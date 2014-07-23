@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<block>
+  <name>payload_source</name>
+  <key>ofdm_tools_payload_source</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.payload_source(packet_len=$packet_len,)</make>
+  <callback>set_packet_len($packet_len)</callback>
+  <param>
+    <name>packet_len</name>
+    <key>packet_len</key>
+    <value>510</value>
+    <type>raw</type>
+  </param>
+  <source>
+    <name>tagged stream out</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </source>
+  <doc>
+hierarchical block that generates a tagged stream from a message source / queue
+</doc>
+</block>

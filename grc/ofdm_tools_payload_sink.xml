@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<block>
+  <name>payload_sink</name>
+  <key>ofdm_tools_payload_sink</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.payload_sink($callback)</make>
+  <callback>set_callback($callback)</callback>
+  <param>
+    <name>callback</name>
+    <key>callback</key>
+    <value>'change for your callback here'</value>
+    <type>raw</type>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </sink>
+  <doc>
+hierarchical block that triggers a receive callback each time a packet is received</doc>
+</block>

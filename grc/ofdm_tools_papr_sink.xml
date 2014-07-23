@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<block>
+  <name>PAPR sink calculator</name>
+  <key>ofdm_tools_papr_sink</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.papr_sink($vlen)</make>
+  <callback>set_size($vlen)</callback>
+  	<param>
+		<name>Vec Length</name>
+		<key>vlen</key>
+		<value>1024</value>
+		<type>int</type>
+	</param>
+
+	<sink>
+		<name>in</name>
+		<type>complex</type>
+		<vlen>$vlen</vlen>
+	</sink>
+
+</block>
