@@ -1,4 +1,4 @@
-ofdm_tools
+OFDM Tools - ofdm, cognitive and sensing stuff
 ==========
 
 I named this module ofdm_tools, but the obejective is to build a 
