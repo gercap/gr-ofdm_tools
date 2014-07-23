@@ -1,8 +1,9 @@
 OFDM Tools - ofdm, cognitive and sensing stuff
 ==========
 
-I named this module ofdm_tools, but the obejective is to build a 
-VHF cognitive communication system for maritme applications
+I named this module ofdm_tools, but the obejective is to build a complete
+VHF cognitive communication system for maritme applications.
+The name ofdm_tools came from the usage of ofdm as the transceiver spectrum shapping technique...
 
 Basic project description:
 - sensing framework detects PU activity
