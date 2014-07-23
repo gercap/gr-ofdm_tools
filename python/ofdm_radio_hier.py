@@ -22,10 +22,10 @@
 # Author: Germano Capela
 # An OFDM transceiver
 # input_mode can be set to:
-# 0 - input tagged stream connects directly to header / payload generator
-# 1 - ... add a CRC32 ...
-# 2 - ... add a CRC32 and scramble bits...
-# 3 - ... scramble bits ...
+# 00 - input tagged stream connects directly to header / payload generator
+# 01 - ... add a CRC32 ...
+# 11 - ... add a CRC32 and scramble bits...
+# 10 - ... scramble bits ...
 
 from gnuradio import analog
 from gnuradio import blocks
@@ -37,10 +37,11 @@ from gnuradio.digital.utils import tagged_streams
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from grc_gnuradio import blks2 as grc_blks2
+import ofdm_tools
 
 class ofdm_radio_hier(gr.hier_block2):
 
-    def __init__(self, pilot_carriers=((-40, -14, 13, 39),), pilot_symbols=((1, 1, 1, -1,),), occupied_carriers=([-54, -53, -52, -51, -50, -49, -48, -47, -46, -45, -44, -43, -42, -41, -39, -38, -37, -36, -35, -34, -33, -32, -31, -30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],), samp_rate=10000, packet_len=512, payload_mod=digital.constellation_qpsk() , sync_word1=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], sync_word2=[0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), 0j, (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j], scramble_mode=0, crc_mode=0,):
+    def __init__(self, pilot_carriers=((-40, -14, 13, 39),), pilot_symbols=((1, 1, 1, -1,),), occupied_carriers=([-54, -53, -52, -51, -50, -49, -48, -47, -46, -45, -44, -43, -42, -41, -39, -38, -37, -36, -35, -34, -33, -32, -31, -30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],), samp_rate=10000, packet_len=512, payload_mod=digital.constellation_qpsk() , sync_word1=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, 1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, -1.42, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], sync_word2=[0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), 0j, (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j, 0j], scramble_mode=0, crc_mode=0, clipper_mode=0, clipping_factor=10):
         gr.hier_block2.__init__(
             self, "Ofdm Radio Hier",
             gr.io_signaturev(2, 2, [gr.sizeof_char*1, gr.sizeof_gr_complex*1]),
@@ -60,6 +61,8 @@ class ofdm_radio_hier(gr.hier_block2):
         self.sync_word2 = sync_word2
         self.scramble_mode = scramble_mode
         self.crc_mode = crc_mode
+        self.clipping_factor = clipping_factor
+        self.clipper_mode = clipper_mode
 
         ##################################################
         # Variables
@@ -83,6 +86,7 @@ class ofdm_radio_hier(gr.hier_block2):
         ##################################################
         # Blocks
         ##################################################
+        self.ofdm_tools_clipper_0 = ofdm_tools.clipper_cc(clipping_factor)
         self.iir_filter_xxx_1 = filter.iir_filter_ccd((forward_OOB), (feedback_OOB), False)
         self.fft_vxx_txpath = fft.fft_vcc(fft_len, False, (()), True, 1)
         self.fft_vxx_2_rxpath = fft.fft_vcc(fft_len, True, (), True, 1)
@@ -127,6 +131,13 @@ class ofdm_radio_hier(gr.hier_block2):
         self.blocks_multiply_xx_rxpath = blocks.multiply_vcc(1)
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vcc((.01, ))
         self.blocks_delay_rxpath = blocks.delay(gr.sizeof_gr_complex*1, fft_len+fft_len/4)
+        self.blks2_selector_0_2 = grc_blks2.selector(
+        	item_size=gr.sizeof_gr_complex*1,
+        	num_inputs=2,
+        	num_outputs=1,
+        	input_index=clipper_mode,
+        	output_index=0,
+        )
         self.blks2_selector_0_1 = grc_blks2.selector(
         	item_size=gr.sizeof_char*1,
         	num_inputs=2,
@@ -190,7 +201,6 @@ class ofdm_radio_hier(gr.hier_block2):
         self.connect((self.digital_constellation_decoder_cb_0, 0), (self.digital_packet_headerparser_b_rxpath, 0))
         self.connect((self, 0), (self.digital_crc32_bb_txpath, 0))
         self.connect((self, 1), (self.analog_agc2_xx_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.iir_filter_xxx_1, 0))
         self.connect((self.blocks_tag_gate_txpath, 0), (self.blocks_multiply_const_vxx_0, 0))
         self.connect((self.iir_filter_xxx_1, 0), (self, 1))
         self.connect((self, 0), (self.blks2_selector_0, 0))
@@ -207,6 +217,10 @@ class ofdm_radio_hier(gr.hier_block2):
         self.connect((self.blks2_selector_0_0_0, 0), (self.digital_crc32_bb_rxpath, 0))
         self.connect((self.blks2_selector_0_0_0, 0), (self.blks2_selector_0_0, 0))
         self.connect((self.blks2_selector_0_0, 0), (self, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.ofdm_tools_clipper_0, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.blks2_selector_0_2, 0))
+        self.connect((self.blks2_selector_0_2, 0), (self.iir_filter_xxx_1, 0))
+        self.connect((self.ofdm_tools_clipper_0, 0), (self.blks2_selector_0_2, 1))
 
         ##################################################
         # Asynch Message Connections
@@ -283,6 +297,13 @@ class ofdm_radio_hier(gr.hier_block2):
         self.blks2_selector_0_1.set_input_index(int(self.scramble_mode))
         self.blks2_selector_0_0_0.set_input_index(int(self.scramble_mode))
 
+    def get_clipping_factor(self):
+        return self.clipping_factor
+
+    def set_clipping_factor(self, clipping_factor):
+        self.clipping_factor = clipping_factor
+        self.ofdm_tools_clipper_0.set_clip_fact(self.clipping_factor)
+
     def get_crc_mode(self):
         return self.crc_mode
 
@@ -290,6 +311,13 @@ class ofdm_radio_hier(gr.hier_block2):
         self.crc_mode = crc_mode
         self.blks2_selector_0.set_input_index(int(self.crc_mode))
         self.blks2_selector_0_0.set_input_index(int(self.crc_mode))
+
+    def get_clipper_mode(self):
+        return self.clipper_mode
+
+    def set_clipper_mode(self, clipper_mode):
+        self.clipper_mode = clipper_mode
+        self.blks2_selector_0_2.set_input_index(int(self.clipper_mode))
 
     def get_packet_length_tag_key(self):
         return self.packet_length_tag_key

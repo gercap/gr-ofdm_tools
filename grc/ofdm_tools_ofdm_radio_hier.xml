@@ -15,6 +15,8 @@
     sync_word2=$sync_word2,
     scramble_mode=$scramble_mode,
     crc_mode=$crc_mode,
+    clipping_factor=$clipping_factor,
+    clipper_mode=$clipper_mode,
 )</make>
   <callback>set_pilot_carriers($pilot_carriers)</callback>
   <callback>set_pilot_symbols($pilot_symbols)</callback>
@@ -26,6 +28,8 @@
   <callback>set_sync_word2($sync_word2)</callback>
   <callback>set_scramble_mode($scramble_mode)</callback>
   <callback>set_crc_mode($crc_mode)</callback>
+  <callback>set_clipping_factor($clipping_factor)</callback>
+  <callback>set_clipper_mode($clipper_mode)</callback>
   <param>
     <name>pilot_carriers</name>
     <key>pilot_carriers</key>
@@ -102,7 +106,25 @@
       <key>1</key>
     </option>
   </param>
-  
+  <param>
+    <name>clipper_mode</name>
+    <key>clipper_mode</key>
+    <type>enum</type>
+    <option>
+      <name>No Clipping</name>
+      <key>0</key>
+    </option>
+    <option>
+      <name>Clip TX Signal</name>
+      <key>1</key>
+    </option>
+  </param>
+  <param>
+    <name>clipping_factor</name>
+    <key>clipping_factor</key>
+    <value>10</value>
+    <type>raw</type>
+  </param>
   <sink>
     <name>tagged stream in</name>
     <type>byte</type>
