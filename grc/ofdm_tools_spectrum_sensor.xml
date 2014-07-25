@@ -6,12 +6,45 @@
   <import>import ofdm_tools</import>
 <make>ofdm_tools.spectrum_sensor(
 vect_length=$vect_length,
-time_observation=1,
-sample_rate=1,
-fft_len=1,
+sample_rate=$sample_rate,
+fft_len=$fft_len,
 threshold=1,
+channel_space=$channel_space,
+search_bw=$search_bw,
+tune_freq=$tune_freq
 )</make>
-  	<param>
+<callback>set_tune_freq($tune_freq)</callback>
+	<param>
+		<name>Tune Freq</name>
+		<key>tune_freq</key>
+		<value>0</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Scanner FFT length</name>
+		<key>fft_len</key>
+		<value>1024</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Sample Rate</name>
+		<key>sample_rate</key>
+		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Channel Spacing</name>
+		<key>channel_space</key>
+		<value>100e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Channel BW</name>
+		<key>search_bw</key>
+		<value>80e3</value>
+		<type>float</type>
+	</param>
+	<param>
 		<name>Vec Length</name>
 		<key>vect_length</key>
 		<value>1024</value>

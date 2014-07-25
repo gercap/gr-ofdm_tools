@@ -26,20 +26,26 @@ from gnuradio import gr
 import pmt
 from ofdm_cr_tools import frange, src_power_fft, src_power_welch, fast_spectrum_scan
 
+
+meta_dict = {'ORDER':None,'ORIGIN':None}
+
 class spectrum_sensor(gr.sync_block):
 	"""
 	docstring for block spectrum_sensor
 	"""
-	def __init__(self, vect_length, time_observation=1, sample_rate=1, fft_len=1, threshold=1):
+	def __init__(self, vect_length, sample_rate=1, fft_len=1, threshold=1, channel_space=1, search_bw=1, tune_freq=0):
 		gr.sync_block.__init__(self,
 			name="spectrum_sensor",
 			in_sig=[(np.complex64, vect_length)],
 			out_sig=None)
 		self.vct_len = vect_length
-		self.time_observation = time_observation
 		self.sample_rate = sample_rate
 		self.fft_len = fft_len
 		self.threshold = threshold
+		self.channel_space = channel_space
+		self.search_bw = search_bw
+		self.tune_freq = tune_freq
+		
 		#message output
 		self.message_port_register_out(pmt.intern('PDU spect_msg'))
 		self.message_port_register_in(pmt.intern('PDU from_cogeng'))
@@ -61,21 +67,29 @@ class spectrum_sensor(gr.sync_block):
 		except:
 			print "Message is not a PDU"
 			return
-		self.send_msg("received trigger message "+str(data))
+		meta_dict = pmt.to_python(meta)
+		if not (type(meta_dict) is dict):
+			meta_dict = {}
+		#deal with metadata...
+
 		#check what was asked by the received msg...
-		#calc PAPR
-		self.set_papr(self.get_vector_sample())
-		#calc Spectrum Constraint
-		self.set_spectrum_constraint_hz(self.get_vector_sample())
-		#send msg w/ spec const
-		self.send_msg(str(self.get_spectrum_constraint_hz()))
-		#send msg w/ papr
-		self.send_msg(str(self.get_papr()))
-		return None
+		if str(data) == 'PAPR': 
+			#calc PAPR
+			self.set_papr(self.get_vector_sample())
+			#send msg w/ papr
+			self.send_msg(self.get_papr())
+		elif str(data) == 'SC': 
+			#calc Spectrum Constraint
+			self.set_spectrum_constraint_hz(self.get_vector_sample())
+			#send msg w/ spec const
+			self.send_msg(self.get_spectrum_constraint_hz())
+		else:
+			self.send_msg("received unknown request")
 
 	def send_msg(self, data):
 		#construct pdu and publish to radio port
-		data = pmt.intern(data) #convert from string
+		#data = pmt.intern(str(data)) #convert from string
+		data = pmt.to_pmt(data)
 		meta = pmt.to_pmt({}) #crete empty metadata
 		pdu = pmt.cons(meta, data) #make the PDU
 		#publish PDU to msg port
@@ -83,10 +97,17 @@ class spectrum_sensor(gr.sync_block):
 
 
 	def set_spectrum_constraint_hz(self, measure):
-		self.spectrum_constraint_hz = fast_spectrum_scan(measure, 97e6, 25e3, 10e3, 2048, 1e6, 'welch', 1e-9, False)
+		self.spectrum_constraint_hz = fast_spectrum_scan(measure, self.tune_freq, self.channel_space,
+		 self.search_bw, self.fft_len, self.sample_rate, 'welch', 1e-9, False)
 
 	def get_spectrum_constraint_hz(self):
 		return self.spectrum_constraint_hz
+
+	def set_tune_freq(self, tune_freq):
+		self.tune_freq = tune_freq
+
+	def get_tune_freq(self):
+		return self.tune_freq
 
 	def set_papr(self, measure):
 		meanSquareValue = np.vdot(measure,np.transpose(measure))/len(measure)

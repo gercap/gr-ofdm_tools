@@ -16,3 +16,16 @@ The firts part includes a reconfigurable OFDM transceiver (based on GNU Radio's 
 The cognitive processing block that handles PDU's exchange w/ TUN/TAP interface is written in Python - not available yet
 This cognitive engine also handles the sensing information that comes from the sensing framework also developed in Python- not available yet
 In order to keep all network nodes synchronized, the cognitive engine comprises also a synchronization transceiver
+
+Available blocks:
+- radio transceiver - ofdm_radio_hier
+- payload source - payload_source
+- paylaod sink - paylaod_sink
+- PAPR calculator sink - PAPR sink calculator
+- spectum sensing block - spectum_sensor
+
+Install:
+- regular OOT module procedure w/ cmake
+
+Current work:
+Re-Writing cognitive engine in GNURadio blocks (python)
