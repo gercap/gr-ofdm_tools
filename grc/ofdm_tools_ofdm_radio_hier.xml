@@ -9,7 +9,6 @@
     pilot_symbols=$pilot_symbols,
     occupied_carriers=$occupied_carriers,
     samp_rate=$samp_rate,
-    packet_len=$packet_len,
     payload_mod=$payload_mod,
     sync_word1=$sync_word1,
     sync_word2=$sync_word2,
@@ -22,7 +21,6 @@
   <callback>set_pilot_symbols($pilot_symbols)</callback>
   <callback>set_occupied_carriers($occupied_carriers)</callback>
   <callback>set_samp_rate($samp_rate)</callback>
-  <callback>set_packet_len($packet_len)</callback>
   <callback>set_payload_mod($payload_mod)</callback>
   <callback>set_sync_word1($sync_word1)</callback>
   <callback>set_sync_word2($sync_word2)</callback>
@@ -52,12 +50,6 @@
     <name>samp_rate</name>
     <key>samp_rate</key>
     <value>10000</value>
-    <type>raw</type>
-  </param>
-  <param>
-    <name>packet_len</name>
-    <key>packet_len</key>
-    <value>512</value>
     <type>raw</type>
   </param>
   <param>

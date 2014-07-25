@@ -221,7 +221,7 @@ class csma_cr_mac(object):
 		self.ofdm_transceiver = ofdm_tools.ofdm_radio_hier(
 			pilot_carriers = self.sync_data['pilot_carriers'], pilot_symbols = self.sync_data['pilot_symbols'],
 			occupied_carriers = self.sync_data['occupied_carriers'], samp_rate = self.ofdm_settings['ofdm_samp_rate'],
-			packet_len = self.ofdm_settings['ofdm_packet_len'], payload_mod = digital.constellation_qpsk() ,
+			payload_mod = digital.constellation_qpsk() ,
 			sync_word1 = self.sync_data['sync_word1'], sync_word2 = self.sync_data['sync_word2'],
 			 scramble_mode=0, crc_mode=self.w_crc, clipper_mode=0, clipping_factor=10)
 

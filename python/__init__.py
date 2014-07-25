@@ -50,6 +50,8 @@ from papr_sink import papr_sink
 from ofdm_radio_hier import ofdm_radio_hier
 from payload_source import payload_source
 from payload_sink import payload_sink
+from spectrum_sensor import spectrum_sensor
+import ofdm_cr_tools
 
 #
 

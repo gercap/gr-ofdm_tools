@@ -23,15 +23,11 @@ import numpy as np
 from gnuradio import gr
 import time
 
-def calc_papr(measure):
-	meanSquareValue = np.vdot(measure,np.transpose(measure))/len(measure)
-	peakValue = max(measure*np.conjugate(measure))
-	paprSymbol = peakValue/meanSquareValue
-	return paprSymbol.real
+
 
 class papr_sink(gr.sync_block):
 	"""
-	docstring for block papr_sink
+	compute PAPR as a sink block
 	"""
 	def __init__(self, size):
 		gr.sync_block.__init__(self,
@@ -40,16 +36,21 @@ class papr_sink(gr.sync_block):
 			out_sig=None)
 		self.papr = 0
 		self.vect_size = size
+		self.vct_data = [0, 0]
 
 	def work(self, input_items, output_items):
 		in0 = input_items[0][:]
-		for el in in0: self.set_papr(calc_papr(el))
-		return 0
+		self.vct_data = in0[0]
+		return len(in0)
 
-	def set_papr(self, papr):
-		self.papr = papr
+	def set_papr(self, measure):
+		meanSquareValue = np.vdot(measure,np.transpose(measure))/len(measure)
+		peakValue = max(measure*np.conjugate(measure))
+		paprSymbol = peakValue/meanSquareValue
+		self.papr = paprSymbol.real
 
 	def level(self):
+		self.set_papr(self.vct_data)
 		return self.papr
 
 	def set_size(self, size):

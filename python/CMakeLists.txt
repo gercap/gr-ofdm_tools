@@ -35,7 +35,9 @@ GR_PYTHON_INSTALL(
     papr_sink.py
     ofdm_radio_hier.py
     payload_source.py
-    payload_sink.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    payload_sink.py
+    spectrum_sensor.py
+    ofdm_cr_tools.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<block>
+  <name>spectrum_sensor</name>
+  <key>ofdm_tools_spectrum_sensor</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+<make>ofdm_tools.spectrum_sensor(
+vect_length=$vect_length,
+time_observation=1,
+sample_rate=1,
+fft_len=1,
+threshold=1,
+)</make>
+  	<param>
+		<name>Vec Length</name>
+		<key>vect_length</key>
+		<value>1024</value>
+		<type>int</type>
+	</param>
+	<sink>
+		<name>in</name>
+		<type>complex</type>
+		<vlen>$vect_length</vlen>
+	</sink>
+  <sink>
+    <name>PDU from_cogeng</name>
+    <type>message</type>
+    <optional>1</optional>
+  </sink>
+  <source>
+    <name>PDU spect_msg</name>
+    <type>message</type>
+    <optional>1</optional>
+  </source>
+</block>
