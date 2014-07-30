@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<block>
+  <name>sync_radio_hier</name>
+  <key>ofdm_tools_sync_radio_hier</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.sync_radio_hier(samp_rate=$samp_rate,)</make>
+  <callback>set_samp_rate($samp_rate)</callback>
+  <param>
+    <name>samp_rate</name>
+    <key>samp_rate</key>
+    <value>10000</value>
+    <type>raw</type>
+  </param>
+  <sink>
+    <name>tagged stream in</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </sink>
+  <sink>
+    <name>radio in</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </sink>
+  <source>
+    <name>tagged stream out</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </source>
+  <source>
+    <name>radio out</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </source>
+  <doc>Germano Capela
+an OFDM tranceiver for narrowband channels (sync)</doc>
+</block>

@@ -37,7 +37,9 @@ GR_PYTHON_INSTALL(
     payload_source.py
     payload_sink.py
     spectrum_sensor.py
-    ofdm_cr_tools.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    ofdm_cr_tools.py
+    cognitive_engine_mac.py
+    sync_radio_hier.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

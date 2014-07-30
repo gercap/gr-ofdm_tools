@@ -24,8 +24,13 @@ Available blocks:
 - PAPR calculator sink - PAPR sink calculator
 - spectum sensing block - spectum_sensor
 
+Missing blocks (in development):
+- cognitive engine
+- synchronization radio
+
+
 Install:
 - regular OOT module procedure w/ cmake
 
 Current work:
-Re-Writing cognitive engine in GNURadio blocks (python)
+Re-Writing cognitive engine to GNURadio blocks (python)

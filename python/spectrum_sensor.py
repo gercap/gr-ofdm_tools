@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-# Copyright 2014 <+YOU OR YOUR COMPANY+>.
+# Copyright 2014 Germano Capela at gmail.com
 # 
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import pmt
 from ofdm_cr_tools import frange, src_power_fft, src_power_welch, fast_spectrum_scan
 
 
-meta_dict = {'ORDER':None,'ORIGIN':None}
+meta_dict = {'REQ':None,'ORIGIN':None}
 
 class spectrum_sensor(gr.sync_block):
 	"""
@@ -45,19 +45,18 @@ class spectrum_sensor(gr.sync_block):
 		self.channel_space = channel_space
 		self.search_bw = search_bw
 		self.tune_freq = tune_freq
-		
+		self.vector_sample = [0, 0]
+		self.parp = 1e-10
+
 		#message output
 		self.message_port_register_out(pmt.intern('PDU spect_msg'))
 		self.message_port_register_in(pmt.intern('PDU from_cogeng'))
 		self.set_msg_handler(pmt.intern('PDU from_cogeng'), self.cogeng_rx)
-		self.i = 0
-		self.vector_sample = [0, 0]
-		self.parp = 0
 
 	def work(self, input_items, output_items):
 		in0 = input_items[0][:]
 		#save a vector sample
-		self.set_vector_sample(in0[0])
+		self.set_vector_sample(in0[0]) #every time the scheduler calls this, i keep 1 vector
 		return len(in0)
 
 	def cogeng_rx(self, msg):
@@ -65,32 +64,33 @@ class spectrum_sensor(gr.sync_block):
 			meta = pmt.car(msg)
 			data = pmt.cdr(msg)
 		except:
-			print "Message is not a PDU"
+			print "Message is not a valid PDU"
 			return
 		meta_dict = pmt.to_python(meta)
 		if not (type(meta_dict) is dict):
 			meta_dict = {}
-		#deal with metadata...
+		print '-------SS DEBUG-----'
+		print 'Received new request'
 
 		#check what was asked by the received msg...
 		if str(data) == 'PAPR': 
 			#calc PAPR
 			self.set_papr(self.get_vector_sample())
 			#send msg w/ papr
-			self.send_msg(self.get_papr())
+			self.send_msg('ss', self.get_papr())
 		elif str(data) == 'SC': 
 			#calc Spectrum Constraint
 			self.set_spectrum_constraint_hz(self.get_vector_sample())
 			#send msg w/ spec const
-			self.send_msg(self.get_spectrum_constraint_hz())
+			self.send_msg('ss', self.get_spectrum_constraint_hz())
 		else:
-			self.send_msg("received unknown request")
+			self.send_msg('ss', "received unknown request")
 
-	def send_msg(self, data):
+	def send_msg(self, meta, data):
 		#construct pdu and publish to radio port
 		#data = pmt.intern(str(data)) #convert from string
+		meta = pmt.to_pmt(meta)
 		data = pmt.to_pmt(data)
-		meta = pmt.to_pmt({}) #crete empty metadata
 		pdu = pmt.cons(meta, data) #make the PDU
 		#publish PDU to msg port
 		self.message_port_pub(pmt.intern('PDU spect_msg'),pdu)
@@ -103,17 +103,11 @@ class spectrum_sensor(gr.sync_block):
 	def get_spectrum_constraint_hz(self):
 		return self.spectrum_constraint_hz
 
-	def set_tune_freq(self, tune_freq):
-		self.tune_freq = tune_freq
-
-	def get_tune_freq(self):
-		return self.tune_freq
-
 	def set_papr(self, measure):
 		meanSquareValue = np.vdot(measure,np.transpose(measure))/len(measure)
 		peakValue = max(measure*np.conjugate(measure))
 		paprSymbol = peakValue/meanSquareValue
-		self.papr = paprSymbol.real
+		self.papr = 10*math.log10(paprSymbol.real)
 
 	def get_papr(self):
 		return self.papr
@@ -138,3 +132,21 @@ class spectrum_sensor(gr.sync_block):
 
 	def set_threshold(self, threshold):
 		self.threshold = threshold
+
+	def set_tune_freq(self, tune_freq):
+		self.tune_freq = tune_freq
+
+	def get_tune_freq(self):
+		return self.tune_freq
+
+	def set_channel_space(self, channel_space):
+		self.channel_space = channel_space
+
+	def get_channel_space(self):
+		return self.channel_space
+
+	def set_search_bw(self, search_bw):
+		self.search_bw = search_bw
+
+	def get_search_bw(self):
+		return self.search_bw

@@ -51,6 +51,9 @@ from ofdm_radio_hier import ofdm_radio_hier
 from payload_source import payload_source
 from payload_sink import payload_sink
 from spectrum_sensor import spectrum_sensor
+from cognitive_engine_mac import cognitive_engine_mac
+from sync_radio_hier import sync_radio_hier
+
 import ofdm_cr_tools
 
 #

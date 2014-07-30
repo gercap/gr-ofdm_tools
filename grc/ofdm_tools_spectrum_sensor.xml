@@ -14,6 +14,8 @@ search_bw=$search_bw,
 tune_freq=$tune_freq
 )</make>
 <callback>set_tune_freq($tune_freq)</callback>
+<callback>set_channel_space($channel_space)</callback>
+<callback>set_search_bw($search_bw)</callback>
 	<param>
 		<name>Tune Freq</name>
 		<key>tune_freq</key>

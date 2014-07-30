@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<block>
+  <name>cognitive_engine_mac</name>
+  <key>ofdm_tools_cognitive_engine_mac</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.cognitive_engine_mac($agent, $address, $sample_rate, $sensing_periodicity, self.ofdm_radio, self.sync_radio, self.radio_selector)</make>
+  <callback>set_sensing_periodicity($sensing_periodicity)</callback>
+
+<param>
+  <name>Node Agent</name>
+  <key>agent</key>
+  <type>enum</type>
+  <option>
+    <name>Master</name>
+    <key>'MASTER'</key>
+  </option>
+  <option>
+    <name>Slave</name>
+    <key>'SLAVE'</key>
+  </option>
+</param>
+
+<param>
+	<name>Node Address</name>
+	<key>address</key>
+	<value>0</value>
+	<type>int</type>
+</param>
+
+<param>
+	<name>Sample Rate</name>
+	<key>sample_rate</key>
+	<value>samp_rate</value>
+	<type>int</type>
+</param>
+
+<param>
+	<name>Sensing Periodicity (secs)</name>
+	<key>sensing_periodicity</key>
+	<value>1</value>
+	<type>float</type>
+</param>
+
+<sink>
+    <name>from_ofdm_radio</name>
+    <type>message</type>
+    <optional>1</optional>
+</sink>
+<sink>
+    <name>from_sync_radio</name>
+    <type>message</type>
+    <optional>1</optional>
+</sink>
+<sink>
+    <name>from_app</name>
+    <type>message</type>
+    <optional>1</optional>
+</sink>
+<sink>
+    <name>from_spect_sens</name>
+    <type>message</type>
+    <optional>1</optional>
+</sink>
+<source>
+    <name>to_ofdm_radio</name>
+    <type>message</type>
+    <optional>1</optional>
+</source>
+<source>
+    <name>to_sync_radio</name>
+    <type>message</type>
+    <optional>1</optional>
+</source>
+<source>
+    <name>to_app</name>
+    <type>message</type>
+    <optional>1</optional>
+</source>
+<source>
+    <name>to_spect_sens</name>
+    <type>message</type>
+    <optional>1</optional>
+</source>
+
+</block>
