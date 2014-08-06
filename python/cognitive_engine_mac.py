@@ -298,7 +298,7 @@ class cognitive_engine_mac(gr.basic_block):
 		# Send the message:
 		self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.PMT_NIL, send_pmt))
 
-    def handle_string_msg(self, msg_pmt):
+	def handle_string_msg(self, msg_pmt):
 		""" Receiver a u8vector on the input port, and print it out. """
 		# Collect metadata, convert to Python format:
 		meta = pmt.to_python(pmt.car(msg_pmt))
