@@ -283,3 +283,37 @@ class cognitive_engine_mac(gr.basic_block):
 		#self.sync_data['occupied_carriers'], self.sync_data['pilot_carriers'], self.sync_data['pilot_symbols'], self.sync_data['sync_word1'], self.sync_data['sync_word2'] = spectrum_enforcer(ofdm_settings['ofdm_fft_len'], spectrum_constraint_fft, ofdm_settings['lobe_len'])
 		self.sync_data['occupied_carriers'], self.sync_data['pilot_carriers'], self.sync_data['pilot_symbols'], dump1, dump2 = spectrum_enforcer(ofdm_settings['ofdm_fft_len'], spectrum_constraint_fft, ofdm_settings['lobe_len'])
 		return None
+
+	def send_string_message(self, msg_str):
+		""" Take a string, remove all non-printable characters,
+		prepend the prefix and post to the next block. """
+		# Do string sanitization:
+		msg_str = filter(lambda x: x in string.printable, msg_str)
+		send_str = "[{}] {}".format(self.prefix, msg_str)
+		# Create an empty PMT (contains only spaces):
+		send_pmt = pmt.make_u8vector(len(send_str), ord(' '))
+		# Copy all characters to the u8vector:
+		for i in range(len(send_str)):
+			pmt.u8vector_set(send_pmt, i, ord(send_str[i]))
+		# Send the message:
+		self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.PMT_NIL, send_pmt))
+
+    def handle_string_msg(self, msg_pmt):
+		""" Receiver a u8vector on the input port, and print it out. """
+		# Collect metadata, convert to Python format:
+		meta = pmt.to_python(pmt.car(msg_pmt))
+		# Collect message, convert to Python format:
+		msg = pmt.cdr(msg_pmt)
+		# Make sure it's a u8vector
+		if not pmt.is_u8vector(msg):
+			print "[ERROR] Received invalid message type.\n"
+			return
+		# Convert to string:
+		msg_str = "".join([chr(x) for x in pmt.u8vector_elements(msg)])
+		# Just for good measure, and to avoid attacks, let's filter again:
+		msg_str = filter(lambda x: x in string.printable, msg_str)
+		# Print string, and if available, the metadata:
+		print msg_str
+		if meta is not None:
+			print "[METADATA]: ", meta
+
