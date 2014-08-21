@@ -383,7 +383,7 @@ def spectrum_translator(spectrum_constraint_hz, fc, sf, fft_len, canc_bins):
 			x += 1 
 	return spectrum_constraint_fft
 
-def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, method, thr, show_plot):
+def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, method, thr_leveler, show_plot):
 
 	npts = len(vct_sample)
 	if n_fft == 0: nFFT = int(2**math.ceil(math.log(npts,2))) #nr points fft
@@ -411,12 +411,12 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 	avg_power = np.average (power_level_ch)
 	min_power = np.amin (power_level_ch)
 	max_power = np.amax (power_level_ch)
-	print 'min power', 10*math.log10(min_power)
-	print 'max power', 10*math.log10(max_power) 
-	print 'average power', 10*math.log10(avg_power)
+	print 'min power', 10*math.log10(min_power+1e-20)
+	print 'max power', 10*math.log10(max_power+1e-20) 
+	print 'average power', 10*math.log10(avg_power+1e-20)
 
-	thr = min_power * 10
-	print 'decision threshold', 10*math.log10(thr)
+	thr = min_power * thr_leveler
+	print 'decision threshold', 10*math.log10(thr+1e-20)
 
 	# test detection threshold
 	pwr = []
@@ -452,7 +452,7 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 	return spectrum_constraint_hz
 
 
-def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, receiver, method, thr, t_wait, show_plot):
+def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, receiver, method, thr_leveler, t_wait, show_plot):
 
 	t = t_wait #0.2 # for lower sampling rates, the scanner must fill completely the vector...
 
@@ -529,13 +529,12 @@ def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, rece
 	avg_power = np.average (power_level_ch)
 	min_power = np.amin (power_level_ch)
 	max_power = np.amax (power_level_ch)
-	print 'min power', 10*math.log10(min_power)
-	print 'max power', 10*math.log10(max_power) 
-	print 'average power', 10*math.log10(avg_power)
-	
-	thr = min_power * 10
+	print 'min power', 10*math.log10(min_power+1e-20)
+	print 'max power', 10*math.log10(max_power+1e-20) 
+	print 'average power', 10*math.log10(avg_power+1e-20)
 
-	print 'decision threshold', 10*math.log10(thr)
+	thr = min_power * thr_leveler
+	print 'decision threshold', 10*math.log10(thr+1e-20)
 
 	# test detection threshold
 	pwr = []

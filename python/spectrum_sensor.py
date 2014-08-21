@@ -33,7 +33,7 @@ class spectrum_sensor(gr.sync_block):
 	"""
 	docstring for block spectrum_sensor
 	"""
-	def __init__(self, vect_length, sample_rate=1, fft_len=1, threshold=1, channel_space=1, search_bw=1, tune_freq=0):
+	def __init__(self, vect_length, sample_rate=1, fft_len=1, threshold=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
 		gr.sync_block.__init__(self,
 			name="spectrum_sensor",
 			in_sig=[(np.complex64, vect_length)],
@@ -44,6 +44,8 @@ class spectrum_sensor(gr.sync_block):
 		self.threshold = threshold
 		self.channel_space = channel_space
 		self.search_bw = search_bw
+		self.method = method
+		self.thr_leveler = thr_leveler
 		self.tune_freq = tune_freq
 		self.vector_sample = [0, 0]
 		self.parp = 1e-10
@@ -98,7 +100,7 @@ class spectrum_sensor(gr.sync_block):
 
 	def set_spectrum_constraint_hz(self, measure):
 		self.spectrum_constraint_hz = fast_spectrum_scan(measure, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, 'welch', 1e-9, False)
+		 self.search_bw, self.fft_len, self.sample_rate, self.method, self.thr_leveler, False)
 
 	def get_spectrum_constraint_hz(self):
 		return self.spectrum_constraint_hz
@@ -150,3 +152,9 @@ class spectrum_sensor(gr.sync_block):
 
 	def get_search_bw(self):
 		return self.search_bw
+
+	def set_thr_leveler(self, thr_leveler):
+		self.thr_leveler = thr_leveler
+
+	def get_thr_leveler(self):
+		return self.thr_leveler

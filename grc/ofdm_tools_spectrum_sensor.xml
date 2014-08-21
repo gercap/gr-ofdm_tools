@@ -11,11 +11,14 @@ fft_len=$fft_len,
 threshold=1,
 channel_space=$channel_space,
 search_bw=$search_bw,
+method=$method,
+thr_leveler=$thr_leveler,
 tune_freq=$tune_freq
 )</make>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_channel_space($channel_space)</callback>
 <callback>set_search_bw($search_bw)</callback>
+<callback>set_thr_leveler($thr_leveler)</callback>
 	<param>
 		<name>Tune Freq</name>
 		<key>tune_freq</key>
@@ -51,6 +54,25 @@ tune_freq=$tune_freq
 		<key>vect_length</key>
 		<value>1024</value>
 		<type>int</type>
+	</param>
+	<param>
+		<name>PDS Method</name>
+		<key>method</key>
+		<type>enum</type>
+	<option>
+		<name>Welch</name>
+		<key>'welch'</key>
+	</option>
+	<option>
+		<name>FFT</name>
+		<key>'fft'</key>
+	</option>
+	</param>
+	<param>
+		<name>Noise Leveler</name>
+		<key>thr_leveler</key>
+		<value>10</value>
+		<type>float</type>
 	</param>
 	<sink>
 		<name>in</name>

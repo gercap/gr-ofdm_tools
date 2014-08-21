@@ -21,11 +21,6 @@
 # Title: Ofdm Radio Hier Grc
 # Author: Germano Capela
 # An OFDM transceiver
-# input_mode can be set to:
-# 00 - input tagged stream connects directly to header / payload generator
-# 01 - ... add a CRC32 ...
-# 11 - ... add a CRC32 and scramble bits...
-# 10 - ... scramble bits ...
 
 from gnuradio import analog, blocks, digital, fft, filter, gr
 from gnuradio.digital.utils import tagged_streams
