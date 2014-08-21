@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import numpy as np, time
+import numpy as np, time, math
 from ofdm_cr_tools import fft_plot_dB, welch_plot_dB, fft_plot_lin
 from gnuradio import gr
 import subprocess
