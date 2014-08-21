@@ -53,6 +53,7 @@ from payload_sink import payload_sink
 from spectrum_sensor import spectrum_sensor
 from cognitive_engine_mac import cognitive_engine_mac
 from sync_radio_hier import sync_radio_hier
+from ascii_plot import ascii_plot
 
 import ofdm_cr_tools
 

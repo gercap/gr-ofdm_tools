@@ -39,7 +39,8 @@ GR_PYTHON_INSTALL(
     spectrum_sensor.py
     ofdm_cr_tools.py
     cognitive_engine_mac.py
-    sync_radio_hier.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    sync_radio_hier.py
+    ascii_plot.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

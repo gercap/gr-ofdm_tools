@@ -259,21 +259,29 @@ def fft_plot(flowgraph, fc, nfft):
 	fft_axis = Sf/2*np.linspace(-1, 1, nfft)
 
 	fig1 = plots.figure()
-	plots.plot([item+fc for item in fft_axis],[10*math.log10(item) for item in psd_fft])
+	plots.plot([item+fc for item in fft_axis],[10*math.log10(item+1e-20) for item in psd_fft])
 	plots.xlabel('Frequency [Hz]')
 	plots.ylabel('PSD [dB/Hz]')
 	plots.title('FFT method PSD', fontsize=12)
 	return
 
 #plt data from flowgraph
-def fft_plot_2(data, Sf, fc, nfft):
+def fft_plot_dB(data, Sf, fc, nfft):
+
 	npts = len(data)
-	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(data, nfft)))**2)/npts)/Sf
+	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(data, nfft)))**2)/(npts*Sf))
 	fft_axis = Sf/2*np.linspace(-1, 1, nfft)
 
-	return [item+fc for item in fft_axis], [10*math.log10(item) for item in psd_fft]
+	return [item+fc for item in fft_axis], [10*math.log10(item+1e-20) for item in psd_fft]
 
-def fft_plot_3(data, Sf, fc, nfft):
+def welch_plot_dB(data, Sf, fc, nfft):
+	welch_axis, psd_welch = sg.welch(data, fs = Sf, nperseg= nfft, nfft = nfft)
+	psd_welch_aligned = np.fft.fftshift(psd_welch)
+	welch_axis_aligned = np.fft.fftshift(welch_axis)
+
+	return [item+fc for item in welch_axis_aligned], [10*math.log10(item+1e-20) for item in psd_welch_aligned]
+
+def fft_plot_lin(data, Sf, fc, nfft):
 	npts = len(data)
 	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(data, nfft)))**2)/npts)/Sf
 	fft_axis = Sf/2*np.linspace(-1, 1, nfft)
@@ -435,11 +443,11 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 		#plots.plot(welch_axis,[10*math.log10(item) for item in psd_welch])
 
 		f1, axarr1 = plots.subplots(3, sharex=True)
-		axarr1[0].plot(axis,[10*math.log10(item) for item in psd])
+		axarr1[0].plot(axis,[10*math.log10(item+1e-20) for item in psd])
 		axarr1[0].set_title('PSD Estimate using ' + method + '\'s method')
 		axarr1[0].set_ylabel('PSD [dB/Hz]')
 
-		axarr1[1].bar(ax_ch, [10*math.log10(item) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
+		axarr1[1].bar(ax_ch, [10*math.log10(item+1e-20) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
 		axarr1[1].set_title('Power by Channel')
 		axarr1[1].set_ylabel('Power [dB]')
 

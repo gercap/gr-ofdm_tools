@@ -33,7 +33,7 @@ class spectrum_sensor(gr.sync_block):
 	"""
 	docstring for block spectrum_sensor
 	"""
-	def __init__(self, vect_length, sample_rate=1, fft_len=1, threshold=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
+	def __init__(self, vect_length, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
 		gr.sync_block.__init__(self,
 			name="spectrum_sensor",
 			in_sig=[(np.complex64, vect_length)],
@@ -41,7 +41,6 @@ class spectrum_sensor(gr.sync_block):
 		self.vct_len = vect_length
 		self.sample_rate = sample_rate
 		self.fft_len = fft_len
-		self.threshold = threshold
 		self.channel_space = channel_space
 		self.search_bw = search_bw
 		self.method = method
@@ -131,9 +130,6 @@ class spectrum_sensor(gr.sync_block):
 
 	def set_fft_len(self, fft_len):
 		self.fft_len = fft_len
-
-	def set_threshold(self, threshold):
-		self.threshold = threshold
 
 	def set_tune_freq(self, tune_freq):
 		self.tune_freq = tune_freq

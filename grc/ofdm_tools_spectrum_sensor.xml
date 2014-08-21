@@ -8,7 +8,6 @@
 vect_length=$vect_length,
 sample_rate=$sample_rate,
 fft_len=$fft_len,
-threshold=1,
 channel_space=$channel_space,
 search_bw=$search_bw,
 method=$method,
