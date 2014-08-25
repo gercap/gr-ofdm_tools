@@ -29,18 +29,18 @@ class papr_sink(gr.sync_block):
 	"""
 	compute PAPR as a sink block
 	"""
-	def __init__(self, size):
+	def __init__(self, block_len):
 		gr.sync_block.__init__(self,
 			name="papr_sink",
-			in_sig=[(np.complex64, size)],
+			in_sig=[np.complex64],
 			out_sig=None)
 		self.papr = 0
-		self.vect_size = size
+		self.block_len = block_len
 		self.vct_data = [0, 0]
 
 	def work(self, input_items, output_items):
-		in0 = input_items[0][:]
-		self.vct_data = in0[0]
+		in0 = input_items[0][0:self.block_len]
+		self.vct_data = in0
 		return len(in0)
 
 	def set_papr(self, measure):
@@ -53,8 +53,8 @@ class papr_sink(gr.sync_block):
 		self.set_papr(self.vct_data)
 		return self.papr
 
-	def set_size(self, size):
-		self.vect_size = size
+	def set_block_len(self, block_len):
+		self.block_len = block_len
 
-	def size(self):
-		return self.vect_size
+	def get_block_len(self):
+		return self.block_len

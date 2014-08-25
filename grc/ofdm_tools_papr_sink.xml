@@ -4,11 +4,11 @@
   <key>ofdm_tools_papr_sink</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
-  <make>ofdm_tools.papr_sink($vlen)</make>
-  <callback>set_size($vlen)</callback>
+  <make>ofdm_tools.papr_sink($block_len)</make>
+  <callback>set_block_len($block_len)</callback>
   	<param>
-		<name>Vec Length</name>
-		<key>vlen</key>
+		<name>Block Len</name>
+		<key>block_len</key>
 		<value>1024</value>
 		<type>int</type>
 	</param>
