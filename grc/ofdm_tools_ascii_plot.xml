@@ -5,7 +5,8 @@
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ascii_plot(
-  fft_len=$fft_len, 
+  fft_len=$fft_len,
+  method=$method,
   samp_rate=$samp_rate, 
   fc=$fc, 
   average=$average, 
@@ -32,6 +33,19 @@
 		<key>fft_len</key>
 		<value>1024</value>
 		<type>int</type>
+	</param>
+	<param>
+		<name>PDS Method</name>
+		<key>method</key>
+		<type>enum</type>
+	<option>
+		<name>Welch</name>
+		<key>'welch'</key>
+	</option>
+	<option>
+		<name>FFT</name>
+		<key>'fft'</key>
+	</option>
 	</param>
 	<param>
 		<name>Sample Rate</name>

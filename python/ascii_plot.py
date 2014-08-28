@@ -29,10 +29,11 @@ import gnuradio.gr.gr_threading as _threading
 
 #main cognitive engine thread
 class main_thread(_threading.Thread):
-	def __init__(self, fft_len, samp_rate, fc, average, refresh_rate, length, height):
+	def __init__(self, fft_len, method, samp_rate, fc, average, refresh_rate, length, height):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.fft_len = fft_len
+		self.method = method
 		self.samp_rate = samp_rate
 		self.fc = fc
 		self.average = average
@@ -62,8 +63,8 @@ class main_thread(_threading.Thread):
 				psd_av = [x/self.average for x in psd_av]
 				psd = [10*math.log10(item+1e-20) for item in psd_av]
 			else:
-				#x_axis, psd = welch_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
-				x_axis, psd = fft_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
+				if self.method == 'welch': x_axis, psd = welch_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
+				else: x_axis, psd = fft_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
 
 			for i,j in zip(x_axis, psd):
 				self.gnuplot.stdin.write("%f %f\n" % (i,j))
@@ -75,17 +76,18 @@ class main_thread(_threading.Thread):
 
 class ascii_plot(gr.sync_block):
 
-	def __init__(self, fft_len, samp_rate, fc, average, refresh_rate, length, height):
+	def __init__(self, fft_len, method, samp_rate, fc, average, refresh_rate, length, height):
 		gr.sync_block.__init__(self,
 			name="ascii_plot",
 			in_sig=[np.complex64],
 			out_sig=None)
 		self.fft_len = fft_len
+		self.method = method
 		self.samp_rate = samp_rate
 		self.fc = fc
 		self.average = average
 		self.refresh_rate = refresh_rate
-		self.main = main_thread(fft_len, samp_rate, fc, average, refresh_rate, length, height)
+		self.main = main_thread(fft_len, method, samp_rate, fc, average, refresh_rate, length, height)
 
 	def work(self, input_items, output_items):
 		in0 = input_items[0][0:self.fft_len]
