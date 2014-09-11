@@ -28,7 +28,7 @@ import gnuradio.gr.gr_threading as _threading
 import osmosdr
 
 
-import xmlrpclib, math
+import xmlrpclib, math, random, string
 import numpy as np
 from scipy import signal as sg
 import matplotlib.pyplot as plots
@@ -151,9 +151,29 @@ def clc_power_freq(vector, nFFT, Sf):
 	power_level = float(sum(psd_fft))
 	return power_level
 
+def xcorr(a, b, length):
+	"""FFT based autocorrelation function, which is faster than numpy.correlate"""
+	e = np.fft.fft(a, length);
+	f = np.fft.fft(b, length);
+	g = f * np.conj(e);
+	h = np.fft.fftshift(np.fft.ifft(g, length));
+	return np.abs(h[len(h)/2:])
+
+def fac(data, length):
+	b = np.abs(np.fft.fft(data, length))
+	b = np.fft.fftshift(np.fft.fft(b, length))
+	return np.abs(b[len(b)/2:])
+
+def movingaverage(interval, window_size):
+	window= np.ones(int(window_size))/float(window_size)
+	return np.abs(np.convolve(interval, window, 'same'))
+
 #computes fft based psd power
 def src_power_fft(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
-	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(vector, nFFT)))**2)/npts)/Sf
+	#win = np.hamming(npts)
+	win = sg.flattop(npts)
+	vector = vector * win
+	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(vector, nFFT)))**2)/npts)
 	fft_axis = Sf/2*np.linspace(-1, 1, nFFT) #fft_axis = np.fft.fftshift(f)
 	power_level_ch_fft = []
 
@@ -188,7 +208,7 @@ def src_power_autocorrelation(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 
 #computes welch based psd power
 def src_power_welch(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
-	welch_axis, psd_welch = sg.welch(vector, fs = Sf, nperseg= nFFT, nfft = nFFT)
+	welch_axis, psd_welch = sg.welch(vector, window='flattop', fs = Sf, nperseg= nFFT, nfft = nFFT)
 	psd_welch_aligned = np.fft.fftshift(psd_welch)
 	welch_axis_aligned = np.fft.fftshift(welch_axis)
 	power_level_ch_welch = []
@@ -561,11 +581,11 @@ def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, rece
 		#plots.plot(welch_axis,[10*math.log10(item) for item in psd_welch])
 
 		f1, axarr1 = plots.subplots(3, sharex=True)
-		axarr1[0].plot(axis,[10*math.log10(item) for item in psd])
+		axarr1[0].plot(axis,[10*math.log10(item+1e-20) for item in psd])
 		axarr1[0].set_title('PSD Estimate using ' + method + '\'s method')
 		axarr1[0].set_ylabel('PSD [dB/Hz]')
 
-		axarr1[1].bar(ax_ch, [10*math.log10(item) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
+		axarr1[1].bar(ax_ch, [10*math.log10(item+1e-20) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
 		axarr1[1].set_title('Power by Channel')
 		axarr1[1].set_ylabel('Power [dB]')
 
@@ -1590,17 +1610,16 @@ def unpack_sync_data(filtered_data):
 
 	return occupied_carriers, pilot_carriers, pilot_symbols, ofdm_fc, ofdm_samp_freq, payload_mod, packet_len, sync_word1, sync_word2
 
+	#A-from MASTER OS to SLAVE OS
+	#B-from MASTER SENSE to SLAVE SENSE
+	#C-from SLAVE OS to MASTER OS
+	#D-from SLAVE SENSE to MASTER SENSE
+	#U- UNKNOWN
+
 def make_sync_header(payload_len, type_pkt):
 	return '###' + payload_len + type_pkt
 
 def make_sync_packet(payload, pkt_size, pkt_type, pkt_numb):
-	'''
-	A-from MASTER OS to SLAVE OS
-	B-from MASTER SENSE to SLAVE SENSE
-	C-from SLAVE OS to MASTER OS
-	D-from SLAVE SENSE to MASTER SENSE
-	U- UNKNOWN
-	'''
 	l = len(payload)
 	L = str(l)
 	Le = (4-len(L))*'0' + L #force 4 digits
@@ -1630,13 +1649,36 @@ def unmake_sync_packet(frame):
 		output = frame[s+l+len_len+tpe_len+nr_len:s+l+len_len+tpe_len+nr_len+pld_len]
 		return output, tpe, nr
 
-	#A-from MASTER OS to SLAVE OS
-	#B-from MASTER SENSE to SLAVE SENSE
-	#C-from SLAVE OS to MASTER OS
-	#D-from SLAVE SENSE to MASTER SENSE
+	#A - OS packet
+	#B - Cogitive packet
 	#U- UNKNOWN
 
-def make_packet(payload, pkt_size , type_pkt):
+def make_sync_packet_evo(fm, tpe, nr, full_length, payload):
+	payload_len_s = str(len(payload))
+	payload_len_s = (4-len(payload_len_s))*'0' + payload_len_s #4
+
+	nr_s = str(nr)
+	nr_s = (2-len(nr_s))*'0' + nr_s #2
+
+	pkt = str(fm) + tpe + nr_s + payload_len_s + payload #1+1+2+4
+	packing = ''.join(random.choice(string.ascii_uppercase) for i in range(full_length-len(pkt)))
+	#packed = pkt + (full_length-len(pkt)) * '\x55'
+	packed = pkt + packing
+	return packed #overhead = 1 + 1 + 2 + 4 = 8 -> fm + tpe + nr + len
+
+def unmake_sync_packet_evo(frame):
+	try:
+		fm = frame[0]
+		tpe = frame[1]
+		nr = int(frame[2:4])
+		length = int(frame[4:8])
+		data = frame[8:8+length]
+		return fm, tpe, nr, data
+	except:
+		print 'an error occoured while unmaking sync packet'
+		return 'BAD', 'BAD', 'BAD', 'BAD'
+
+def make_packet(payload, pkt_size , type_pkt): # make_packet(payload, self.ofdm_settings['ofdm_packet_len']-4, 'A'))
 	
 	l = len(payload)
 	L = str(l)
@@ -1649,7 +1691,7 @@ def unmake_packet(frame, w_crc):
 	if w_crc:
 		try:
 			pld_len = int(frame[0:4]) #length of pld_len = 4
-			tpe = frame[4:5] #length of tpe_len = 1
+			tpe = frame[4] #length of tpe_len = 1
 			output = frame[5:5+pld_len]
 			return output, tpe, True
 		except:
@@ -1659,7 +1701,7 @@ def unmake_packet(frame, w_crc):
 		if ok:
 			try:
 				pld_len = int(frame[0:4]) #length of pld_len = 4
-				tpe = frame[4:5] #length of tpe_len = 1
+				tpe = frame[4] #length of tpe_len = 1
 				output = frame[5:5+pld_len]
 				return output, tpe, ok
 			except:
@@ -1669,3 +1711,48 @@ def unmake_packet(frame, w_crc):
 		else:
 			print 'CRC NOK'
 			return 'BAD', 'BAD', ok
+
+	#A - OS packet
+	#B - Cogitive packet
+	#U- UNKNOWN
+
+def make_packet_evo(fm, tpe, full_length, payload):
+	# fm - 2bytes; to - 2bytes; tpe - 1byte
+	paylaod_length_s = str(len(payload))
+	paylaod_length_s = (4-len(paylaod_length_s))*'0' + paylaod_length_s
+	pkt = str(fm) + tpe + paylaod_length_s + payload
+	packing = ''.join(random.choice(string.ascii_uppercase) for i in range(full_length-len(pkt)))
+	#packed = pkt + (full_length-len(pkt)) * '\x55'
+	packed = pkt + packing
+	return packed
+
+def unmake_packet_evo(frame, w_crc):
+	if w_crc:
+		try:
+			fm = frame[0]
+			tpe = frame[1]
+			length = int(frame[2:6])
+			data = frame[6:6+length]
+			return fm, tpe, length, data, True
+		except:
+			print 'an error occoured while unmaking ofdm packet - in-flowgraph CRC'
+			return 'BAD', 'BAD', 'BAD', 'BAD', False
+	else:
+		ok, frame = digital.crc.check_crc32(frame)
+		if ok:
+			try:
+				fm = frame[0]
+				tpe = frame[1]
+				length = int(frame[2:6])
+				data = frame[6:6+length]
+				return fm, tpe, length, data, ok
+			except:
+				print 'an error occoured while unmaking ofdm packet- out-flowgraph CRC'
+				print 'ok: ', ok
+				print 'frame: ', frame
+		else:
+			print 'CRC NOK'
+			return 'BAD', 'BAD', 'BAD', 'BAD', ok
+
+
+
