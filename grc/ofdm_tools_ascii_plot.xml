@@ -57,7 +57,7 @@
 		<name>Average</name>
 		<key>average</key>
 		<value>0</value>
-		<type>int</type>
+		<type>float</type>
 	</param>
 	<param>
 		<name>Refresh Rate</name>

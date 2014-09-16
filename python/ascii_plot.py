@@ -50,18 +50,18 @@ class main_thread(_threading.Thread):
 	def run(self):
 		print 'main thread started'
 		time.sleep(self.refresh_rate)
+		avg_0 = np.array([0]*self.fft_len)
+		avg_1 = np.array([0]*self.fft_len)
 
 		while self.keep_running:
 			self.gnuplot.stdin.write("set term dumb "+str(self.length)+" "+str(self.height)+ " \n")
 			self.gnuplot.stdin.write("plot '-' using 1:2 title 'GNURadio PSD' with linespoints \n")
 
 			if self.average > 0:
-				psd_av = [0]*self.fft_len
-				for a in range (self.average):
-					x_axis, psd = fft_plot_lin(self.samples, self.samp_rate, self.fc, self.fft_len)
-					psd_av = map(add, psd_av, psd)
-				psd_av = [x/self.average for x in psd_av]
-				psd = [10*math.log10(item+1e-20) for item in psd_av]
+				x_axis, psd = fft_plot_lin(self.samples, self.samp_rate, self.fc, self.fft_len)
+				avg_0 = avg_1
+				avg_1 = (1-self.average) * avg_1 + self.average * psd
+				psd = 10*np.log10(avg_1+1e-20)
 			else:
 				if self.method == 'welch': x_axis, psd = welch_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
 				else: x_axis, psd = fft_plot_dB(self.samples, self.samp_rate, self.fc, self.fft_len)
