@@ -54,6 +54,7 @@ from spectrum_sensor import spectrum_sensor
 from cognitive_engine_mac import cognitive_engine_mac
 from sync_radio_hier import sync_radio_hier
 from ascii_plot import ascii_plot
+from ais_decoder import ais_decoder
 
 import ofdm_cr_tools
 

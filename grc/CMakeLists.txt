@@ -25,5 +25,6 @@ install(FILES
     ofdm_tools_spectrum_sensor.xml
     ofdm_tools_cognitive_engine_mac.xml
     ofdm_tools_sync_radio_hier.xml
-    ofdm_tools_ascii_plot.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_ascii_plot.xml
+    ofdm_tools_ais_decoder.xml DESTINATION share/gnuradio/grc/blocks
 )

@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<block>
+  <name>ais_decoder</name>
+  <key>ofdm_tools_ais_decoder</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.ais_decoder(
+    address=$address,
+    port=$port,
+    verbose=$verbose,
+  )</make>
+  <param>
+    <name>address</name>
+    <key>address</key>
+    <value>127.0.0.1</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>port</name>
+    <key>port</key>
+    <value>8888</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>verbose NMEA</name>
+    <key>verbose</key>
+    <type>enum</type>
+    <option>
+      <name>yes</name>
+      <key>True</key>
+    </option>
+    <option>
+      <name>no</name>
+      <key>False</key>
+    </option>
+  </param>
+  
+  <sink>
+    <name>in</name>
+    <type>short</type>
+  </sink>
+
+</block>
