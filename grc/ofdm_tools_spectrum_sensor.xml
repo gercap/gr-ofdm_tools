@@ -5,7 +5,7 @@
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
 <make>ofdm_tools.spectrum_sensor(
-vect_length=$vect_length,
+block_length=$block_length,
 sample_rate=$sample_rate,
 fft_len=$fft_len,
 channel_space=$channel_space,
@@ -50,7 +50,7 @@ tune_freq=$tune_freq
 	</param>
 	<param>
 		<name>Vec Length</name>
-		<key>vect_length</key>
+		<key>block_length</key>
 		<value>1024</value>
 		<type>int</type>
 	</param>
@@ -76,7 +76,7 @@ tune_freq=$tune_freq
 	<sink>
 		<name>in</name>
 		<type>complex</type>
-		<vlen>$vect_length</vlen>
+		<vlen>1</vlen>
 	</sink>
   <sink>
     <name>PDU from_cogeng</name>

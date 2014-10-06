@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 #  ais_decoder.py
-#  
+#  --> pipes audio stream from gnuradio flowgraph to gnuais decoder
+#
 #  Copyright 2014 germanocapela at gmail
 #  
 #  This program is free software; you can redistribute it and/or modify

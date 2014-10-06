@@ -33,12 +33,12 @@ class spectrum_sensor(gr.sync_block):
 	"""
 	docstring for block spectrum_sensor
 	"""
-	def __init__(self, vect_length, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
+	def __init__(self, block_length, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
 		gr.sync_block.__init__(self,
 			name="spectrum_sensor",
-			in_sig=[(np.complex64, vect_length)],
+			in_sig=[np.complex64],
 			out_sig=None)
-		self.vct_len = vect_length
+		self.block_length = block_length
 		self.sample_rate = sample_rate
 		self.fft_len = fft_len
 		self.channel_space = channel_space
@@ -55,10 +55,10 @@ class spectrum_sensor(gr.sync_block):
 		self.set_msg_handler(pmt.intern('PDU from_cogeng'), self.cogeng_rx)
 
 	def work(self, input_items, output_items):
-		in0 = input_items[0][:]
+		in0 = input_items[0][0:self.block_length]
 		#save a vector sample
-		self.set_vector_sample(in0[0]) #every time the scheduler calls this, i keep 1 vector
-		return len(in0)
+		self.set_vector_sample(in0) #every time the scheduler calls this, i keep 1 vector
+		return len(input_items[0]) #len(in0)
 
 	def cogeng_rx(self, msg):
 		try:
@@ -70,8 +70,8 @@ class spectrum_sensor(gr.sync_block):
 		meta_dict = pmt.to_python(meta)
 		if not (type(meta_dict) is dict):
 			meta_dict = {}
-		print '-------SS DEBUG-----'
-		print 'Received new request'
+		#print '-------SS DEBUG-----'
+		#print 'Received new request'
 
 		#check what was asked by the received msg...
 		if str(data) == 'PAPR': 
@@ -119,8 +119,8 @@ class spectrum_sensor(gr.sync_block):
 	def get_vector_sample(self):
 		return self.vector_sample
 
-	def set_vect_length(self, vect_length):
-		self.vect_length = vect_length
+	def set_block_length(self, block_length):
+		self.block_length = block_length
 
 	def set_time_observation(self, time_observation):
 		self.time_observation = time_observation

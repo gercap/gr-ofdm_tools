@@ -165,15 +165,17 @@ def fac(data, length):
 	return np.abs(b[len(b)/2:])
 
 def movingaverage(interval, window_size):
-	window= np.ones(int(window_size))/float(window_size)
+	window = np.ones(int(window_size))/float(window_size)
 	return np.abs(np.convolve(interval, window, 'same'))
 
 #computes fft based psd power
 def src_power_fft(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 	#win = np.hamming(npts)
-	win = sg.flattop(npts)
-	vector = vector * win
+	#win = sg.flattop(npts)
+	#vector = vector * win
 	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(vector, nFFT)))**2)/npts)
+	#TODO - moving average
+	psd_fft = movingaverage(psd_fft, 1*srch_bins)
 	fft_axis = Sf/2*np.linspace(-1, 1, nFFT) #fft_axis = np.fft.fftshift(f)
 	power_level_ch_fft = []
 
@@ -210,6 +212,7 @@ def src_power_autocorrelation(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 def src_power_welch(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 	welch_axis, psd_welch = sg.welch(vector, window='flattop', fs = Sf, nperseg= nFFT, nfft = nFFT)
 	psd_welch_aligned = np.fft.fftshift(psd_welch)
+	#TODO - moving average
 	welch_axis_aligned = np.fft.fftshift(welch_axis)
 	power_level_ch_welch = []
 
@@ -287,8 +290,9 @@ def fft_plot(flowgraph, fc, nfft):
 
 #plt data from flowgraph
 def fft_plot_dB(data, Sf, fc, nfft):
-
 	npts = len(data)
+	#win = sg.flattop(npts)
+	#data = data * win
 	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(data, nfft)))**2)/(npts*Sf))
 	fft_axis = Sf/2*np.linspace(-1, 1, nfft)
 
@@ -303,6 +307,8 @@ def welch_plot_dB(data, Sf, fc, nfft):
 
 def fft_plot_lin(data, Sf, fc, nfft):
 	npts = len(data)
+	#win = sg.flattop(npts)
+	#data = data * win
 	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(data, nfft)))**2)/npts)/Sf
 	fft_axis = Sf/2*np.linspace(-1, 1, nfft)
 
@@ -421,7 +427,7 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 	Fstart = fc - samp_rate/2
 	Ffinish = fc + samp_rate/2
 
-	print 'Scanning...'
+	#print 'Scanning...'
 	bb_freqs = frange(-samp_rate/2, samp_rate/2, channel_rate)
 	srch_bins = srch_bw/Fr
 
@@ -439,12 +445,12 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 	avg_power = np.average (power_level_ch)
 	min_power = np.amin (power_level_ch)
 	max_power = np.amax (power_level_ch)
-	print 'min power', 10*math.log10(min_power+1e-20)
-	print 'max power', 10*math.log10(max_power+1e-20) 
-	print 'average power', 10*math.log10(avg_power+1e-20)
+	#print 'min power', 10*math.log10(min_power+1e-20)
+	#print 'max power', 10*math.log10(max_power+1e-20) 
+	#print 'average power', 10*math.log10(avg_power+1e-20)
 
 	thr = min_power * thr_leveler
-	print 'decision threshold', 10*math.log10(thr+1e-20)
+	#print 'decision threshold', 10*math.log10(thr+1e-20)
 
 	# test detection threshold
 	pwr = []
@@ -470,12 +476,12 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 		axarr1[1].bar(ax_ch, [10*math.log10(item+1e-20) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
 		axarr1[1].set_title('Power by Channel')
 		axarr1[1].set_ylabel('Power [dB]')
+		axarr1[1].plot(axis, np.array([10*math.log10(thr+1e-20)]*len(axis)))
 
 		axarr1[2].bar(ax_ch, pwr[0:len(ax_ch)], srch_bw/2, align = 'center')
 		axarr1[2].set_title('Decision')
 		axarr1[2].set_ylabel('Occupied/Not occupied')
 		axarr1[2].set_xlabel('Frequency [Hz]')
-		#plots.show()
 
 	return spectrum_constraint_hz
 
@@ -588,6 +594,7 @@ def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, rece
 		axarr1[1].bar(ax_ch, [10*math.log10(item+1e-20) for item in power_level_ch[0:len(ax_ch)]], srch_bw/2, align = 'center')
 		axarr1[1].set_title('Power by Channel')
 		axarr1[1].set_ylabel('Power [dB]')
+		axarr1[1].plot(axis, np.array([10*math.log10(thr+1e-20)]*len(axis)))
 
 		axarr1[2].bar(ax_ch, pwr[0:len(ax_ch)], srch_bw/2, align = 'center')
 		axarr1[2].set_title('Decision')
