@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 #  ais_decoder.py
-#  --> pipes audio stream from gnuradio flowgraph to gnuais decoder
+#  --> pipes audio stream from gnuradio flowgraph to gnuais-based decoder (http://www.aishub.net/aisdecoder-via-sound-card.html)
 #
 #  Copyright 2014 germanocapela at gmail
 #  

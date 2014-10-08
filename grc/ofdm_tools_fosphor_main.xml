@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<block>
+  <name>fosphor_main</name>
+  <key>ofdm_tools_fosphor_main</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.fosphor_main()</make>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+</block>

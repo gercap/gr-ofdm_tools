@@ -41,7 +41,8 @@ GR_PYTHON_INSTALL(
     cognitive_engine_mac.py
     sync_radio_hier.py
     ascii_plot.py
-    ais_decoder.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    ais_decoder.py
+    fosphor_main.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
