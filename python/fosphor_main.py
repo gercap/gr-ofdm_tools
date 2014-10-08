@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # 
 # Copyright 2014 germanocapela at gmail.com
-# an alternative sink to the "main" function of gr-phosphor 
+# an alternative sink to the "main" function of gr-phosphor
+# compile the code in gr-fosphor/lib/fosphor/
+# then copy the executable "main" to /usr/bin/ with the name fosphor_main
 
  
 # This is free software; you can redistribute it and/or modify
