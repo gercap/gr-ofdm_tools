@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='ASCII'?>
 <block>
   <name>Ofdm Radio Hier</name>
-  <key>ofdm_radio_hier</key>
+  <key>ofdm_radio_h</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ofdm_radio_hier(
@@ -16,6 +16,7 @@
     crc_mode=$crc_mode,
     clipping_factor=$clipping_factor,
     clipper_mode=$clipper_mode,
+    filter_mode=$filter_mode,
 )</make>
   <callback>set_pilot_carriers($pilot_carriers)</callback>
   <callback>set_pilot_symbols($pilot_symbols)</callback>
@@ -28,6 +29,7 @@
   <callback>set_crc_mode($crc_mode)</callback>
   <callback>set_clipping_factor($clipping_factor)</callback>
   <callback>set_clipper_mode($clipper_mode)</callback>
+  <callback>set_filter_mode($filter_mode)</callback>
   <param>
     <name>pilot_carriers</name>
     <key>pilot_carriers</key>
@@ -129,6 +131,19 @@
     <key>clipping_factor</key>
     <value>10</value>
     <type>raw</type>
+  </param>
+  <param>
+    <name>filter_mode</name>
+    <key>clipper_mode</key>
+    <type>enum</type>
+    <option>
+      <name>ON</name>
+      <key>1</key>
+    </option>
+    <option>
+      <name>OFF</name>
+      <key>0</key>
+    </option>
   </param>
   <sink>
     <name>tagged stream in</name>

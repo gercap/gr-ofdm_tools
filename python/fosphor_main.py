@@ -75,5 +75,5 @@ class fosphor_main(gr.hier_block2):
 	def __del__(self):
 		if self.p is not None:
 			if self.kill_on_del:
-				print "==> Killing ais_decoder..."
+				print "==> Killing fosphor..."
 				os.kill(self.p.pid, signal.SIGTERM)
