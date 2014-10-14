@@ -24,7 +24,7 @@ from gnuradio import gr
 
 class clipper(gr.sync_block):
 	"""
-	force a clipping to input signal
+	forces a clipping to input signal
 	"""
 	def __init__(self, clip_fact):
 		gr.sync_block.__init__(

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='ASCII'?>
 <block>
   <name>Ofdm Radio Hier</name>
-  <key>ofdm_radio_h</key>
+  <key>ofdm_radio_hier</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ofdm_radio_hier(
@@ -134,7 +134,7 @@
   </param>
   <param>
     <name>filter_mode</name>
-    <key>clipper_mode</key>
+    <key>filter_mode</key>
     <type>enum</type>
     <option>
       <name>ON</name>

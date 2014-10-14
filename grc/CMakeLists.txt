@@ -27,5 +27,6 @@ install(FILES
     ofdm_tools_sync_radio_hier.xml
     ofdm_tools_ascii_plot.xml
     ofdm_tools_ais_decoder.xml
-    ofdm_tools_fosphor_main.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_fosphor_main.xml
+    DESTINATION share/gnuradio/grc/blocks
 )

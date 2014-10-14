@@ -42,7 +42,8 @@ GR_PYTHON_INSTALL(
     sync_radio_hier.py
     ascii_plot.py
     ais_decoder.py
-    fosphor_main.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    fosphor_main.py
+    DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
