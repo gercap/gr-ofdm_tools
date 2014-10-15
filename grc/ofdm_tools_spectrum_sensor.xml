@@ -12,12 +12,17 @@ channel_space=$channel_space,
 search_bw=$search_bw,
 method=$method,
 thr_leveler=$thr_leveler,
-tune_freq=$tune_freq
+tune_freq=$tune_freq,
+alpha_avg=$alpha_avg,
+source=$source,
+log=$log,
 )</make>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_channel_space($channel_space)</callback>
 <callback>set_search_bw($search_bw)</callback>
 <callback>set_thr_leveler($thr_leveler)</callback>
+<callback>set_alpha_avg($alpha_avg)</callback>
+<callback>set_sample_rate($sample_rate)</callback>
 	<param>
 		<name>Tune Freq</name>
 		<key>tune_freq</key>
@@ -72,6 +77,31 @@ tune_freq=$tune_freq
 		<key>thr_leveler</key>
 		<value>10</value>
 		<type>float</type>
+	</param>
+	<param>
+		<name>Alpha Avg Noise</name>
+		<key>alpha_avg</key>
+		<value>0.9</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Log Results</name>
+		<key>log</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+	<param>
+		<name>Source Name</name>
+		<key>source</key>
+		<value></value>
+		<type>raw</type>
 	</param>
 	<sink>
 		<name>in</name>

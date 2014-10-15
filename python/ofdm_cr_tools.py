@@ -417,7 +417,7 @@ def spectrum_translator(spectrum_constraint_hz, fc, sf, fft_len, canc_bins):
 			x += 1 
 	return spectrum_constraint_fft
 
-def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, method, thr_leveler, show_plot):
+def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, method, thr_leveler, noise_estimate, alpha_avg, show_plot):
 
 	npts = len(vct_sample)
 	if n_fft == 0: nFFT = int(2**math.ceil(math.log(npts,2))) #nr points fft
@@ -442,14 +442,15 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 	axis = [ax+fc for ax in axis]
 	ax_ch = frange(Fstart, Ffinish, channel_rate)
 
-	avg_power = np.average (power_level_ch)
+	#avg_power = np.average (power_level_ch)
 	min_power = np.amin (power_level_ch)
-	max_power = np.amax (power_level_ch)
+	#max_power = np.amax (power_level_ch)
 	#print 'min power', 10*math.log10(min_power+1e-20)
 	#print 'max power', 10*math.log10(max_power+1e-20) 
 	#print 'average power', 10*math.log10(avg_power+1e-20)
 
-	thr = min_power * thr_leveler
+	noise_estimate = (1-alpha_avg) * noise_estimate + alpha_avg * min_power
+	thr = noise_estimate * thr_leveler
 	#print 'decision threshold', 10*math.log10(thr+1e-20)
 
 	# test detection threshold
@@ -460,8 +461,7 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 		if item>thr:
 			pwr.append(1)
 			spectrum_constraint_hz.append(ax_ch[i])
-		else:
-			pwr.append(0.01)
+		#else: pwr.append(0.01)
 		i += 1
 
 	if show_plot:
@@ -483,7 +483,7 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 		axarr1[2].set_ylabel('Occupied/Not occupied')
 		axarr1[2].set_xlabel('Frequency [Hz]')
 
-	return spectrum_constraint_hz
+	return thr, power_level_ch, noise_estimate, spectrum_constraint_hz
 
 
 def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, receiver, method, thr_leveler, t_wait, show_plot):

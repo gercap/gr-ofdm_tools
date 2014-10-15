@@ -21,7 +21,7 @@
 
 import numpy as np
 from scipy import signal as sg
-import math
+import time
 from gnuradio import gr
 import pmt
 from ofdm_cr_tools import frange, src_power_fft, src_power_welch, fast_spectrum_scan
@@ -33,7 +33,7 @@ class spectrum_sensor(gr.sync_block):
 	"""
 	docstring for block spectrum_sensor
 	"""
-	def __init__(self, block_length, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0):
+	def __init__(self, block_length, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, method='fft', thr_leveler = 10, tune_freq=0, alpha_avg=1, source=None, log=False):
 		gr.sync_block.__init__(self,
 			name="spectrum_sensor",
 			in_sig=[np.complex64],
@@ -48,6 +48,20 @@ class spectrum_sensor(gr.sync_block):
 		self.tune_freq = tune_freq
 		self.vector_sample = [0, 0]
 		self.parp = 1e-10
+		self.spectrum_constraint_hz = []
+		self.threshold = 0
+		self.power_level_ch = []
+		self.noise_estimate = 1e-11
+		self.alpha_avg = alpha_avg
+		self.source = source
+		self.log = log
+		if self.log:
+			self.log_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
+			self.log_file.write('Time,'+time.strftime("%H%M%S") + ',sample_rate,' + str(sample_rate) +
+			 ',channel_space,' + str(channel_space) + ',channel_bw,' + str(search_bw) +
+			  ',tune_freq,' + str(tune_freq) + '\n')
+			print 'successfully created log file'
+			print self.log_file
 
 		#message output
 		self.message_port_register_out(pmt.intern('PDU spect_msg'))
@@ -79,13 +93,30 @@ class spectrum_sensor(gr.sync_block):
 			self.set_papr(self.get_vector_sample())
 			#send msg w/ papr
 			self.send_msg('ss', self.get_papr())
+			if self.log:
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',tune_freq,' + str(self.get_tune_freq()) + '\n')
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',papr,' + str(self.get_papr()) + '\n')
+
 		elif str(data) == 'SC': 
 			#calc Spectrum Constraint
 			self.set_spectrum_constraint_hz(self.get_vector_sample())
 			#send msg w/ spec const
+			self.send_msg('ss', self.get_threshold())
 			self.send_msg('ss', self.get_spectrum_constraint_hz())
+			print 'log', self.log
+			print 'threshold', 10*np.log10(self.get_threshold()+1e-20), 'dB'
+			print 'noise',  10*np.log10(self.get_noise_estimate()+1e-20), 'dB'
+			print 'spectrum_constraint_hz: ' + str(self.get_spectrum_constraint_hz())
+			#print 'level/channel', self.get_power_level_ch()
+			
+			if self.log:
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',tune_freq[Hz],' + str(self.get_tune_freq()) + '\n')
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',threshold[dB],' + str(10*np.log10(self.get_threshold()+1e-20)) + '\n')
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',noise[dB],' + str(10*np.log10(self.get_noise_estimate()+1e-20)) + '\n')
+				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',spectrum_constraint[Hz],' + str(self.get_spectrum_constraint_hz()) + '\n')
 		else:
 			self.send_msg('ss', "received unknown request")
+			if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',received unknown request' +'\n')
 
 	def send_msg(self, meta, data):
 		#construct pdu and publish to radio port
@@ -96,19 +127,27 @@ class spectrum_sensor(gr.sync_block):
 		#publish PDU to msg port
 		self.message_port_pub(pmt.intern('PDU spect_msg'),pdu)
 
-
 	def set_spectrum_constraint_hz(self, measure):
-		self.spectrum_constraint_hz = fast_spectrum_scan(measure, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.method, self.thr_leveler, False)
+		self.threshold, self.power_level_ch, self.noise_estimate, self.spectrum_constraint_hz = fast_spectrum_scan(measure, self.tune_freq, self.channel_space,
+		 self.search_bw, self.fft_len, self.sample_rate, self.method, self.thr_leveler, self.get_noise_estimate(), self.get_alpha_avg(), False)
 
 	def get_spectrum_constraint_hz(self):
 		return self.spectrum_constraint_hz
+
+	def get_threshold(self):
+		return self.threshold
+
+	def get_noise_estimate(self):
+		return self.noise_estimate
+
+	def get_power_level_ch(self):
+		return self.power_level_ch
 
 	def set_papr(self, measure):
 		meanSquareValue = np.vdot(measure,np.transpose(measure))/len(measure)
 		peakValue = max(measure*np.conjugate(measure))
 		paprSymbol = peakValue/meanSquareValue
-		self.papr = 10*math.log10(paprSymbol.real)
+		self.papr = 10*np.log10(paprSymbol.real+1e-20)
 
 	def get_papr(self):
 		return self.papr
@@ -125,32 +164,46 @@ class spectrum_sensor(gr.sync_block):
 	def set_time_observation(self, time_observation):
 		self.time_observation = time_observation
 
+	def get_sample_rate(self):
+		return self.sample_rate
+
 	def set_sample_rate(self, sample_rate):
 		self.sample_rate = sample_rate
+		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_samp_rate,' + str(sample_rate) + '\n')
 
 	def set_fft_len(self, fft_len):
 		self.fft_len = fft_len
 
 	def set_tune_freq(self, tune_freq):
 		self.tune_freq = tune_freq
+		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_tune_freq,' + str(tune_freq) + '\n')
 
 	def get_tune_freq(self):
 		return self.tune_freq
 
 	def set_channel_space(self, channel_space):
 		self.channel_space = channel_space
+		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_channel_space,' + str(channel_space) + '\n')
 
 	def get_channel_space(self):
 		return self.channel_space
 
 	def set_search_bw(self, search_bw):
 		self.search_bw = search_bw
+		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_search_bw,' + str(search_bw) + '\n')
 
 	def get_search_bw(self):
 		return self.search_bw
 
 	def set_thr_leveler(self, thr_leveler):
 		self.thr_leveler = thr_leveler
+		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_thr_leveler,' + str(thr_leveler) + '\n')
 
 	def get_thr_leveler(self):
 		return self.thr_leveler
+	
+	def set_alpha_avg(self, alpha_avg):
+		self.alpha_avg = alpha_avg
+
+	def get_alpha_avg(self):
+		return self.alpha_avg
