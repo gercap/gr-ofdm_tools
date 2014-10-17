@@ -72,7 +72,7 @@ class spectrum_sensor(gr.sync_block):
 		in0 = input_items[0][0:self.block_length]
 		#save a vector sample
 		self.set_vector_sample(in0) #every time the scheduler calls this, i keep 1 vector
-		return len(input_items[0]) #len(in0)
+		return len(in0) #0 #len(input_items[0]) # 
 
 	def cogeng_rx(self, msg):
 		try:
@@ -92,7 +92,7 @@ class spectrum_sensor(gr.sync_block):
 			#calc PAPR
 			self.set_papr(self.get_vector_sample())
 			#send msg w/ papr
-			self.send_msg('ss', self.get_papr())
+			self.send_msg('papr', self.get_papr())
 			if self.log:
 				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',tune_freq,' + str(self.get_tune_freq()) + '\n')
 				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',papr,' + str(self.get_papr()) + '\n')
@@ -101,12 +101,13 @@ class spectrum_sensor(gr.sync_block):
 			#calc Spectrum Constraint
 			self.set_spectrum_constraint_hz(self.get_vector_sample())
 			#send msg w/ spec const
-			self.send_msg('ss', self.get_threshold())
-			self.send_msg('ss', self.get_spectrum_constraint_hz())
-			print 'log', self.log
-			print 'threshold', 10*np.log10(self.get_threshold()+1e-20), 'dB'
-			print 'noise',  10*np.log10(self.get_noise_estimate()+1e-20), 'dB'
-			print 'spectrum_constraint_hz: ' + str(self.get_spectrum_constraint_hz())
+			self.send_msg('thre', self.get_threshold())
+			self.send_msg('nois', self.get_noise_estimate())
+			self.send_msg('cons', self.get_spectrum_constraint_hz())
+			#print 'threshold', 10*np.log10(self.get_threshold()+1e-20), 'dB'
+			#print 'noise',  10*np.log10(self.get_noise_estimate()+1e-20), 'dB'
+			#print 'spectrum_constraint_hz: ' + str(self.get_spectrum_constraint_hz())
+
 			#print 'level/channel', self.get_power_level_ch()
 			
 			if self.log:
@@ -115,7 +116,7 @@ class spectrum_sensor(gr.sync_block):
 				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',noise[dB],' + str(10*np.log10(self.get_noise_estimate()+1e-20)) + '\n')
 				self.log_file.write('Time,'+time.strftime("%H%M%S") + ',spectrum_constraint[Hz],' + str(self.get_spectrum_constraint_hz()) + '\n')
 		else:
-			self.send_msg('ss', "received unknown request")
+			self.send_msg('unkn', "received unknown request")
 			if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',received unknown request' +'\n')
 
 	def send_msg(self, meta, data):
@@ -169,35 +170,35 @@ class spectrum_sensor(gr.sync_block):
 
 	def set_sample_rate(self, sample_rate):
 		self.sample_rate = sample_rate
-		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_samp_rate,' + str(sample_rate) + '\n')
+		if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_samp_rate,' + str(sample_rate) + '\n')
 
 	def set_fft_len(self, fft_len):
 		self.fft_len = fft_len
 
 	def set_tune_freq(self, tune_freq):
 		self.tune_freq = tune_freq
-		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_tune_freq,' + str(tune_freq) + '\n')
+		if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_tune_freq,' + str(tune_freq) + '\n')
 
 	def get_tune_freq(self):
 		return self.tune_freq
 
 	def set_channel_space(self, channel_space):
 		self.channel_space = channel_space
-		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_channel_space,' + str(channel_space) + '\n')
+		if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_channel_space,' + str(channel_space) + '\n')
 
 	def get_channel_space(self):
 		return self.channel_space
 
 	def set_search_bw(self, search_bw):
 		self.search_bw = search_bw
-		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_search_bw,' + str(search_bw) + '\n')
+		if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_search_bw,' + str(search_bw) + '\n')
 
 	def get_search_bw(self):
 		return self.search_bw
 
 	def set_thr_leveler(self, thr_leveler):
 		self.thr_leveler = thr_leveler
-		self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_thr_leveler,' + str(thr_leveler) + '\n')
+		if self.log: self.log_file.write('Time,'+time.strftime("%H%M%S") + ',set_thr_leveler,' + str(thr_leveler) + '\n')
 
 	def get_thr_leveler(self):
 		return self.thr_leveler

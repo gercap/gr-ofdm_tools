@@ -28,5 +28,6 @@ install(FILES
     ofdm_tools_ascii_plot.xml
     ofdm_tools_ais_decoder.xml
     ofdm_tools_fosphor_main.xml
+    ofdm_tools_spectrum_logger.xml
     DESTINATION share/gnuradio/grc/blocks
 )

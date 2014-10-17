@@ -56,6 +56,8 @@ from sync_radio_hier import sync_radio_hier
 from ascii_plot import ascii_plot
 from ais_decoder import ais_decoder
 from fosphor_main import fosphor_main
+from spectrum_logger import spectrum_logger
+
 
 
 

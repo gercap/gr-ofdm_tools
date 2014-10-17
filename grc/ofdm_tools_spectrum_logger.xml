@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<block>
+  <name>spectrum_logger</name>
+  <key>ofdm_tools_spectrum_logger</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.spectrum_logger(
+  tune_freq=$tune_freq,
+  sample_rate=$sample_rate,
+  channel_space=$channel_space,
+  search_bw=$search_bw,
+  log=$log)</make>
+<callback>set_tune_freq($tune_freq)</callback>
+<callback>set_channel_space($channel_space)</callback>
+<callback>set_search_bw($search_bw)</callback>
+<callback>set_sample_rate($sample_rate)</callback>
+
+	<param>
+		<name>Tune Freq</name>
+		<key>tune_freq</key>
+		<value>0</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Sample Rate</name>
+		<key>sample_rate</key>
+		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Channel Spacing</name>
+		<key>channel_space</key>
+		<value>100e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Channel BW</name>
+		<key>search_bw</key>
+		<value>80e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Log Results</name>
+		<key>log</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+  <sink>
+    <name>PDU from_ss</name>
+    <type>message</type>
+    <optional>1</optional>
+  </sink>
+  <source>
+    <name>constraints</name>
+    <type>float</type>
+    <optional>1</optional>
+  </source>
+</block>
