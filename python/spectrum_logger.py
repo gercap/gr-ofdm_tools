@@ -24,7 +24,7 @@ from gnuradio import gr
 import time, sys, pmt
 
 class spectrum_logger(gr.sync_block):
-	def __init__(self, tune_freq=1, sample_rate=1, channel_space=1, search_bw=1, log=False):
+	def __init__(self, tune_freq=1, sample_rate=1, fft_len=1, channel_space=1, search_bw=1, log=False, verbose=False):
 		gr.sync_block.__init__(self,
 			name="spectrum_logger",
 			in_sig=None,
@@ -34,9 +34,10 @@ class spectrum_logger(gr.sync_block):
 		self.search_bw = search_bw
 		self.tune_freq = tune_freq
 		self.log = log
+		self.verbose = verbose
 		self.constraints = []
 		self.spectrum_statistic = {}
-		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'channel_space':channel_space, 'search_bw':search_bw}
+		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw}
 		if self.log:
 			self.log_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
 			self.log_file.write('Time,'+time.strftime("%H%M%S") + ',sample_rate,' + str(sample_rate) +
@@ -110,10 +111,10 @@ class spectrum_logger(gr.sync_block):
 		if self.log:
 			self.log_file.write('settings ' + str(self.settings) + '\n')
 			self.log_file.write('statistics ' + str(self.spectrum_statistic) + '\n')
-		else:
+
+		if self.verbose:
 			print 'settings', self.settings
 			print 'statistics', self.spectrum_statistic
-
 
 		'''
 		else:
@@ -180,4 +181,7 @@ class spectrum_logger(gr.sync_block):
 
 	def get_alpha_avg(self):
 		return self.alpha_avg
+
+	def set_verbose(self, verbose):
+		self.verbose = verbose
 

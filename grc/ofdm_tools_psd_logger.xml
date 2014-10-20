@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<block>
+  <name>psd_logger</name>
+  <key>ofdm_tools_psd_logger</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.psd_logger(
+  fft_len=$fft_len,
+  rate=$rate,
+  sample_rate=$sample_rate
+  )</make>
+	<param>
+		<name>FFT Len</name>
+		<key>fft_len</key>
+		<value>4096</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Rate (PSD's per second)</name>
+		<key>rate</key>
+		<value>5</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Sample Rate</name>
+		<key>sample_rate</key>
+		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+</block>

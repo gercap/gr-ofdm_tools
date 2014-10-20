@@ -7,14 +7,15 @@
   <make>ofdm_tools.spectrum_logger(
   tune_freq=$tune_freq,
   sample_rate=$sample_rate,
+  fft_len=$fft_len,
   channel_space=$channel_space,
   search_bw=$search_bw,
-  log=$log)</make>
+  log=$log,
+  verbose=$verbose)</make>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_channel_space($channel_space)</callback>
 <callback>set_search_bw($search_bw)</callback>
 <callback>set_sample_rate($sample_rate)</callback>
-
 	<param>
 		<name>Tune Freq</name>
 		<key>tune_freq</key>
@@ -25,6 +26,12 @@
 		<name>Sample Rate</name>
 		<key>sample_rate</key>
 		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>FFT Length</name>
+		<key>fft_len</key>
+		<value>fft_len</value>
 		<type>int</type>
 	</param>
 	<param>
@@ -42,6 +49,19 @@
 	<param>
 		<name>Log Results</name>
 		<key>log</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+	<param>
+		<name>Verbose</name>
+		<key>verbose</key>
 		<type>enum</type>
 	<option>
 		<name>No</name>
