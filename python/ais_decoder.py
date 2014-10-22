@@ -24,7 +24,7 @@
 #  
 
 
-import sys, subprocess, tempfile, os, signal
+import sys, subprocess, tempfile, os, signal, time
 
 from gnuradio import gr, gru, blocks
 
@@ -41,10 +41,14 @@ class ais_decoder(gr.hier_block2):
 		buffered=True
 		kill_on_del=True
 		memory=None
-		
+		if verbose is not True:
+			file_name = '/tmp/ais_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
+			log_file = open(file_name,'w')
+			print 'logging AIS NMEA sentences to', file_name
+
 		self.mode = mode
 		self.kill_on_del = kill_on_del
-		
+
 		if mode == 'fifo':
 			fifo_name = 'ais_fifo'
 			self.tmpdir = tempfile.mkdtemp()
@@ -56,10 +60,11 @@ class ais_decoder(gr.hier_block2):
 				print "Failed to create FIFO: %s" % e
 				raise
 		
-		#decoder_exec = [decoder_path + " -h 127.0.0.1" + " -p 8888"+" -a file"+" -f "+str(self.filename) + " -d"]
-		
-		if verbose: decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename) + " -d"]
-		else: decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename)]
+		if verbose:
+			decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename) + " -d"]
+		else:
+			decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename) + " -d" + " 2>" + file_name]
+
 
 		self.p = None
 		#res = 0

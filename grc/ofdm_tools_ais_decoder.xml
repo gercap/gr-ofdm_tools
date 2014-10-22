@@ -22,15 +22,15 @@
     <type>string</type>
   </param>
   <param>
-    <name>verbose NMEA</name>
+    <name>verbose or log to file NMEA?</name>
     <key>verbose</key>
     <type>enum</type>
     <option>
-      <name>yes</name>
+      <name>verbose</name>
       <key>True</key>
     </option>
     <option>
-      <name>no</name>
+      <name>log</name>
       <key>False</key>
     </option>
   </param>
