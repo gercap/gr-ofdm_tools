@@ -35,7 +35,8 @@ import pmt
 from ofdm_cr_tools import frange, fast_spectrum_scan, movingaverage
 
 class spectrum_sensor_v1(gr.hier_block2):
-	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1, search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, log_detect=False, log_psd=False):
+	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
+	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, verbose=False):
 		gr.hier_block2.__init__(self,
 			"spectrum_sensor_v1",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -51,19 +52,14 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.power_level_ch = []
 		self.alpha_avg = alpha_avg
 
-		self.log_detect = log_detect
-		self.log_psd = log_psd
-
-		self.msgq = gr.msg_queue(10)
+		self.msgq0 = gr.msg_queue(2)
+		self.msgq1 = gr.msg_queue(2)
 
 		self.log_stat_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
 		self.log_stat_file.write('Time,'+time.strftime("%H%M%S") + ',sample_rate,' + str(sample_rate) +
 		 ',channel_space,' + str(channel_space) + ',channel_bw,' + str(search_bw) +
 		  ',tune_freq,' + str(tune_freq) + ',sens_per_sec,' + str(sens_per_sec) + '\n')
 		print 'successfully created log_stat_file', self.log_stat_file
-
-		self.psd_mat_file = '/tmp/psd_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S") + '.mat'
-		print 'successfully created log_psd_file', self.psd_mat_file
 
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
@@ -78,22 +74,63 @@ class spectrum_sensor_v1(gr.hier_block2):
 
 		self.c2mag = blocks.complex_to_mag(self.fft_len)
 
-		self.sink = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq, True)
+		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
+		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
 		#####CONNECTIONS####
-		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag, self.sink)
+		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag, self.sink0)
+		self.connect(self.c2mag, self.sink1)
 
-		self._watcher = _queue_watcher(self.msgq, self.log_stat_file, self.psd_mat_file, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg)
+		self._watcher0 = _queue0_watcher(self.msgq0, self.log_stat_file, self.tune_freq, self.channel_space,
+		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, verbose)
+
+		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
+
+class _queue1_watcher(_threading.Thread):
+	def __init__(self, rcvd_data, verbose):
+		_threading.Thread.__init__(self)
+		self.setDaemon(1)
+		self.rcvd_data = rcvd_data
+		dat = time.strftime("%y%m%d")
+		tim = time.strftime("%H%M%S")
+		self.path = '/tmp/psd_log'+'-'+ dat + '-' + tim + '.matz'
+		self.psd_mat_file = open(self.path,'w')
+		print 'successfully created log_psd_file', self.psd_mat_file
+
+		self.verbose = verbose
+		self.keep_running = True
+		self.start()
 
 
-class _queue_watcher(_threading.Thread):
-	def __init__(self, rcvd_data, log_stat_file, psd_mat_file, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg):
+	def run(self):
+		peaks = None
+		while self.keep_running:
+
+			msg = self.rcvd_data.delete_head()
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
+				if self.verbose:
+					print 'nitems in queue =', nitems
+
+			payload = msg.to_string()
+			complex_data = np.fromstring (payload, np.float32)
+			peaks = np.maximum(complex_data, peaks)
+			self.psd_mat_file = open(self.path,'w')
+			#self.psd_mat_file.write(str(peaks + '\n')
+			np.save(self.psd_mat_file, peaks)
+			
+			#scipy.io.savemat(self.path, mdict={'psd': peaks})
+
+class _queue0_watcher(_threading.Thread):
+	def __init__(self, rcvd_data, log_stat_file, tune_freq, channel_space,
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, verbose):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
 		self.log_stat_file = log_stat_file
-		self.psd_mat_file = psd_mat_file
 
 		self.tune_freq = tune_freq
 		self.channel_space = channel_space
@@ -109,12 +146,14 @@ class _queue_watcher(_threading.Thread):
 		self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 		self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
 
+		self.peak_vals = None
+
+		self.verbose = verbose
 		self.keep_running = True
 		self.start()
 
 
 	def run(self):
-		peak_vals = None
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
@@ -124,6 +163,8 @@ class _queue_watcher(_threading.Thread):
 			if nitems > 1:
 				start = itemsize * (nitems - 1)
 				s = s[start:start+itemsize]
+				if self.verbose:
+					print 'nitems in queue =', nitems
 
 			payload = msg.to_string()
 			complex_data = np.fromstring (payload, np.float32)
@@ -143,9 +184,6 @@ class _queue_watcher(_threading.Thread):
 			#log data
 			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
-
-			peak_vals = np.maximum(complex_data, peak_vals)
-			scipy.io.savemat(self.psd_mat_file, mdict={'psd': complex_data})
 
 	def spectrum_scanner(self, samples):
 

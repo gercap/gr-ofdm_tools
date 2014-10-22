@@ -84,4 +84,5 @@ class _queue_watcher(_threading.Thread):
 			complex_data = np.fromstring (payload, np.float32)
 			peak_vals = np.maximum(complex_data, peak_vals)
 			#self.log_file.write('psd ' + str(complex_data) + '\r')
-			scipy.io.savemat(self.mat_file, mdict={'psd': complex_data})
+			#scipy.io.savemat(self.mat_file, mdict={'psd': complex_data})
+			np.save(self.mat_file, peak_vals)

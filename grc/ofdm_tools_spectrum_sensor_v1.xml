@@ -13,8 +13,7 @@ search_bw=$search_bw,
 thr_leveler=$thr_leveler,
 tune_freq=$tune_freq,
 alpha_avg=$alpha_avg,
-log_detect=$log_detect,
-log_psd=$log_psd
+verbose=$verbose
 )</make>
 	<param>
 		<name>Scanner FFT/Block length</name>
@@ -68,22 +67,8 @@ log_psd=$log_psd
 	</param>
 
 	<param>
-		<name>Log Detect</name>
-		<key>log_detect</key>
-		<type>enum</type>
-	<option>
-		<name>No</name>
-		<key>False</key>
-	</option>
-	<option>
-		<name>Yes</name>
-		<key>True</key>
-	</option>
-	</param>
-
-	<param>
-		<name>Log PSD</name>
-		<key>log_psd</key>
+		<name>Verbose</name>
+		<key>verbose</key>
 		<type>enum</type>
 	<option>
 		<name>No</name>
