@@ -3,7 +3,7 @@
 #
 #  ais_decoder.py
 #  --> pipes audio stream from gnuradio flowgraph to gnuais-based decoder (http://www.aishub.net/aisdecoder-via-sound-card.html)
-#
+#  --> prints (stderr) or logs NMEA (to a file in /tmp ) sentences
 #  Copyright 2014 germanocapela at gmail
 #  
 #  This program is free software; you can redistribute it and/or modify

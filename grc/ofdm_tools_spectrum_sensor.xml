@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <block>
-  <name>spectrum_sensor</name>
+  <name>Spectrum Sensor (legacy)</name>
   <key>ofdm_tools_spectrum_sensor</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>

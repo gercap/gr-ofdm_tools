@@ -44,7 +44,8 @@ GR_PYTHON_INSTALL(
     ais_decoder.py
     fosphor_main.py
     spectrum_logger.py
-    psd_logger.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    psd_logger.py
+    spectrum_sensor_v1.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

@@ -36,7 +36,7 @@ class spectrum_logger(gr.sync_block):
 		self.log = log
 		self.verbose = verbose
 		self.constraints = []
-		self.spectrum_statistic = {}
+		self.statistic = {}
 		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw}
 		if self.log:
 			self.log_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
@@ -44,7 +44,7 @@ class spectrum_logger(gr.sync_block):
 			 ',channel_space,' + str(channel_space) + ',search_bw,' + str(search_bw) +
 			  ',tune_freq,' + str(tune_freq) + '\n')
 			self.log_file.write('settings ' + str(self.settings) + '\n')
-			self.log_file.write('statistics ' + str(self.spectrum_statistic) + '\n')
+			self.log_file.write('statistics ' + str(self.statistic) + '\n')
 			print 'successfully created log file'
 			print self.log_file
 		else:
@@ -100,21 +100,21 @@ class spectrum_logger(gr.sync_block):
 		if str(meta) == 'cons':
 			self.constraints = data
 			for el in data:
-				if el in self.spectrum_statistic:
-					self.spectrum_statistic[el] += 1
+				if el in self.statistic:
+					self.statistic[el] += 1
 				else:
-					self.spectrum_statistic[el] = 1
+					self.statistic[el] = 1
 
 		if str(meta) == 'thre': self.settings['thre'] = data
 		if str(meta) == 'nois': self.settings['nois'] = data
 
 		if self.log:
 			self.log_file.write('settings ' + str(self.settings) + '\n')
-			self.log_file.write('statistics ' + str(self.spectrum_statistic) + '\n')
+			self.log_file.write('statistics ' + str(self.statistic) + '\n')
 
 		if self.verbose:
 			print 'settings', self.settings
-			print 'statistics', self.spectrum_statistic
+			print 'statistics', self.statistic
 
 		'''
 		else:

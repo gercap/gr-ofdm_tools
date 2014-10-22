@@ -24,7 +24,7 @@ from scipy import signal as sg
 import time
 from gnuradio import gr
 import pmt
-from ofdm_cr_tools import frange, src_power_fft, src_power_welch, fast_spectrum_scan
+from ofdm_cr_tools import frange, fast_spectrum_scan
 
 
 meta_dict = {'REQ':None,'ORIGIN':None}

@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<block>
+  <name>Spectrum Sensor (v1)</name>
+  <key>ofdm_tools_spectrum_sensor_v1</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.spectrum_sensor_v1(
+fft_len=$fft_len,
+sens_per_sec=$sens_per_sec,
+sample_rate=$sample_rate,
+channel_space=$channel_space,
+search_bw=$search_bw,
+thr_leveler=$thr_leveler,
+tune_freq=$tune_freq,
+alpha_avg=$alpha_avg,
+log_detect=$log_detect,
+log_psd=$log_psd
+)</make>
+	<param>
+		<name>Scanner FFT/Block length</name>
+		<key>fft_len</key>
+		<value>1024</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Scanner Rate (sens per sec)</name>
+		<key>sens_per_sec</key>
+		<value>1</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Sample Rate</name>
+		<key>sample_rate</key>
+		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Channel Spacing</name>
+		<key>channel_space</key>
+		<value>100e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Channel BW</name>
+		<key>search_bw</key>
+		<value>80e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Noise Leveler</name>
+		<key>thr_leveler</key>
+		<value>10</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Tune Freq</name>
+		<key>tune_freq</key>
+		<value>0</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Alpha Avg Noise</name>
+		<key>alpha_avg</key>
+		<value>0.9</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Log Detect</name>
+		<key>log_detect</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+
+	<param>
+		<name>Log PSD</name>
+		<key>log_psd</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+
+	<sink>
+		<name>in</name>
+		<type>complex</type>
+		<vlen>1</vlen>
+	</sink>
+</block>
