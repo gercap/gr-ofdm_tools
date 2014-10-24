@@ -6,64 +6,49 @@
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ascii_plot(
   fft_len=$fft_len,
-  method=$method,
-  samp_rate=$samp_rate, 
-  fc=$fc, 
+  sample_rate=$sample_rate, 
+  tune_freq=$tune_freq, 
   average=$average, 
-  refresh_rate=$refresh_rate,
+  rate=$rate,
   length=$length,
-  height=$height
+  height=$height,
   )</make>
-<callback>set_fft_len($fft_len)</callback>
-<callback>set_samp_rate($samp_rate)</callback>
-<callback>set_fc($fc)</callback>
+<callback>set_sample_rate($sample_rate)</callback>
+<callback>set_tune_freq($tune_freq)</callback>
 <callback>set_average($average)</callback>
-<callback>set_refresh_rate($refresh_rate)</callback>
 <callback>set_length($length)</callback>
 <callback>set_height($height)</callback>
 
 	<param>
 		<name>Tune Freq</name>
-		<key>fc</key>
-		<value>0</value>
+		<key>tune_freq</key>
+		<value>tune_freq</value>
 		<type>float</type>
 	</param>
 	<param>
 		<name>FFT Length</name>
 		<key>fft_len</key>
-		<value>1024</value>
+		<value>fft_len</value>
 		<type>int</type>
 	</param>
-	<param>
-		<name>PDS Method</name>
-		<key>method</key>
-		<type>enum</type>
-	<option>
-		<name>Welch</name>
-		<key>'welch'</key>
-	</option>
-	<option>
-		<name>FFT</name>
-		<key>'fft'</key>
-	</option>
-	</param>
+
 	<param>
 		<name>Sample Rate</name>
-		<key>samp_rate</key>
+		<key>sample_rate</key>
 		<value>samp_rate</value>
 		<type>int</type>
 	</param>
 	<param>
 		<name>Average</name>
 		<key>average</key>
-		<value>0</value>
+		<value>0.8</value>
 		<type>float</type>
 	</param>
 	<param>
 		<name>Refresh Rate</name>
-		<key>refresh_rate</key>
-		<value>0.5</value>
-		<type>float</type>
+		<key>rate</key>
+		<value>15</value>
+		<type>int</type>
 	</param>
 	<param>
 		<name>Length</name>
@@ -77,11 +62,6 @@
 		<value>30</value>
 		<type>int</type>
 	</param>
-  <!-- Make one 'sink' node per input. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <sink>
     <name>in</name>
     <type>complex</type>

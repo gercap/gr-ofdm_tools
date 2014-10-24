@@ -36,7 +36,7 @@ from ofdm_cr_tools import frange, fast_spectrum_scan, movingaverage
 
 class spectrum_sensor_v1(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
-	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, verbose=False):
+	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, verbose=False):
 		gr.hier_block2.__init__(self,
 			"spectrum_sensor_v1",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -58,7 +58,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.log_stat_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
 		self.log_stat_file.write('Time,'+time.strftime("%H%M%S") + ',sample_rate,' + str(sample_rate) +
 		 ',channel_space,' + str(channel_space) + ',channel_bw,' + str(search_bw) +
-		  ',tune_freq,' + str(tune_freq) + ',sens_per_sec,' + str(sens_per_sec) + '\n')
+		  ',tune_freq,' + str(tune_freq) + ',sens_per_sec,' + str(sens_per_sec) + 'test_duration,' + str(test_duration) +'\n')
 		print 'successfully created log_stat_file', self.log_stat_file
 
 		#######BLOCKS#####
@@ -67,10 +67,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		 max(1, int(self.sample_rate/self.fft_len/self.sens_per_sec)))
 
 		mywindow = window.blackmanharris(self.fft_len)
-		self.fft = fft.fft_vcc(self.fft_len, True, mywindow)
-		power = 0
-		for tap in mywindow:
-			power += tap*tap
+		self.fft = fft.fft_vcc(self.fft_len, True, (), True)
 
 		self.c2mag = blocks.complex_to_mag(self.fft_len)
 
@@ -80,8 +77,8 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag, self.sink0)
 		self.connect(self.c2mag, self.sink1)
 
-		self._watcher0 = _queue0_watcher(self.msgq0, self.log_stat_file, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, verbose)
+		self._watcher0 = _queue0_watcher(self.msgq0, self.log_stat_file, sens_per_sec, self.tune_freq, self.channel_space,
+		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, verbose)
 
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
 
@@ -125,8 +122,8 @@ class _queue1_watcher(_threading.Thread):
 			#scipy.io.savemat(self.path, mdict={'psd': peaks})
 
 class _queue0_watcher(_threading.Thread):
-	def __init__(self, rcvd_data, log_stat_file, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, verbose):
+	def __init__(self, rcvd_data, log_stat_file, sens_per_sec, tune_freq, channel_space,
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, verbose):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -141,12 +138,10 @@ class _queue0_watcher(_threading.Thread):
 		self.noise_estimate = 1e-11
 		self.alpha_avg = alpha_avg
 
-		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw}
+		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw, 'test_duration':test_duration, 'sens_per_sec':sens_per_sec, 'n_measurements':0}
 		self.statistic = {}
 		self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 		self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
-
-		self.peak_vals = None
 
 		self.verbose = verbose
 		self.keep_running = True
@@ -169,6 +164,7 @@ class _queue0_watcher(_threading.Thread):
 			payload = msg.to_string()
 			complex_data = np.fromstring (payload, np.float32)
 			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
+			self.settings['n_measurements'] += 1
 
 			#register data/time
 			self.settings['date'] = time.strftime("%y%m%d")
@@ -184,6 +180,10 @@ class _queue0_watcher(_threading.Thread):
 			#log data
 			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
+			
+			if self.verbose:
+				#print 'settings', self.settings
+				print 'statistics', self.statistic
 
 	def spectrum_scanner(self, samples):
 
@@ -203,14 +203,11 @@ class _queue0_watcher(_threading.Thread):
 		thr = self.noise_estimate * self.thr_leveler
 
 		# test detection threshold
-		pwr = []
 		spectrum_constraint_hz = []
 		i = 0
 		for item in power_level_ch:
 			if item>thr:
-				pwr.append(1)
 				spectrum_constraint_hz.append(ax_ch[i])
-			#else: pwr.append(0.01)
 			i += 1
 
 		return spectrum_constraint_hz

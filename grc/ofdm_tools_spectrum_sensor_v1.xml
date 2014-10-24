@@ -13,6 +13,7 @@ search_bw=$search_bw,
 thr_leveler=$thr_leveler,
 tune_freq=$tune_freq,
 alpha_avg=$alpha_avg,
+test_duration=$test_duration,
 verbose=$verbose
 )</make>
 	<param>
@@ -64,6 +65,13 @@ verbose=$verbose
 		<key>alpha_avg</key>
 		<value>0.9</value>
 		<type>float</type>
+	</param>
+
+	<param>
+		<name>Test Durat (s)</name>
+		<key>test_duration</key>
+		<value>duration</value>
+		<type>int</type>
 	</param>
 
 	<param>
