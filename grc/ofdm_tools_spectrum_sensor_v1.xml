@@ -14,6 +14,7 @@ thr_leveler=$thr_leveler,
 tune_freq=$tune_freq,
 alpha_avg=$alpha_avg,
 test_duration=$test_duration,
+trunc_band=$trunc_band,
 verbose=$verbose
 )</make>
 	<param>
@@ -32,6 +33,12 @@ verbose=$verbose
 		<name>Sample Rate</name>
 		<key>sample_rate</key>
 		<value>samp_rate</value>
+		<type>int</type>
+	</param>
+	<param>
+		<name>Trunc Band</name>
+		<key>trunc_band</key>
+		<value>trunc_band</value>
 		<type>int</type>
 	</param>
 	<param>

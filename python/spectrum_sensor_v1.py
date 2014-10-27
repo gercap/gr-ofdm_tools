@@ -36,7 +36,7 @@ from ofdm_cr_tools import frange, fast_spectrum_scan, movingaverage
 
 class spectrum_sensor_v1(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
-	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, verbose=False):
+	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, trunc_band=1, verbose=False):
 		gr.hier_block2.__init__(self,
 			"spectrum_sensor_v1",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -69,16 +69,17 @@ class spectrum_sensor_v1(gr.hier_block2):
 		mywindow = window.blackmanharris(self.fft_len)
 		self.fft = fft.fft_vcc(self.fft_len, True, (), True)
 
-		self.c2mag = blocks.complex_to_mag(self.fft_len)
+		self.c2mag2 = blocks.complex_to_mag_squared(self.fft_len)
+		self.multiply = blocks.multiply_const_vff(np.array([1/float(self.fft_len*self.sample_rate)]*fft_len))
 
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
 		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
 		#####CONNECTIONS####
-		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag, self.sink0)
-		self.connect(self.c2mag, self.sink1)
+		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
+		self.connect(self.multiply, self.sink1)
 
 		self._watcher0 = _queue0_watcher(self.msgq0, self.log_stat_file, sens_per_sec, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, verbose)
+		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose)
 
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
 
@@ -123,7 +124,7 @@ class _queue1_watcher(_threading.Thread):
 
 class _queue0_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, log_stat_file, sens_per_sec, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, verbose):
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -137,11 +138,20 @@ class _queue0_watcher(_threading.Thread):
 		self.thr_leveler = thr_leveler
 		self.noise_estimate = 1e-11
 		self.alpha_avg = alpha_avg
-
-		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw, 'test_duration':test_duration, 'sens_per_sec':sens_per_sec, 'n_measurements':0}
+		self.trunc = sample_rate-trunc_band
+		self.trunc_ch = int(self.trunc/self.channel_space)/2
+		
+		self.settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':tune_freq, 'sample_rate':sample_rate, 'fft_len':fft_len,'channel_space':channel_space, 'search_bw':search_bw, 'test_duration':test_duration, 'sens_per_sec':sens_per_sec, 'n_measurements':0, 'noise_estimate':self.noise_estimate, 'trunc_band':trunc_band, 'thr_leveler':thr_leveler}
 		self.statistic = {}
 		self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 		self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
+
+		dat = time.strftime("%y%m%d")
+		tim = time.strftime("%H%M%S")
+		self.path = '/tmp/max_power_log'+'-'+ dat + '-' + tim + '.matz'
+		self.max_power_file = open(self.path,'w')
+		print 'successfully created max_power_log', self.max_power_file
+		self.max_powers = None
 
 		self.verbose = verbose
 		self.keep_running = True
@@ -158,13 +168,12 @@ class _queue0_watcher(_threading.Thread):
 			if nitems > 1:
 				start = itemsize * (nitems - 1)
 				s = s[start:start+itemsize]
-				if self.verbose:
-					print 'nitems in queue =', nitems
 
 			payload = msg.to_string()
 			complex_data = np.fromstring (payload, np.float32)
 			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
 			self.settings['n_measurements'] += 1
+			self.settings['noise_estimate'] = self.noise_estimate
 
 			#register data/time
 			self.settings['date'] = time.strftime("%y%m%d")
@@ -191,13 +200,24 @@ class _queue0_watcher(_threading.Thread):
 		Fstart = self.tune_freq - self.sample_rate/2
 		Ffinish = self.tune_freq + self.sample_rate/2
 
-		#print 'Scanning...'
 		bb_freqs = frange(-self.sample_rate/2, self.sample_rate/2, self.channel_space)
 		srch_bins = self.search_bw/Fr
 
+		#measure powers
 		power_level_ch = src_power(samples, self.fft_len, Fr, self.sample_rate, bb_freqs, srch_bins)
 		ax_ch = frange(Fstart, Ffinish, self.channel_space)
 
+		if self.trunc > 0:
+			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
+			ax_ch = ax_ch[self.trunc_ch:-self.trunc_ch]
+
+		#log maximum powers
+		self.max_powers = np.maximum(power_level_ch, self.max_powers)
+		self.max_power_file = open(self.path,'w')
+		#np.save(self.max_power_file, ax_ch)
+		np.save(self.max_power_file, self.max_powers)
+
+		#Truncate before this point if necessary
 		min_power = np.amin (power_level_ch)
 		self.noise_estimate = (1-self.alpha_avg) * self.noise_estimate + self.alpha_avg * min_power
 		thr = self.noise_estimate * self.thr_leveler
