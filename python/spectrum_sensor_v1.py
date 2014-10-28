@@ -55,12 +55,6 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.msgq0 = gr.msg_queue(2)
 		self.msgq1 = gr.msg_queue(2)
 
-		self.log_stat_file = open('/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S"),'w')
-		self.log_stat_file.write('Time,'+time.strftime("%H%M%S") + ',sample_rate,' + str(sample_rate) +
-		 ',channel_space,' + str(channel_space) + ',channel_bw,' + str(search_bw) +
-		  ',tune_freq,' + str(tune_freq) + ',sens_per_sec,' + str(sens_per_sec) + 'test_duration,' + str(test_duration) +'\n')
-		print 'successfully created log_stat_file', self.log_stat_file
-
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
 		self.one_in_n = blocks.keep_one_in_n(gr.sizeof_gr_complex * self.fft_len,
@@ -78,7 +72,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
 		self.connect(self.multiply, self.sink1)
 
-		self._watcher0 = _queue0_watcher(self.msgq0, self.log_stat_file, sens_per_sec, self.tune_freq, self.channel_space,
+		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose)
 
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
@@ -123,12 +117,14 @@ class _queue1_watcher(_threading.Thread):
 			#scipy.io.savemat(self.path, mdict={'psd': peaks})
 
 class _queue0_watcher(_threading.Thread):
-	def __init__(self, rcvd_data, log_stat_file, sens_per_sec, tune_freq, channel_space,
+	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
 		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
-		self.log_stat_file = log_stat_file
+		self.path_log_stat = '/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
+		self.log_stat_file = open(self.path_log_stat,'w')
+		print 'successfully created log_stat_file', self.log_stat_file
 
 		self.tune_freq = tune_freq
 		self.channel_space = channel_space
@@ -148,8 +144,8 @@ class _queue0_watcher(_threading.Thread):
 
 		dat = time.strftime("%y%m%d")
 		tim = time.strftime("%H%M%S")
-		self.path = '/tmp/max_power_log'+'-'+ dat + '-' + tim + '.matz'
-		self.max_power_file = open(self.path,'w')
+		self.path_max_power = '/tmp/max_power_log'+'-'+ dat + '-' + tim + '.matz'
+		self.max_power_file = open(self.path_max_power,'w')
 		print 'successfully created max_power_log', self.max_power_file
 		self.max_powers = None
 
@@ -187,9 +183,12 @@ class _queue0_watcher(_threading.Thread):
 					self.statistic[el] = 1
 
 			#log data
+			self.log_stat_file = open(self.path_log_stat,'w')
 			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
-			
+			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
+			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
+
 			if self.verbose:
 				#print 'settings', self.settings
 				print 'statistics', self.statistic
@@ -213,7 +212,7 @@ class _queue0_watcher(_threading.Thread):
 
 		#log maximum powers
 		self.max_powers = np.maximum(power_level_ch, self.max_powers)
-		self.max_power_file = open(self.path,'w')
+		self.max_power_file = open(self.path_max_power,'w')
 		#np.save(self.max_power_file, ax_ch)
 		np.save(self.max_power_file, self.max_powers)
 
