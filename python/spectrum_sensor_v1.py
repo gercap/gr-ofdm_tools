@@ -84,7 +84,7 @@ class _queue1_watcher(_threading.Thread):
 		self.rcvd_data = rcvd_data
 		dat = time.strftime("%y%m%d")
 		tim = time.strftime("%H%M%S")
-		self.path = '/tmp/psd_log'+'-'+ dat + '-' + tim + '.matz'
+		self.path = '/tmp/sdr_psd_log'+'-'+ dat + '-' + tim + '.matz'
 		self.psd_mat_file = open(self.path,'w')
 		print 'successfully created log_psd_file', self.psd_mat_file
 
@@ -122,7 +122,7 @@ class _queue0_watcher(_threading.Thread):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
-		self.path_log_stat = '/tmp/ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
+		self.path_log_stat = '/tmp/sdr_ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
 		self.log_stat_file = open(self.path_log_stat,'w')
 		print 'successfully created log_stat_file', self.log_stat_file
 
@@ -144,7 +144,7 @@ class _queue0_watcher(_threading.Thread):
 
 		dat = time.strftime("%y%m%d")
 		tim = time.strftime("%H%M%S")
-		self.path_max_power = '/tmp/max_power_log'+'-'+ dat + '-' + tim + '.matz'
+		self.path_max_power = '/tmp/sdr_max_power_log'+'-'+ dat + '-' + tim + '.matz'
 		self.max_power_file = open(self.path_max_power,'w')
 		print 'successfully created max_power_log', self.max_power_file
 		self.max_powers = None

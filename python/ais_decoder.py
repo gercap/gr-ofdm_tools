@@ -42,7 +42,7 @@ class ais_decoder(gr.hier_block2):
 		kill_on_del=True
 		memory=None
 		if verbose is not True:
-			file_name = '/tmp/ais_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
+			file_name = '/tmp/sdr_ais_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
 			log_file = open(file_name,'w')
 			print 'logging AIS NMEA sentences to', file_name
 
