@@ -41,7 +41,7 @@ path_cumulative_psd_log = '/tmp/sdr_psd_cumulative_log' + '-' + start_dat + '-' 
 path_cumulative_stat_log = '/tmp/sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
 path_cumulative_max_power_log = '/tmp/sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
-periodicity = 60*5 #3600 #log files for each hour
+periodicity = 60*60 #3600 #log files for each hour
 
 periodic_psd_peaks = None
 path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
