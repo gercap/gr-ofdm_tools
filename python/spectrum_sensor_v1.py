@@ -28,11 +28,43 @@ from gnuradio.filter import window
 import numpy as np
 import time, scipy.io
 import gnuradio.gr.gr_threading as _threading
-
 from scipy import signal as sg
 import pmt
+import threading;
 
 from ofdm_cr_tools import frange, fast_spectrum_scan, movingaverage
+
+#log files information
+start_dat = time.strftime("%y%m%d")
+start_tim = time.strftime("%H%M%S")
+path_cumulative_psd_log = '/tmp/sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+path_cumulative_stat_log = '/tmp/sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
+path_cumulative_max_power_log = '/tmp/sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+
+periodicity = 60*5 #3600 #log files for each hour
+
+periodic_psd_peaks = None
+path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+periodic_statistic = {}
+path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
+periodic_max_powers = None
+path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+
+def periodic_files():
+	global path_periodic_psd_log, path_periodic_stat_log, path_periodic_max_powers_log, periodic_psd_peaks, periodic_statistic, periodic_max_powers
+
+	dat = time.strftime("%y%m%d")
+	tim = time.strftime("%H%M%S")
+
+	periodic_psd_peaks = None
+	path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
+	periodic_statistic = {}
+	path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
+	periodic_max_powers = None
+	path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
+
+	threading.Timer(periodicity, periodic_files).start()
+
 
 class spectrum_sensor_v1(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
@@ -72,20 +104,20 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
 		self.connect(self.multiply, self.sink1)
 
+		#Watchers
 		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose)
-
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
+
+		#start periodic logging
+		periodic_files()
 
 class _queue1_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, verbose):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
-		dat = time.strftime("%y%m%d")
-		tim = time.strftime("%H%M%S")
-		self.path = '/tmp/sdr_psd_log'+'-'+ dat + '-' + tim + '.matz'
-		self.psd_mat_file = open(self.path,'w')
+		self.psd_mat_file = open(path_cumulative_psd_log,'w')
 		print 'successfully created log_psd_file', self.psd_mat_file
 
 		self.verbose = verbose
@@ -94,7 +126,8 @@ class _queue1_watcher(_threading.Thread):
 
 
 	def run(self):
-		peaks = None
+		global periodic_psd_peaks
+		cumulative_psd_peaks = None
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
@@ -109,12 +142,17 @@ class _queue1_watcher(_threading.Thread):
 
 			payload = msg.to_string()
 			complex_data = np.fromstring (payload, np.float32)
-			peaks = np.maximum(complex_data, peaks)
-			self.psd_mat_file = open(self.path,'w')
-			#self.psd_mat_file.write(str(peaks + '\n')
-			np.save(self.psd_mat_file, peaks)
-			
-			#scipy.io.savemat(self.path, mdict={'psd': peaks})
+
+			#cumulative
+			cumulative_psd_peaks = np.maximum(complex_data, cumulative_psd_peaks) 
+			self.psd_mat_file = open(path_cumulative_psd_log,'w')
+			np.save(self.psd_mat_file, cumulative_psd_peaks)
+
+			#periodic
+			periodic_psd_peaks = np.maximum(complex_data, periodic_psd_peaks) 
+			periodic_psd_log = open(path_periodic_psd_log,'w')
+			np.save(periodic_psd_log, periodic_psd_peaks)
+
 
 class _queue0_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
@@ -122,8 +160,7 @@ class _queue0_watcher(_threading.Thread):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
-		self.path_log_stat = '/tmp/sdr_ss_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
-		self.log_stat_file = open(self.path_log_stat,'w')
+		self.log_stat_file = open(path_cumulative_stat_log,'w')
 		print 'successfully created log_stat_file', self.log_stat_file
 
 		self.tune_freq = tune_freq
@@ -142,10 +179,7 @@ class _queue0_watcher(_threading.Thread):
 		self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 		self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
 
-		dat = time.strftime("%y%m%d")
-		tim = time.strftime("%H%M%S")
-		self.path_max_power = '/tmp/sdr_max_power_log'+'-'+ dat + '-' + tim + '.matz'
-		self.max_power_file = open(self.path_max_power,'w')
+		self.max_power_file = open(path_cumulative_max_power_log,'w')
 		print 'successfully created max_power_log', self.max_power_file
 		self.max_powers = None
 
@@ -155,6 +189,7 @@ class _queue0_watcher(_threading.Thread):
 
 
 	def run(self):
+		global periodic_statistic
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
@@ -175,25 +210,40 @@ class _queue0_watcher(_threading.Thread):
 			self.settings['date'] = time.strftime("%y%m%d")
 			self.settings['time'] = time.strftime("%H%M%S")
 
-			#count occurrences
+			#count occurrences - cumulative
 			for el in spectrum_constraint_hz:
 				if el in self.statistic:
 					self.statistic[el] += 1
 				else:
 					self.statistic[el] = 1
 
-			#log data
-			self.log_stat_file = open(self.path_log_stat,'w')
+			#count occurrences - periodic
+			for el in spectrum_constraint_hz:
+				if el in periodic_statistic:
+					periodic_statistic[el] += 1
+				else:
+					periodic_statistic[el] = 1
+
+			#log data cumulative
+			self.log_stat_file = open(path_cumulative_stat_log,'w')
 			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
 			self.log_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.log_stat_file.write('statistics ' + str(self.statistic) + '\n')
+
+			#log data periodic
+			periodic_log_stat_file = open(path_periodic_stat_log,'w')
+			periodic_log_stat_file.write('settings ' + str(self.settings) + '\n')
+			periodic_log_stat_file.write('statistics ' + str(periodic_statistic) + '\n')
+			periodic_log_stat_file.write('settings ' + str(self.settings) + '\n')
+			periodic_log_stat_file.write('statistics ' + str(periodic_statistic) + '\n')
 
 			if self.verbose:
 				#print 'settings', self.settings
 				print 'statistics', self.statistic
 
 	def spectrum_scanner(self, samples):
+		global periodic_max_powers
 
 		Fr = float(self.sample_rate)/float(self.fft_len)
 		Fstart = self.tune_freq - self.sample_rate/2
@@ -210,11 +260,15 @@ class _queue0_watcher(_threading.Thread):
 			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
 			ax_ch = ax_ch[self.trunc_ch:-self.trunc_ch]
 
-		#log maximum powers
+		#log maximum powers - cumulative
 		self.max_powers = np.maximum(power_level_ch, self.max_powers)
-		self.max_power_file = open(self.path_max_power,'w')
-		#np.save(self.max_power_file, ax_ch)
+		self.max_power_file = open(path_cumulative_max_power_log,'w')
 		np.save(self.max_power_file, self.max_powers)
+
+		#log maximum powers - periodic
+		periodic_max_powers = np.maximum(power_level_ch, periodic_max_powers)
+		periodic_max_powers_file = open(path_periodic_max_powers_log,'w')
+		np.save(periodic_max_powers_file, periodic_max_powers)
 
 		#Truncate before this point if necessary
 		min_power = np.amin (power_level_ch)
