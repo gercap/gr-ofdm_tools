@@ -14,6 +14,7 @@ thr_leveler=$thr_leveler,
 tune_freq=$tune_freq,
 alpha_avg=$alpha_avg,
 test_duration=$test_duration,
+period=$period,
 trunc_band=$trunc_band,
 verbose=$verbose
 )</make>
@@ -78,6 +79,13 @@ verbose=$verbose
 		<name>Test Durat (s)</name>
 		<key>test_duration</key>
 		<value>duration</value>
+		<type>int</type>
+	</param>
+
+	<param>
+		<name>Periodic logs (s)</name>
+		<key>period</key>
+		<value>3600</value>
 		<type>int</type>
 	</param>
 

@@ -46,12 +46,17 @@ periodicity = 60*60 #3600 #log files for each hour
 periodic_psd_peaks = None
 path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 periodic_statistic = {}
+n_measurements_period = 0
 path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
 periodic_max_powers = None
 path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
+def set_log_periodicity(period):
+	global periodicity
+	periodicity = period
+
 def periodic_files():
-	global path_periodic_psd_log, path_periodic_stat_log, path_periodic_max_powers_log, periodic_psd_peaks, periodic_statistic, periodic_max_powers
+	global path_periodic_psd_log, path_periodic_stat_log, path_periodic_max_powers_log, periodic_psd_peaks, periodic_statistic, periodic_max_powers, n_measurements_period
 
 	dat = time.strftime("%y%m%d")
 	tim = time.strftime("%H%M%S")
@@ -59,6 +64,7 @@ def periodic_files():
 	periodic_psd_peaks = None
 	path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
 	periodic_statistic = {}
+	n_measurements_period = 0
 	path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
 	periodic_max_powers = None
 	path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
@@ -68,7 +74,7 @@ def periodic_files():
 
 class spectrum_sensor_v1(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
-	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, trunc_band=1, verbose=False):
+	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, period=3600, trunc_band=1, verbose=False):
 		gr.hier_block2.__init__(self,
 			"spectrum_sensor_v1",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -110,6 +116,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
 
 		#start periodic logging
+		set_log_periodicity(period)
 		periodic_files()
 
 class _queue1_watcher(_threading.Thread):
@@ -189,7 +196,7 @@ class _queue0_watcher(_threading.Thread):
 
 
 	def run(self):
-		global periodic_statistic
+		global periodic_statistic, n_measurements_period
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
@@ -204,6 +211,8 @@ class _queue0_watcher(_threading.Thread):
 			complex_data = np.fromstring (payload, np.float32)
 			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
 			self.settings['n_measurements'] += 1
+			n_measurements_period += 1
+			self.settings['n_measurements_period'] = n_measurements_period
 			self.settings['noise_estimate'] = self.noise_estimate
 
 			#register data/time
