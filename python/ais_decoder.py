@@ -25,8 +25,19 @@
 
 
 import sys, subprocess, tempfile, os, signal, time
+from os.path import expanduser
 
 from gnuradio import gr, gru, blocks
+
+start_dat = time.strftime("%y%m%d")
+start_tim = time.strftime("%H%M%S")
+
+home = expanduser("~")
+directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
+
+if not os.path.exists(directory):
+	os.makedirs(directory)
+
 
 class ais_decoder(gr.hier_block2):
 	def __init__(self, address="127.0.0.1", port=8888, verbose = True):
@@ -42,7 +53,7 @@ class ais_decoder(gr.hier_block2):
 		kill_on_del=True
 		memory=None
 		if verbose is not True:
-			file_name = '/tmp/sdr_ais_log'+'-'+ time.strftime("%y%m%d") + '-' + time.strftime("%H%M%S")
+			file_name = directory+'sdr_ais_log'+'-' + start_dat + '-' + start_tim
 			log_file = open(file_name,'w')
 			print 'logging AIS NMEA sentences to', file_name
 

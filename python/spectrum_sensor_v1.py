@@ -30,26 +30,35 @@ import time, scipy.io
 import gnuradio.gr.gr_threading as _threading
 from scipy import signal as sg
 import pmt
-import threading;
+import threading, os
+from os.path import expanduser
 
 from ofdm_cr_tools import frange, fast_spectrum_scan, movingaverage
 
 #log files information
+
 start_dat = time.strftime("%y%m%d")
 start_tim = time.strftime("%H%M%S")
-path_cumulative_psd_log = '/tmp/sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
-path_cumulative_stat_log = '/tmp/sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
-path_cumulative_max_power_log = '/tmp/sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
-periodicity = 60*60 #3600 #log files for each hour
+home = expanduser("~")
+directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
+
+if not os.path.exists(directory):
+	os.makedirs(directory)
+
+path_cumulative_psd_log = directory+'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+path_cumulative_stat_log = directory+'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
+path_cumulative_max_power_log = directory+'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+
+periodicity = 60*60 #log files periodicity
 
 periodic_psd_peaks = None
-path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+path_periodic_psd_log = directory+'sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 periodic_statistic = {}
 n_measurements_period = 0
-path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
+path_periodic_stat_log = directory+'sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
 periodic_max_powers = None
-path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+path_periodic_max_powers_log = directory+'sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
 def set_log_periodicity(period):
 	global periodicity
@@ -62,12 +71,12 @@ def periodic_files():
 	tim = time.strftime("%H%M%S")
 
 	periodic_psd_peaks = None
-	path_periodic_psd_log = '/tmp/sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
+	path_periodic_psd_log = directory+'sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
 	periodic_statistic = {}
 	n_measurements_period = 0
-	path_periodic_stat_log = '/tmp/sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
+	path_periodic_stat_log = directory+'sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
 	periodic_max_powers = None
-	path_periodic_max_powers_log = '/tmp/sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
+	path_periodic_max_powers_log = directory+'sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
 
 	threading.Timer(periodicity, periodic_files).start()
 
