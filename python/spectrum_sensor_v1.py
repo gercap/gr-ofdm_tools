@@ -90,7 +90,13 @@ class logger(object):
 			self.path_periodic_psd, self.periodic_psd_peaks,
 			self.max_power_file, self.path_cumulative_max_power, self.cumulative_max_power,
 			self.path_periodic_max_power, self.periodic_max_power,
-			self.path_periodic_stat, self.n_measurements_period)
+			self.path_periodic_stat, self.n_measurements_period, self.reset_periodic_vars)
+
+	def reset_periodic_vars(self):
+		self.periodic_psd_peaks = None
+		self.periodic_statistic = {}
+		self.periodic_max_power = None
+		self.n_measurements_period = 0
 
 	def set_cumulative_psd_peaks(self, cumulative_psd_peaks):
 		self.cumulative_psd_peaks = cumulative_psd_peaks
@@ -134,7 +140,7 @@ class file_logger(_threading.Thread):
 	 path_periodic_psd, periodic_psd_peaks,
 	 max_power_file, path_cumulative_max_power, cumulative_max_power,
 	 path_periodic_max_power, periodic_max_power,
-	 path_periodic_stat, n_measurements_period):
+	 path_periodic_stat, n_measurements_period, reset_periodic_vars):
 
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
@@ -163,6 +169,8 @@ class file_logger(_threading.Thread):
 		self.path_periodic_max_power = path_periodic_max_power
 
 		self.n_measurements_period = n_measurements_period
+
+		self.reset_periodic_vars = reset_periodic_vars
 
 		self.keep_running = True
 		self.start()
@@ -211,6 +219,7 @@ class file_logger(_threading.Thread):
 			self.periodic_statistic = {}
 			self.n_measurements_period = 0
 			self.periodic_max_power = None
+			self.reset_periodic_vars()
 
 			time.sleep(self.periodicity)
 			print 'logged to files'
