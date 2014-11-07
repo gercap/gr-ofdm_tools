@@ -29,16 +29,6 @@ from os.path import expanduser
 
 from gnuradio import gr, gru, blocks
 
-start_dat = time.strftime("%y%m%d")
-start_tim = time.strftime("%H%M%S")
-
-home = expanduser("~")
-directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
-
-if not os.path.exists(directory):
-	os.makedirs(directory)
-
-
 class ais_decoder(gr.hier_block2):
 	def __init__(self, address="127.0.0.1", port=8888, verbose = True):
 		
@@ -52,10 +42,6 @@ class ais_decoder(gr.hier_block2):
 		buffered=True
 		kill_on_del=True
 		memory=None
-		if verbose is not True:
-			file_name = directory+'sdr_ais_log'+'-' + start_dat + '-' + start_tim
-			log_file = open(file_name,'w')
-			print 'logging AIS NMEA sentences to', file_name
 
 		self.mode = mode
 		self.kill_on_del = kill_on_del
@@ -72,8 +58,22 @@ class ais_decoder(gr.hier_block2):
 				raise
 		
 		if verbose:
+			print 'verbose mode'
 			decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename) + " -d"]
 		else:
+			print 'logging mode'
+			start_dat = time.strftime("%y%m%d")
+			start_tim = time.strftime("%H%M%S")
+
+			home = expanduser("~")
+			directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
+
+			if not os.path.exists(directory):
+				os.makedirs(directory)
+			
+			file_name = directory+'sdr_ais_log'+'-' + start_dat + '-' + start_tim
+			print 'logging AIS NMEA sentences to', file_name
+			
 			decoder_exec = [decoder_path + " -h " + str(address) + " -p "+ str(port) +" -a file"+" -f "+str(self.filename) + " -d" + " 2>" + file_name]
 
 

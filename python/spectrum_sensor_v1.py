@@ -38,102 +38,183 @@ from ofdm_cr_tools import frange, movingaverage
 
 #log files information
 
-start_dat = time.strftime("%y%m%d")
-start_tim = time.strftime("%H%M%S")
+class logger(object):
+	def __init__(self, periodicity):
+		start_dat = time.strftime("%y%m%d")
+		start_tim = time.strftime("%H%M%S")
 
-#create a folder with date and time in user system folder
-home = expanduser("~")
-directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
-if not os.path.exists(directory):
-	os.makedirs(directory)
+		#create a folder with date and time in user system folder
+		home = expanduser("~")
+		self.directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
+		if not os.path.exists(self.directory):
+			os.makedirs(self.directory)
 
-#initialize path for cumulative files
-path_cumulative_psd = directory+'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
-path_cumulative_stat = directory+'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
-path_cumulative_max_power = directory+'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		#initialize path for cumulative files
+		self.path_cumulative_psd = self.directory+'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_cumulative_stat = self.directory+'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
+		self.path_cumulative_max_power = self.directory+'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
-#initialize cumulative file logs
-cumulative_stat_file = open(path_cumulative_stat,'w')
-print 'successfully created', cumulative_stat_file
-psd_file = open(path_cumulative_psd,'w')
-print 'successfully created', psd_file
-max_power_file = open(path_cumulative_max_power,'w')
-print 'successfully created', max_power_file
+		#initialize cumulative file logs
+		self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
+		print 'successfully created', self.cumulative_stat_file
+		self.psd_file = open(self.path_cumulative_psd,'w')
+		print 'successfully created', self.psd_file
+		self.max_power_file = open(self.path_cumulative_max_power,'w')
+		print 'successfully created', self.max_power_file
 
-#initialize cumulative vars
-cumulative_statistics = {}
-settings = {} #valid for periodic and cumulative measurements
-cumulative_psd_peaks = None
-cumulative_max_power = None
+		#initialize cumulative vars
+		self.cumulative_statistics = {}
+		self.settings = {} #valid for periodic and cumulative measurements
+		self.cumulative_psd_peaks = None
+		self.cumulative_max_power = None
 
-#global variable for periodicity of periodic logs
-periodicity = 60*60
+		#global variable for periodicity of periodic logs
+		self.periodicity = periodicity
 
-#initialize path for periodic files and periodic variables
-path_periodic_psd = directory+'sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
-path_periodic_stat = directory+'sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
-path_periodic_max_power = directory+'sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		#initialize path for periodic files and periodic variables
+		self.path_periodic_psd = self.directory+'sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_periodic_stat = self.directory+'sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
+		self.path_periodic_max_power = self.directory+'sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
-#initialize periodic vars
-periodic_psd_peaks = None
-periodic_statistic = {}
-periodic_max_power = None
-n_measurements_period = 0 #reset counter for periodic measurements
+		#initialize periodic vars
+		self.periodic_psd_peaks = None
+		self.periodic_statistic = {}
+		self.periodic_max_power = None
+		self.n_measurements_period = 0
 
-#function to set periodicity upon flowgraph construction
-def set_log_periodicity(period):
-	global periodicity
-	periodicity = period
+		#initialize log thread
+		self._file_logger = file_logger(self.periodicity, self.directory,
+			self.cumulative_stat_file, self.path_cumulative_stat,
+			self.settings, self.cumulative_statistics, self.periodic_statistic,
+			self.psd_file, self.path_cumulative_psd, self.cumulative_psd_peaks,
+			self.path_periodic_psd, self.periodic_psd_peaks,
+			self.max_power_file, self.path_cumulative_max_power, self.cumulative_max_power,
+			self.path_periodic_max_power, self.periodic_max_power,
+			self.path_periodic_stat, self.n_measurements_period)
 
-#function that starts the periodic procedure of renewing periodic log files
-def periodic_files():
-	global path_periodic_psd, path_periodic_stat, path_periodic_max_power #path of periodic files (reset every period)
-	global periodic_psd_peaks, periodic_statistic, periodic_max_power, n_measurements_period #periodic variables (reset every period)
+	def set_cumulative_psd_peaks(self, cumulative_psd_peaks):
+		self.cumulative_psd_peaks = cumulative_psd_peaks
+		self._file_logger.cumulative_psd_peaks = cumulative_psd_peaks
 
-	#log cumulative stats
-	cumulative_stat_file = open(path_cumulative_stat,'w')
-	cumulative_stat_file.write('settings ' + str(settings) + '\n')
-	cumulative_stat_file.write('statistics ' + str(cumulative_statistics) + '\n')
-	cumulative_stat_file.write('settings ' + str(settings) + '\n')
-	cumulative_stat_file.write('statistics ' + str(cumulative_statistics) + '\n')
+	def set_periodic_psd_peaks(self, periodic_psd_peaks):
+		self.periodic_psd_peaks = periodic_psd_peaks
+		self._file_logger.periodic_psd_peaks = periodic_psd_peaks
 
-	#log periodic stats
-	periodic_stat_file = open(path_periodic_stat,'w')
-	periodic_stat_file.write('settings ' + str(settings) + '\n')
-	periodic_stat_file.write('statistics ' + str(periodic_statistic) + '\n')
-	periodic_stat_file.write('settings ' + str(settings) + '\n')
-	periodic_stat_file.write('statistics ' + str(periodic_statistic) + '\n')
+	def set_settings(self, settings):
+		self.settings = settings
+		self._file_logger.settings = settings
 
-	#log cumulative psd
-	psd_file = open(path_cumulative_psd,'w')
-	np.save(psd_file, cumulative_psd_peaks)
+	def set_n_measurements_period(self, n_measurements_period):
+		self.n_measurements_period = n_measurements_period
+		self._file_logger.n_measurements_period = n_measurements_period
 
-	#log periodic psd
-	periodic_psd_file = open(path_periodic_psd,'w')
-	np.save(periodic_psd_file, periodic_psd_peaks)
+	def set_cumulative_statistics(self, cumulative_statistics):
+		self.cumulative_statistics = cumulative_statistics
+		self._file_logger.cumulative_statistics = cumulative_statistics
 
-	#log cumulative max powers
-	max_power_file = open(path_cumulative_max_power,'w')
-	np.save(max_power_file, cumulative_max_power)
+	def set_periodic_statistic(self, periodic_statistic):
+		self.periodic_statistic = periodic_statistic
+		self._file_logger.periodic_statistic = periodic_statistic
 
-	#log periodic max powers
-	periodic_max_power_file = open(path_periodic_max_power,'w')
-	np.save(periodic_max_power_file, periodic_max_power)
+	def set_cumulative_max_power(self, cumulative_max_power):
+		self.cumulative_max_power = cumulative_max_power
+		self._file_logger.cumulative_max_power = cumulative_max_power
 
-	dat = time.strftime("%y%m%d")
-	tim = time.strftime("%H%M%S")
+	def set_periodic_max_power(self, periodic_max_power):
+		self.periodic_max_power = periodic_max_power
+		self._file_logger.periodic_max_power = periodic_max_power
 
-	#reset periodic files
-	path_periodic_psd = directory+'sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
-	path_periodic_stat = directory+'sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
-	path_periodic_max_power = directory+'sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
-	#reset periodic vars
-	periodic_psd_peaks = None
-	periodic_statistic = {}
-	n_measurements_period = 0
-	periodic_max_power = None
 
-	threading.Timer(periodicity, periodic_files).start()
+#queue wathcer to log max psd
+class file_logger(_threading.Thread):
+	def __init__(self, periodicity, directory,
+	 cumulative_stat_file, path_cumulative_stat,
+	 settings, cumulative_statistics, periodic_statistic,
+	 psd_file, path_cumulative_psd, cumulative_psd_peaks,
+	 path_periodic_psd, periodic_psd_peaks,
+	 max_power_file, path_cumulative_max_power, cumulative_max_power,
+	 path_periodic_max_power, periodic_max_power,
+	 path_periodic_stat, n_measurements_period):
+
+		_threading.Thread.__init__(self)
+		self.setDaemon(1)
+		self.periodicity = periodicity
+		self.directory = directory
+
+		self.cumulative_stat_file = cumulative_stat_file
+		self.path_cumulative_stat = path_cumulative_stat
+
+		self.settings = settings
+		self.cumulative_statistics = cumulative_statistics
+		self.periodic_statistic = periodic_statistic
+
+		self.psd_file = psd_file
+		self.path_cumulative_psd = path_cumulative_psd
+		self.cumulative_psd_peaks = cumulative_psd_peaks
+		self.path_periodic_psd = path_periodic_psd
+		self.periodic_psd_peaks = periodic_psd_peaks
+
+		self.max_power_file = max_power_file
+		self.path_cumulative_max_power = path_cumulative_max_power
+		self.cumulative_max_power = cumulative_max_power
+		self.periodic_max_power = periodic_max_power
+
+		self.path_periodic_stat = path_periodic_stat
+		self.path_periodic_max_power = path_periodic_max_power
+
+		self.n_measurements_period = n_measurements_period
+
+		self.keep_running = True
+		self.start()
+
+	def run(self):
+		while self.keep_running:
+
+			self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
+			self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
+			self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
+			self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
+			self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
+
+			#log periodic stats
+			periodic_stat_file = open(self.path_periodic_stat,'w')
+			periodic_stat_file.write('settings ' + str(self.settings) + '\n')
+			periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
+			periodic_stat_file.write('settings ' + str(self.settings) + '\n')
+			periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
+
+			#log cumulative psd
+			self.psd_file = open(self.path_cumulative_psd,'w')
+			np.save(self.psd_file, self.cumulative_psd_peaks)
+
+			#log periodic psd
+			periodic_psd_file = open(self.path_periodic_psd,'w')
+			np.save(periodic_psd_file, self.periodic_psd_peaks)
+
+			#log cumulative max powers
+			self.max_power_file = open(self.path_cumulative_max_power,'w')
+			np.save(self.max_power_file, self.cumulative_max_power)
+
+			#log periodic max powers
+			periodic_max_power_file = open(self.path_periodic_max_power,'w')
+			np.save(periodic_max_power_file, self.periodic_max_power)
+
+			dat = time.strftime("%y%m%d")
+			tim = time.strftime("%H%M%S")
+
+			#reset periodic files
+			self.path_periodic_psd = self.directory+'sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
+			self.path_periodic_stat = self.directory+'sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
+			self.path_periodic_max_power = self.directory+'sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
+			#reset periodic vars
+			self.periodic_psd_peaks = None
+			self.periodic_statistic = {}
+			self.n_measurements_period = 0
+			self.periodic_max_power = None
+
+			time.sleep(self.periodicity)
+			print 'logged to files'
+
 
 
 class spectrum_sensor_v1(gr.hier_block2):
@@ -173,28 +254,27 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
 		self.connect(self.multiply, self.sink1)
 
+		#start periodic logging
+		self._logger = logger(period)
+
 		#Watchers
 		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose)
-		self._watcher1 = _queue1_watcher(self.msgq1, verbose)
-
-		#start periodic logging
-		set_log_periodicity(period)
-		periodic_files()
+		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose, self._logger)
+		self._watcher1 = _queue1_watcher(self.msgq1, verbose, self._logger)
 
 #queue wathcer to log max psd
 class _queue1_watcher(_threading.Thread):
-	def __init__(self, rcvd_data, verbose):
+	def __init__(self, rcvd_data, verbose, logger):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
 
 		self.verbose = verbose
+		self.logger = logger
 		self.keep_running = True
 		self.start()
 
 	def run(self):
-		global periodic_psd_peaks, cumulative_psd_peaks
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
@@ -211,16 +291,16 @@ class _queue1_watcher(_threading.Thread):
 			complex_data = np.fromstring (payload, np.float32)
 
 			#cumulative log
-			cumulative_psd_peaks = np.maximum(complex_data, cumulative_psd_peaks) 
+			self.logger.set_cumulative_psd_peaks(np.maximum(complex_data, self.logger.cumulative_psd_peaks))
 
 			#periodic log
-			periodic_psd_peaks = np.maximum(complex_data, periodic_psd_peaks) 
+			self.logger.set_periodic_psd_peaks(np.maximum(complex_data, self.logger.periodic_psd_peaks))
 
 
 #queue wathcer to log statistics and max power per channel
 class _queue0_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose):
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, logger):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -249,17 +329,17 @@ class _queue0_watcher(_threading.Thread):
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
 
 		self.verbose = verbose
+		self.logger = logger
 		self.keep_running = True
 		self.start()
 
 
 	def run(self):
-		global periodic_statistic, n_measurements_period, cumulative_statistics, settings
 
-		settings = {'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':self.tune_freq,
+		self.logger.set_settings({'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':self.tune_freq,
 		 'sample_rate':self.sample_rate, 'fft_len':self.fft_len,'channel_space':self.channel_space, 'search_bw':self.search_bw,
 		  'test_duration':self.test_duration, 'sens_per_sec':self.sens_per_sec, 'n_measurements':0, 'noise_estimate':self.noise_estimate,
-		   'trunc_band':self.trunc_band, 'thr_leveler':self.thr_leveler}
+		   'trunc_band':self.trunc_band, 'thr_leveler':self.thr_leveler})
 
 		while self.keep_running:
 
@@ -277,36 +357,41 @@ class _queue0_watcher(_threading.Thread):
 			#scann channels
 			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
 			#count cumulative measurements
-			settings['n_measurements'] += 1
+			self.logger.settings['n_measurements'] += 1
 			#count periodic measurements
-			n_measurements_period += 1
-			settings['n_measurements_period'] = n_measurements_period
+			self.logger.n_measurements_period += 1
+			self.logger.settings['n_measurements_period'] = self.logger.n_measurements_period
 			#get noise estimate
-			settings['noise_estimate'] = self.noise_estimate
+			self.logger.settings['noise_estimate'] = self.noise_estimate
 
 			#register data/time
-			settings['date'] = time.strftime("%y%m%d")
-			settings['time'] = time.strftime("%H%M%S")
+			self.logger.settings['date'] = time.strftime("%y%m%d")
+			self.logger.settings['time'] = time.strftime("%H%M%S")
 
 			for el in spectrum_constraint_hz:
 				#count occurrences -> cumulative
-				if el in cumulative_statistics:
-					cumulative_statistics[el] += 1
+				if el in self.logger.cumulative_statistics:
+					self.logger.cumulative_statistics[el] += 1
 				else:
-					cumulative_statistics[el] = 1
+					self.logger.cumulative_statistics[el] = 1
 				#count occurrences -> periodic
-				if el in periodic_statistic:
-					periodic_statistic[el] += 1
+				if el in self.logger.periodic_statistic:
+					self.logger.periodic_statistic[el] += 1
 				else:
-					periodic_statistic[el] = 1
+					self.logger.periodic_statistic[el] = 1
+
+			#update thread that logs data
+			self.logger.set_settings(self.logger.settings)
+			self.logger.set_n_measurements_period(self.logger.n_measurements_period)
+			self.logger.set_cumulative_statistics(self.logger.cumulative_statistics)
+			self.logger.set_periodic_statistic(self.logger.periodic_statistic)
 
 			if self.verbose:
 				#print 'settings', self.settings
-				print 'statistics', cumulative_statistics
+				print 'statistics', self.logger.cumulative_statistics
 
 	#function that scans channels and compares with threshold to determine occupied / not occupied
 	def spectrum_scanner(self, samples):
-		global periodic_max_power, cumulative_max_power
 
 		#measure power for each channel
 		power_level_ch = src_power(samples, self.fft_len, self.Fr, self.sample_rate, self.bb_freqs, self.srch_bins)
@@ -316,10 +401,10 @@ class _queue0_watcher(_threading.Thread):
 			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
 
 		#log maximum powers - cumulative
-		cumulative_max_power = np.maximum(power_level_ch, cumulative_max_power)
+		self.logger.set_cumulative_max_power(np.maximum(power_level_ch, self.logger.cumulative_max_power))
 
 		#log maximum powers - periodic
-		periodic_max_power = np.maximum(power_level_ch, periodic_max_power)
+		self.logger.set_periodic_max_power(np.maximum(power_level_ch, self.logger.periodic_max_power))
 
 		#compute noise estimate (averaged)
 		min_power = np.amin (power_level_ch)
