@@ -255,14 +255,13 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.fft = fft.fft_vcc(self.fft_len, True, (), True)
 
 		self.c2mag2 = blocks.complex_to_mag_squared(self.fft_len)
-		#self.multiply = blocks.multiply_const_vff(np.array([1/float(self.fft_len*self.sample_rate)]*fft_len))
-		self.multiply = blocks.multiply_const_vcc(np.array([1.0/float(self.fft_len)]*fft_len))
+		self.multiply = blocks.multiply_const_vff(np.array([1.0/float(self.fft_len**2)]*fft_len))
 
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
 		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
 		#####CONNECTIONS####
-		self.connect(self, self.s2p, self.one_in_n, self.fft, self.multiply, self.c2mag2, self.sink0)
-		self.connect(self.c2mag2, self.sink1)
+		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
+		self.connect(self.multiply, self.sink1)
 
 		#start periodic logging
 		self._logger = logger(period)
@@ -288,13 +287,13 @@ class _queue1_watcher(_threading.Thread):
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
-			itemsize = int(msg.arg1())
-			nitems = int(msg.arg2())
 
-			if nitems > 1:
-				start = itemsize * (nitems - 1)
-				s = s[start:start+itemsize]
-				if self.verbose:
+			if self.verbose:
+				itemsize = int(msg.arg1())
+				nitems = int(msg.arg2())
+				if nitems > 1:
+					start = itemsize * (nitems - 1)
+					s = s[start:start+itemsize]
 					print 'nitems in queue =', nitems
 
 			payload = msg.to_string()
@@ -354,12 +353,12 @@ class _queue0_watcher(_threading.Thread):
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
-			itemsize = int(msg.arg1())
-			nitems = int(msg.arg2())
-
-			if nitems > 1:
-				start = itemsize * (nitems - 1)
-				s = s[start:start+itemsize]
+			
+			#itemsize = int(msg.arg1())
+			#nitems = int(msg.arg2())
+			#if nitems > 1:
+			#	start = itemsize * (nitems - 1)
+			#	s = s[start:start+itemsize]
 
 			#convert received data to numpy vector
 			payload = msg.to_string()
@@ -373,10 +372,6 @@ class _queue0_watcher(_threading.Thread):
 			self.logger.settings['n_measurements_period'] = self.logger.n_measurements_period
 			#get noise estimate
 			self.logger.settings['noise_estimate'] = self.noise_estimate
-
-			#register data/time
-			self.logger.settings['date'] = time.strftime("%y%m%d")
-			self.logger.settings['time'] = time.strftime("%H%M%S")
 
 			for el in spectrum_constraint_hz:
 				#count occurrences -> cumulative
@@ -396,9 +391,9 @@ class _queue0_watcher(_threading.Thread):
 			self.logger.set_cumulative_statistics(self.logger.cumulative_statistics)
 			self.logger.set_periodic_statistic(self.logger.periodic_statistic)
 
-			if self.verbose:
-				#print 'settings', self.settings
-				print 'statistics', self.logger.cumulative_statistics
+			#if self.verbose:
+			#	#print 'settings', self.settings
+			#	print 'statistics', self.logger.cumulative_statistics
 
 	#function that scans channels and compares with threshold to determine occupied / not occupied
 	def spectrum_scanner(self, samples):
@@ -420,7 +415,8 @@ class _queue0_watcher(_threading.Thread):
 		min_power = np.amin (power_level_ch)
 		self.noise_estimate = (1-self.alpha_avg) * self.noise_estimate + self.alpha_avg * min_power
 		thr = self.noise_estimate * self.thr_leveler
-		print 'self.noise_estimate', 10*np.log10(self.noise_estimate+1e-20)
+		if self.verbose:
+			print 'noise_estimate dB (channel)', 10*np.log10(self.noise_estimate+1e-20)
 
 		#compare channel power with detection threshold
 		spectrum_constraint_hz = []
