@@ -34,7 +34,7 @@ import pmt
 import threading, os
 from os.path import expanduser
 
-from ofdm_cr_tools import frange, movingaverage
+from ofdm_cr_tools import frange, movingaverage, src_power
 
 #log files information
 
@@ -45,14 +45,14 @@ class logger(object):
 
 		#create a folder with date and time in user system folder
 		home = expanduser("~")
-		self.directory = home+'/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
+		self.directory = home + '/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
 		if not os.path.exists(self.directory):
 			os.makedirs(self.directory)
 
 		#initialize path for cumulative files
-		self.path_cumulative_psd = self.directory+'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
-		self.path_cumulative_stat = self.directory+'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
-		self.path_cumulative_max_power = self.directory+'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_cumulative_psd = self.directory + 'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_cumulative_stat = self.directory + 'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
+		self.path_cumulative_max_power = self.directory + 'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
 		#initialize cumulative file logs
 		self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
@@ -68,13 +68,13 @@ class logger(object):
 		self.cumulative_psd_peaks = None
 		self.cumulative_max_power = None
 
-		#global variable for periodicity of periodic logs
+		#variable for periodicity of periodic logs
 		self.periodicity = periodicity
 
-		#initialize path for periodic files and periodic variables
-		self.path_periodic_psd = self.directory+'sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
-		self.path_periodic_stat = self.directory+'sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
-		self.path_periodic_max_power = self.directory+'sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		#initialize path for periodic files
+		self.path_periodic_psd = self.directory + 'sdr_psd_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_periodic_stat = self.directory + 'sdr_ss_periodic_log' + '-' + start_dat + '-' + start_tim + '.log'
+		self.path_periodic_max_power = self.directory + 'sdr_max_power_periodic_log' + '-' + start_dat + '-' + start_tim + '.matz'
 
 		#initialize periodic vars
 		self.periodic_psd_peaks = None
@@ -178,32 +178,33 @@ class file_logger(_threading.Thread):
 	def run(self):
 		while self.keep_running:
 
+			# save comulative statistics
 			self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
 			self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
 			self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
 
-			#log periodic stats
+			# save periodic stats
 			periodic_stat_file = open(self.path_periodic_stat,'w')
 			periodic_stat_file.write('settings ' + str(self.settings) + '\n')
 			periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
 			periodic_stat_file.write('settings ' + str(self.settings) + '\n')
 			periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
 
-			#log cumulative psd
+			#save cumulative psd
 			self.psd_file = open(self.path_cumulative_psd,'w')
 			np.save(self.psd_file, self.cumulative_psd_peaks)
 
-			#log periodic psd
+			#save periodic psd
 			periodic_psd_file = open(self.path_periodic_psd,'w')
 			np.save(periodic_psd_file, self.periodic_psd_peaks)
 
-			#log cumulative max powers
+			#save cumulative max powers
 			self.max_power_file = open(self.path_cumulative_max_power,'w')
 			np.save(self.max_power_file, self.cumulative_max_power)
 
-			#log periodic max powers
+			#save periodic max powers
 			periodic_max_power_file = open(self.path_periodic_max_power,'w')
 			np.save(periodic_max_power_file, self.periodic_max_power)
 
@@ -211,9 +212,9 @@ class file_logger(_threading.Thread):
 			tim = time.strftime("%H%M%S")
 
 			#reset periodic files
-			self.path_periodic_psd = self.directory+'sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
-			self.path_periodic_stat = self.directory+'sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
-			self.path_periodic_max_power = self.directory+'sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
+			self.path_periodic_psd = self.directory + 'sdr_psd_periodic_log' + '-' + dat + '-' + tim + '.matz'
+			self.path_periodic_stat = self.directory + 'sdr_ss_periodic_log' + '-' + dat + '-' + tim + '.log'
+			self.path_periodic_max_power = self.directory + 'sdr_max_power_periodic_log' + '-' + dat + '-' + tim + '.matz'
 			#reset periodic vars
 			self.periodic_psd_peaks = None
 			self.periodic_statistic = {}
@@ -267,8 +268,10 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self._logger = logger(period)
 
 		#Watchers
+		#statistics and power
 		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose, self._logger)
+		#psd
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose, self._logger)
 
 #queue wathcer to log max psd
@@ -337,6 +340,9 @@ class _queue0_watcher(_threading.Thread):
 		if self.trunc > 0:
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
 
+		self.prev_power = [0]*len(self.ax_ch)
+		self.curr_power = [0]*len(self.ax_ch)
+
 		self.verbose = verbose
 		self.logger = logger
 		self.keep_running = True
@@ -354,16 +360,18 @@ class _queue0_watcher(_threading.Thread):
 
 			msg = self.rcvd_data.delete_head()
 			
-			#itemsize = int(msg.arg1())
-			#nitems = int(msg.arg2())
-			#if nitems > 1:
-			#	start = itemsize * (nitems - 1)
-			#	s = s[start:start+itemsize]
+			if self.verbose:
+				itemsize = int(msg.arg1())
+				nitems = int(msg.arg2())
+				if nitems > 1:
+					start = itemsize * (nitems - 1)
+					s = s[start:start+itemsize]
 
 			#convert received data to numpy vector
 			payload = msg.to_string()
 			complex_data = np.fromstring (payload, np.float32)
-			#scann channels
+
+			#scan channels
 			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
 			#count cumulative measurements
 			self.logger.settings['n_measurements'] += 1
@@ -391,10 +399,6 @@ class _queue0_watcher(_threading.Thread):
 			self.logger.set_cumulative_statistics(self.logger.cumulative_statistics)
 			self.logger.set_periodic_statistic(self.logger.periodic_statistic)
 
-			#if self.verbose:
-			#	#print 'settings', self.settings
-			#	print 'statistics', self.logger.cumulative_statistics
-
 	#function that scans channels and compares with threshold to determine occupied / not occupied
 	def spectrum_scanner(self, samples):
 
@@ -404,7 +408,7 @@ class _queue0_watcher(_threading.Thread):
 		#trunc channels outside useful band (filter curve) --> trunc band < sample_rate
 		if self.trunc > 0:
 			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
-
+		
 		#log maximum powers - cumulative
 		self.logger.set_cumulative_max_power(np.maximum(power_level_ch, self.logger.cumulative_max_power))
 
@@ -418,6 +422,17 @@ class _queue0_watcher(_threading.Thread):
 		if self.verbose:
 			print 'noise_estimate dB (channel)', 10*np.log10(self.noise_estimate+1e-20)
 
+		self.prev_power = self.curr_power
+		self.curr_power = power_level_ch
+
+		#measure transmission rate
+		j = 0
+		for measure in self.curr_power:
+			if measure > self.prev_power[j] and measure > thr:
+				print 'detected flanck! at: ', self.ax_ch[j]*1e6, 'MHz'
+			j += 1
+
+
 		#compare channel power with detection threshold
 		spectrum_constraint_hz = []
 		i = 0
@@ -427,22 +442,3 @@ class _queue0_watcher(_threading.Thread):
 			i += 1
 
 		return spectrum_constraint_hz
-
-def src_power(psd, nFFT, Fr, Sf, bb_freqs, srch_bins):
-	#apply a moving average across psd - softens noise effect
-	psd = movingaverage(psd, 1*srch_bins)
-	#fft_axis = Sf/2*np.linspace(-1, 1, nFFT) #fft_axis = np.fft.fftshift(f)
-	power_level_ch_fft = []
-
-	#compute power for left edge frequency
-	f = bb_freqs[0]
-	bin_n = (f+Sf/2)/Fr
-	power_level = float(sum(psd[0:int(bin_n+srch_bins/2)]))
-	power_level_ch_fft.append(power_level)
-
-	#compute power per frequency
-	for f in bb_freqs[1:]:
-		bin_n = (f+Sf/2)/Fr #freq = bin_n*Fr-Sf/2
-		power_level = float(sum(psd[int(bin_n-srch_bins/2):int(bin_n+srch_bins/2)]))
-		power_level_ch_fft.append(power_level)
-	return power_level_ch_fft
