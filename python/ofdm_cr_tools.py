@@ -228,6 +228,25 @@ def src_power_welch(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 		power_level_ch_welch.append(power_level)
 	return psd_welch_aligned, welch_axis_aligned, power_level_ch_welch
 
+def src_power(psd, nFFT, Fr, Sf, bb_freqs, srch_bins):
+	#apply a moving average across psd - softens noise effect
+	psd = movingaverage(psd, 1*srch_bins)
+	#fft_axis = Sf/2*np.linspace(-1, 1, nFFT) #fft_axis = np.fft.fftshift(f)
+	power_level_ch_fft = []
+
+	#compute power for left edge frequency
+	f = bb_freqs[0]
+	bin_n = (f+Sf/2)/Fr
+	power_level = float(sum(psd[0:int(bin_n+srch_bins/2)]))
+	power_level_ch_fft.append(power_level)
+
+	#compute power per frequency
+	for f in bb_freqs[1:]:
+		bin_n = (f+Sf/2)/Fr #freq = bin_n*Fr-Sf/2
+		power_level = float(sum(psd[int(bin_n-srch_bins/2):int(bin_n+srch_bins/2)]))
+		power_level_ch_fft.append(power_level)
+	return power_level_ch_fft
+
 #determine usefull carriers
 def _get_active_carriers(fft_len, occupied_carriers, pilot_carriers):
 	""" Returns a list of all carriers that at some point carry data or pilots. """
