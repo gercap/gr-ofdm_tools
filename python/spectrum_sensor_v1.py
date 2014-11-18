@@ -340,8 +340,9 @@ class _queue0_watcher(_threading.Thread):
 		if self.trunc > 0:
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
 
-		self.prev_power = [0]*len(self.ax_ch)
-		self.curr_power = [0]*len(self.ax_ch)
+		self.prev_power = np.array([0]*len(self.ax_ch))
+		self.curr_power = np.array([0]*len(self.ax_ch))
+		self.flag = False
 
 		self.verbose = verbose
 		self.logger = logger
@@ -423,15 +424,17 @@ class _queue0_watcher(_threading.Thread):
 			print 'noise_estimate dB (channel)', 10*np.log10(self.noise_estimate+1e-20)
 
 		self.prev_power = self.curr_power
-		self.curr_power = power_level_ch
+		self.curr_power = (1-0.8) * np.array(power_level_ch) + (0.8) * self.prev_power
 
-		#measure transmission rate
 		j = 0
 		for measure in self.curr_power:
-			if measure > self.prev_power[j] and measure > thr:
-				print 'detected flanck! at: ', self.ax_ch[j]*1e6, 'MHz'
+			if measure > self.prev_power[j] and measure > thr and self.flag == False:
+				print 'detected flanck!', self.ax_ch[j]/1e6, 'MHz'
+				self.flag = True
+			if self.flag == True and measure < thr:
+				self.flag = False
+				print 'detected negative flanck!' , self.ax_ch[j]/1e6, 'MHz'
 			j += 1
-
 
 		#compare channel power with detection threshold
 		spectrum_constraint_hz = []
