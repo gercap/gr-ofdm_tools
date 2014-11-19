@@ -228,8 +228,9 @@ class file_logger(_threading.Thread):
 
 
 class spectrum_sensor_v1(gr.hier_block2):
-	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space=1,
-	 search_bw=1, thr_leveler = 10, tune_freq=0, alpha_avg=1, test_duration=1, period=3600, trunc_band=1, verbose=False):
+	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space = 1,
+	 search_bw = 1, thr_leveler = 10, tune_freq = 0, alpha_avg = 1, test_duration = 1,
+	  period = 3600, trunc_band = 1, verbose = False, peak_alpha = 0):
 		gr.hier_block2.__init__(self,
 			"spectrum_sensor_v1",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -243,6 +244,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.tune_freq = tune_freq #center frequency
 		self.threshold = 0 #actual value of the threshold
 		self.alpha_avg = alpha_avg #averaging factor for noise level between consecutive measurements
+		self.peak_alpha = peak_alpha  #averaging factor for peak level between consecutive measurements
 
 		self.msgq0 = gr.msg_queue(2)
 		self.msgq1 = gr.msg_queue(2)
@@ -270,9 +272,15 @@ class spectrum_sensor_v1(gr.hier_block2):
 		#Watchers
 		#statistics and power
 		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
-		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration, trunc_band, verbose, self._logger)
+		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration,
+		  trunc_band, verbose, peak_alpha, self._logger)
 		#psd
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose, self._logger)
+
+	def set_peak_alpha(self, peak_alpha):
+		self.peak_alpha = peak_alpha
+		self._watcher0.peak_alpha = peak_alpha
+		self._watcher0.peak_alpha_o = peak_alpha
 
 #queue wathcer to log max psd
 class _queue1_watcher(_threading.Thread):
@@ -312,7 +320,7 @@ class _queue1_watcher(_threading.Thread):
 #queue wathcer to log statistics and max power per channel
 class _queue0_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, logger):
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, peak_alpha, logger):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -340,15 +348,16 @@ class _queue0_watcher(_threading.Thread):
 		if self.trunc > 0:
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
 
-		self.prev_power = np.array([0]*len(self.ax_ch))
-		self.curr_power = np.array([0]*len(self.ax_ch))
-		self.flag = False
+		self.prev_power = np.array([1e-11]*len(self.ax_ch))
+		self.curr_power = np.array([1e-11]*len(self.ax_ch))
+		self.flag = [False]*len(self.ax_ch)
+		self.peak_alpha = peak_alpha
+		self.peak_alpha_o = peak_alpha
 
 		self.verbose = verbose
 		self.logger = logger
 		self.keep_running = True
 		self.start()
-
 
 	def run(self):
 
@@ -423,21 +432,23 @@ class _queue0_watcher(_threading.Thread):
 		if self.verbose:
 			print 'noise_estimate dB (channel)', 10*np.log10(self.noise_estimate+1e-20)
 
-		'''
 		self.prev_power = self.curr_power
-		self.curr_power = (1-0.8) * np.array(power_level_ch) + (0.8) * self.prev_power
+		self.curr_power = (1-self.peak_alpha) * np.array(power_level_ch) + (self.peak_alpha) * self.prev_power
+		#self.curr_power = power_level_ch
 
-		if self.verbose:
-			j = 0
-			for measure in self.curr_power:
-				if measure > self.prev_power[j] and measure > thr and self.flag == False:
-					print 'detected flanck!', self.ax_ch[j]/1e6, 'MHz'
-					self.flag = True
-				if self.flag == True and measure < thr:
-					self.flag = False
-					print 'detected negative flanck!' , self.ax_ch[j]/1e6, 'MHz'
-				j += 1
-		'''
+		j = 0
+		for measure in self.curr_power:
+			if power_level_ch[j] > thr: print 'instant power > thr'
+			if measure > self.prev_power[j] and measure > thr and self.flag[j] == False:
+				print 'detected flanck!', self.ax_ch[j]/1e6, 'MHz', 'j', j
+				self.flag[j] = True
+				self.peak_alpha = 0
+			elif self.flag[j] == True and measure < thr:
+				#print ' '
+				print 'detected negative flanck!' , self.ax_ch[j]/1e6, 'MHz'
+				self.flag[j] = False
+				self.peak_alpha = self.peak_alpha_o
+			j += 1
 
 		#compare channel power with detection threshold
 		spectrum_constraint_hz = []

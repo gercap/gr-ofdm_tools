@@ -16,8 +16,10 @@ alpha_avg=$alpha_avg,
 test_duration=$test_duration,
 period=$period,
 trunc_band=$trunc_band,
-verbose=$verbose
+verbose=$verbose,
+peak_alpha=$peak_alpha
 )</make>
+<callback>set_peak_alpha($peak_alpha)</callback>
 	<param>
 		<name>Scanner FFT/Block length</name>
 		<key>fft_len</key>
@@ -101,6 +103,13 @@ verbose=$verbose
 		<name>Yes</name>
 		<key>True</key>
 	</option>
+	</param>
+
+	<param>
+		<name>Peak Alpha</name>
+		<key>peak_alpha</key>
+		<value>0.9</value>
+		<type>float</type>
 	</param>
 
 	<sink>
