@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>Spectrum Sensor (v1)</name>
-  <key>ofdm_tools_spectrum_sensor_v1</key>
+  <name>Flanck Detector (rate analyzer)</name>
+  <key>ofdm_tools_flanck_detector</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
-  <make>ofdm_tools.spectrum_sensor_v1(
+  <make>ofdm_tools.flanck_detector(
 fft_len=$fft_len,
 sens_per_sec=$sens_per_sec,
 sample_rate=$sample_rate,
@@ -16,7 +16,9 @@ alpha_avg=$alpha_avg,
 test_duration=$test_duration,
 period=$period,
 trunc_band=$trunc_band,
-verbose=$verbose
+verbose=$verbose,
+peak_alpha=$peak_alpha,
+subject_channels=$subject_channels
 )</make>
 	<param>
 		<name>Scanner FFT/Block length</name>
@@ -101,6 +103,20 @@ verbose=$verbose
 		<name>Yes</name>
 		<key>True</key>
 	</option>
+	</param>
+
+	<param>
+		<name>Peak Alpha</name>
+		<key>peak_alpha</key>
+		<value>0.9</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Subject Channels</name>
+		<key>subject_channels</key>
+		<value>[]</value>
+		<type>real_vector</type>
 	</param>
 
 	<sink>

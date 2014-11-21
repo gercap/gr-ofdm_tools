@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-# Copyright 2014 germanocapela at gmail dot com
-# spectrum sensor - multichannel energy detector
-# log the psd after a peak hold
-# log maximum power per channel
-#
+# Copyright 2014 <+YOU OR YOUR COMPANY+>.
+# 
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
@@ -226,13 +223,12 @@ class file_logger(_threading.Thread):
 			print 'logged to files'
 
 
-
-class spectrum_sensor_v1(gr.hier_block2):
+class flanck_detector(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space = 1,
 	 search_bw = 1, thr_leveler = 10, tune_freq = 0, alpha_avg = 1, test_duration = 1,
-	  period = 3600, trunc_band = 1, verbose = False):
+	  period = 3600, trunc_band = 1, verbose = False, peak_alpha = 0, subject_channels = []):
 		gr.hier_block2.__init__(self,
-			"spectrum_sensor_v1",
+			"flank detector",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
 			gr.io_signature(0,0,0))
 		self.fft_len = fft_len #lenght of the fft for spectral analysis
@@ -244,9 +240,11 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.tune_freq = tune_freq #center frequency
 		self.threshold = 0 #actual value of the threshold
 		self.alpha_avg = alpha_avg #averaging factor for noise level between consecutive measurements
+		self.peak_alpha = peak_alpha  #averaging factor for peak level between consecutive measurements
+		self.subject_channels = subject_channels #channels whose flancks will be analysed
+		
 
 		self.msgq0 = gr.msg_queue(2)
-		self.msgq1 = gr.msg_queue(2)
 
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
@@ -260,61 +258,23 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.multiply = blocks.multiply_const_vff(np.array([1.0/float(self.fft_len**2)]*fft_len))
 
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
-		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
-		self.connect(self.multiply, self.sink1)
 
 		#start periodic logging
-		self._logger = logger(period)
+		#self._logger = logger(period)
+		self._logger = None
 
 		#Watchers
 		#statistics and power
 		self._watcher0 = _queue0_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration,
-		  trunc_band, verbose, self._logger)
-		#psd
-		self._watcher1 = _queue1_watcher(self.msgq1, verbose, self._logger)
-
-#queue wathcer to log max psd
-class _queue1_watcher(_threading.Thread):
-	def __init__(self, rcvd_data, verbose, logger):
-		_threading.Thread.__init__(self)
-		self.setDaemon(1)
-		self.rcvd_data = rcvd_data
-
-		self.verbose = verbose
-		self.logger = logger
-		self.keep_running = True
-		self.start()
-
-	def run(self):
-		while self.keep_running:
-
-			msg = self.rcvd_data.delete_head()
-
-			if self.verbose:
-				itemsize = int(msg.arg1())
-				nitems = int(msg.arg2())
-				if nitems > 1:
-					start = itemsize * (nitems - 1)
-					s = s[start:start+itemsize]
-					print 'nitems in queue =', nitems
-
-			payload = msg.to_string()
-			complex_data = np.fromstring (payload, np.float32)
-
-			#cumulative log
-			self.logger.set_cumulative_psd_peaks(np.maximum(complex_data, self.logger.cumulative_psd_peaks))
-
-			#periodic log
-			self.logger.set_periodic_psd_peaks(np.maximum(complex_data, self.logger.periodic_psd_peaks))
-
+		  trunc_band, verbose, peak_alpha, subject_channels, self._logger)
 
 #queue wathcer to log statistics and max power per channel
 class _queue0_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, logger):
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, peak_alpha, subject_channels, logger):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -342,6 +302,19 @@ class _queue0_watcher(_threading.Thread):
 		if self.trunc > 0:
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
 
+		self.subject_channels = subject_channels # list of channels to be analysed by the flanck detector
+		self.idx_subject_channels = [0]*len(self.subject_channels) # aux list to index ax_ch
+		k = 0
+		for item in subject_channels: 
+			self.idx_subject_channels[k] = self.ax_ch.index(item)
+			k += 1
+		self.prev_power = np.array([1.0]*len(self.subject_channels))
+		self.curr_power = np.array([1.0]*len(self.subject_channels))
+
+		self.flag = [True]*len(self.subject_channels) #initial condition - high level (starts in pseudo-detection)
+		self.peak_alpha = np.array([0.0]*len(self.subject_channels)) #initial condition (starts in pseudo-detection)
+		self.peak_alpha_original =  peak_alpha #save original alpha to reset peak_alpha when negative flanck is detected
+
 		self.verbose = verbose
 		self.logger = logger
 		self.keep_running = True
@@ -349,10 +322,12 @@ class _queue0_watcher(_threading.Thread):
 
 	def run(self):
 
+		'''
 		self.logger.set_settings({'date':time.strftime("%y%m%d"), 'time':time.strftime("%H%M%S"), 'tune_freq':self.tune_freq,
 		 'sample_rate':self.sample_rate, 'fft_len':self.fft_len,'channel_space':self.channel_space, 'search_bw':self.search_bw,
 		  'test_duration':self.test_duration, 'sens_per_sec':self.sens_per_sec, 'n_measurements':0, 'noise_estimate':self.noise_estimate,
 		   'trunc_band':self.trunc_band, 'thr_leveler':self.thr_leveler})
+		'''
 
 		while self.keep_running:
 
@@ -370,35 +345,11 @@ class _queue0_watcher(_threading.Thread):
 			complex_data = np.fromstring (payload, np.float32)
 
 			#scan channels
-			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
-			#count cumulative measurements
-			self.logger.settings['n_measurements'] += 1
-			#count periodic measurements
-			self.logger.n_measurements_period += 1
-			self.logger.settings['n_measurements_period'] = self.logger.n_measurements_period
-			#get noise estimate
-			self.logger.settings['noise_estimate'] = self.noise_estimate
+			self.flank_detector(complex_data)
 
-			for el in spectrum_constraint_hz:
-				#count occurrences -> cumulative
-				if el in self.logger.cumulative_statistics:
-					self.logger.cumulative_statistics[el] += 1
-				else:
-					self.logger.cumulative_statistics[el] = 1
-				#count occurrences -> periodic
-				if el in self.logger.periodic_statistic:
-					self.logger.periodic_statistic[el] += 1
-				else:
-					self.logger.periodic_statistic[el] = 1
-
-			#update thread that logs data
-			self.logger.set_settings(self.logger.settings)
-			self.logger.set_n_measurements_period(self.logger.n_measurements_period)
-			self.logger.set_cumulative_statistics(self.logger.cumulative_statistics)
-			self.logger.set_periodic_statistic(self.logger.periodic_statistic)
 
 	#function that scans channels and compares with threshold to determine occupied / not occupied
-	def spectrum_scanner(self, samples):
+	def flank_detector(self, samples):
 
 		#measure power for each channel
 		power_level_ch = src_power(samples, self.fft_len, self.Fr, self.sample_rate, self.bb_freqs, self.srch_bins)
@@ -406,26 +357,48 @@ class _queue0_watcher(_threading.Thread):
 		#trunc channels outside useful band (filter curve) --> trunc band < sample_rate
 		if self.trunc > 0:
 			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
-		
-		#log maximum powers - cumulative
-		self.logger.set_cumulative_max_power(np.maximum(power_level_ch, self.logger.cumulative_max_power))
-
-		#log maximum powers - periodic
-		self.logger.set_periodic_max_power(np.maximum(power_level_ch, self.logger.periodic_max_power))
 
 		#compute noise estimate (averaged)
 		min_power = np.amin (power_level_ch)
 		self.noise_estimate = (1-self.alpha_avg) * self.noise_estimate + self.alpha_avg * min_power
 		thr = self.noise_estimate * self.thr_leveler
+		thr2 = thr*20 #2nd thrshold to limit fast growing
 		if self.verbose:
 			print 'noise_estimate dB (channel)', 10*np.log10(self.noise_estimate+1e-20)
 
-		#compare channel power with detection threshold
-		spectrum_constraint_hz = []
-		i = 0
-		for item in power_level_ch:
-			if item>thr:
-				spectrum_constraint_hz.append(self.ax_ch[i])
-			i += 1
+		self.prev_power[:] = self.curr_power[:]
+		k = 0
+		for item in self.idx_subject_channels:
+			self.curr_power[k] = (1-self.peak_alpha[k]) * np.clip(power_level_ch[item], 0, thr2) + (self.peak_alpha[k]) * self.prev_power[k]
 
-		return spectrum_constraint_hz
+			if self.curr_power[k] < thr2 and self.curr_power[k] > thr: # kind of an AGC for weaker channels
+				self.curr_power[k] = thr2
+
+			if power_level_ch[item] > thr: print 'instant power > thr'
+			if self.curr_power[k] > self.prev_power[k] and self.curr_power[k] > thr and self.flag[k] == False:
+				print 'detected flanck!', self.ax_ch[item]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
+				self.flag[k] = True
+				self.peak_alpha[k] = 0
+			elif self.flag[k] == True and self.curr_power[k] < thr:
+				print 'detected negative flanck!' , self.ax_ch[item]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
+				self.flag[k] = False
+				self.peak_alpha[k] = self.peak_alpha_original
+			k += 1
+
+		'''
+		#count cumulative measurements
+		self.logger.settings['n_measurements'] += 1
+		#count periodic measurements
+		self.logger.n_measurements_period += 1
+		self.logger.settings['n_measurements_period'] = self.logger.n_measurements_period
+		#get noise estimate
+		self.logger.settings['noise_estimate'] = self.noise_estimate
+		'''
+
+		#update thread that logs data
+		'''
+		self.logger.set_settings(self.logger.settings)
+		self.logger.set_n_measurements_period(self.logger.n_measurements_period)
+		self.logger.set_cumulative_statistics(self.logger.cumulative_statistics)
+		self.logger.set_periodic_statistic(self.logger.periodic_statistic)
+		'''

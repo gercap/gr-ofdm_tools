@@ -30,5 +30,6 @@ install(FILES
     ofdm_tools_fosphor_main.xml
     ofdm_tools_spectrum_logger.xml
     ofdm_tools_psd_logger.xml
-    ofdm_tools_spectrum_sensor_v1.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_spectrum_sensor_v1.xml
+    ofdm_tools_flanck_detector.xml DESTINATION share/gnuradio/grc/blocks
 )

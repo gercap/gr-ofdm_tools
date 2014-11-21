@@ -45,7 +45,8 @@ GR_PYTHON_INSTALL(
     fosphor_main.py
     spectrum_logger.py
     psd_logger.py
-    spectrum_sensor_v1.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    spectrum_sensor_v1.py
+    flanck_detector.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

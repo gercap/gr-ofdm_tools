@@ -59,6 +59,7 @@ from fosphor_main import fosphor_main
 from spectrum_logger import spectrum_logger
 from psd_logger import psd_logger
 from spectrum_sensor_v1 import spectrum_sensor_v1
+from flanck_detector import flanck_detector
 
 
 
