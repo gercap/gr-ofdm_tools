@@ -27,7 +27,7 @@ import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
 import numpy as np
-import time, scipy.io
+import time, datetime
 import gnuradio.gr.gr_threading as _threading
 from scipy import signal as sg
 import pmt
@@ -39,7 +39,7 @@ from ofdm_cr_tools import frange, movingaverage, src_power
 #log files information
 
 class logger(object):
-	def __init__(self, periodicity):
+	def __init__(self, periodicity, test_duration):
 		start_dat = time.strftime("%y%m%d")
 		start_tim = time.strftime("%H%M%S")
 
@@ -48,6 +48,8 @@ class logger(object):
 		self.directory = home + '/sensing' + '-' + start_dat + '-' + time.strftime("%H%M") + '/'
 		if not os.path.exists(self.directory):
 			os.makedirs(self.directory)
+
+		self.stop_time = datetime.datetime.now() + datetime.timedelta(seconds=test_duration)
 
 		#initialize path for cumulative files
 		self.path_cumulative_psd = self.directory + 'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
@@ -90,7 +92,7 @@ class logger(object):
 			self.path_periodic_psd, self.periodic_psd_peaks,
 			self.max_power_file, self.path_cumulative_max_power, self.cumulative_max_power,
 			self.path_periodic_max_power, self.periodic_max_power,
-			self.path_periodic_stat, self.n_measurements_period, self.reset_periodic_vars)
+			self.path_periodic_stat, self.n_measurements_period, self.reset_periodic_vars, self.stop_time)
 
 	def reset_periodic_vars(self):
 		self.periodic_psd_peaks = None
@@ -140,7 +142,7 @@ class file_logger(_threading.Thread):
 	 path_periodic_psd, periodic_psd_peaks,
 	 max_power_file, path_cumulative_max_power, cumulative_max_power,
 	 path_periodic_max_power, periodic_max_power,
-	 path_periodic_stat, n_measurements_period, reset_periodic_vars):
+	 path_periodic_stat, n_measurements_period, reset_periodic_vars, stop_time):
 
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
@@ -173,6 +175,7 @@ class file_logger(_threading.Thread):
 		self.reset_periodic_vars = reset_periodic_vars
 
 		self.keep_running = True
+		self.stop_time = stop_time
 		self.start()
 
 	def run(self):
@@ -225,6 +228,9 @@ class file_logger(_threading.Thread):
 			time.sleep(self.periodicity)
 			print 'logged to files'
 
+			if datetime.datetime.now() > self.stop_time:
+				print 'test expired - stopping logging thread'
+				self.keep_running = False
 
 
 class spectrum_sensor_v1(gr.hier_block2):
