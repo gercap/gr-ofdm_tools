@@ -367,9 +367,9 @@ class _queue0_watcher(_threading.Thread):
 			if self.curr_power[k] < thr2 and self.curr_power[k] > thr: # kind of an AGC for weaker channels
 				self.curr_power[k] = thr2
 
-			if power_level_ch[channel] > thr: print 'instant power > thr'
+			#if power_level_ch[channel] > thr: print 'instant power > thr'
 			if self.curr_power[k] > self.prev_power[k] and self.curr_power[k] > thr and self.flag[k] == False:
-				print 'detected flanck!', self.ax_ch[channel]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
+				#print 'detected flanck!', self.ax_ch[channel]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
 				self.flag[k] = True
 				self.peak_alpha[k] = 0
 
@@ -385,7 +385,7 @@ class _queue0_watcher(_threading.Thread):
 					self.logger.periodic_statistic[self.ax_ch[channel]] = 1
 
 			elif self.flag[k] == True and self.curr_power[k] < thr:
-				print 'detected negative flanck!' , self.ax_ch[channel]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
+				#print 'detected negative flanck!' , self.ax_ch[channel]/1e6, 'MHz', self.subject_channels[k]/1e6, 'MHz'
 				self.flag[k] = False
 				self.peak_alpha[k] = self.peak_alpha_original
 			k += 1

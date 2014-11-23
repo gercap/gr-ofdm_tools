@@ -272,7 +272,7 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.connect(self.multiply, self.sink1)
 
 		#start periodic logging
-		self._logger = logger(period)
+		self._logger = logger(period, test_duration)
 
 		#Watchers
 		#statistics and power
