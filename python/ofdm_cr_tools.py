@@ -25,8 +25,6 @@ from gnuradio.fft import window
 from gnuradio.filter import firdes
 from grc_gnuradio import blks2 as grc_blks2
 import gnuradio.gr.gr_threading as _threading
-import osmosdr
-
 
 import xmlrpclib, math, random, string
 import numpy as np

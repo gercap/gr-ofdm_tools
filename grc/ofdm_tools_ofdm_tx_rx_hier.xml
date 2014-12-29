@@ -24,7 +24,7 @@
     <type>raw</type>
   </param>
   <param>
-    <name>Bits/Symb Pld (1/2/3)</name>
+    <name>Bits/Symb Pld (1,2,3,4)</name>
     <key>payload_bps</key>
     <value>2</value>
     <type>int</type>

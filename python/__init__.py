@@ -62,9 +62,7 @@ from spectrum_sensor_v1 import spectrum_sensor_v1
 from flanck_detector import flanck_detector
 from ofdm_tx_rx_hier import ofdm_tx_rx_hier
 
-
-
-
+import ofdm_txrx_modules
 import ofdm_cr_tools
 
 #

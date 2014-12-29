@@ -27,6 +27,7 @@ from gnuradio import blocks
 from gnuradio import digital
 from gnuradio import gr
 from gnuradio.filter import firdes
+import ofdm_tools
 
 class ofdm_tx_rx_hier(gr.hier_block2):
 
@@ -53,7 +54,7 @@ class ofdm_tx_rx_hier(gr.hier_block2):
         # Blocks
         ##################################################
         self.tag_gate_tx = blocks.tag_gate(gr.sizeof_gr_complex * 1, False)
-        self.ofdm_tx = digital.ofdm_tx(
+        self.ofdm_tx = ofdm_tools.ofdm_txrx_modules.ofdm_tx(
         	  fft_len=fft_len, cp_len=fft_len/4,
         	  packet_length_tag_key=len_tag_key,
         	  bps_header=1,
@@ -62,7 +63,7 @@ class ofdm_tx_rx_hier(gr.hier_block2):
         	  debug_log=False,
         	  scramble_bits=False
         	 )
-        self.ofdm_rx = digital.ofdm_rx(
+        self.ofdm_rx = ofdm_tools.ofdm_txrx_modules.ofdm_rx(
         	  fft_len=fft_len, cp_len=fft_len/4,
         	  frame_length_tag_key='frame_'+"rx_len",
         	  packet_length_tag_key="rx_len",
