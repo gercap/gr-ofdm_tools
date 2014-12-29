@@ -46,7 +46,8 @@ GR_PYTHON_INSTALL(
     spectrum_logger.py
     psd_logger.py
     spectrum_sensor_v1.py
-    flanck_detector.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    flanck_detector.py
+    ofdm_tx_rx_hier.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

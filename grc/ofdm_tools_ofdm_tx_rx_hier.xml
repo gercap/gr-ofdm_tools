@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<block>
+  <name>ofdm_tx_rx_hier</name>
+  <key>ofdm_tools_ofdm_tx_rx_hier</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.ofdm_tx_rx_hier(
+    samp_rate=$samp_rate,
+    fft_len=$fft_len,
+    payload_bps=$payload_bps,
+)</make>
+  <callback>set_samp_rate($samp_rate)</callback>
+  <callback>set_fft_len($fft_len)</callback>
+  <param>
+    <name>samp_rate</name>
+    <key>samp_rate</key>
+    <value>125000</value>
+    <type>raw</type>
+  </param>
+  <param>
+    <name>fft_len</name>
+    <key>fft_len</key>
+    <value>64</value>
+    <type>raw</type>
+  </param>
+  <param>
+    <name>Bits/Symb Pld (1/2/3)</name>
+    <key>payload_bps</key>
+    <value>2</value>
+    <type>int</type>
+  </param>
+  <sink>
+    <name>tagged stream in</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </sink>
+  <sink>
+    <name>radio in</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </sink>
+  <source>
+    <name>tagged stream out</name>
+    <type>byte</type>
+    <vlen>1</vlen>
+  </source>
+  <source>
+    <name>radio out</name>
+    <type>complex</type>
+    <vlen>1</vlen>
+  </source>
+  <doc>
+
+an OFDM transceiver - tx path and rx path</doc>
+</block>
