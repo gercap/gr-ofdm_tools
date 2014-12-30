@@ -31,7 +31,7 @@ import ofdm_tools
 
 class ofdm_tx_rx_hier(gr.hier_block2):
 
-    def __init__(self, samp_rate=125000, fft_len=64, payload_bps=2):
+    def __init__(self, fft_len=64, payload_bps=2):
         gr.hier_block2.__init__(
             self, "OFDM TX RX Hier paths",
             gr.io_signaturev(2, 2, [gr.sizeof_char*1, gr.sizeof_gr_complex*1]),
@@ -41,7 +41,6 @@ class ofdm_tx_rx_hier(gr.hier_block2):
         ##################################################
         # Parameters
         ##################################################
-        self.samp_rate = samp_rate
         self.fft_len = fft_len
         self.payload_bps = payload_bps
 
@@ -86,14 +85,6 @@ class ofdm_tx_rx_hier(gr.hier_block2):
         self.connect((self.multiply_const_tx, 0), (self, 1))
         self.connect((self.ofdm_tx, 0), (self.tag_gate_tx, 0))
         self.connect((self.tag_gate_tx, 0), (self.multiply_const_tx, 0))
-
-
-
-    def get_samp_rate(self):
-        return self.samp_rate
-
-    def set_samp_rate(self, samp_rate):
-        self.samp_rate = samp_rate
 
     def get_fft_len(self):
         return self.fft_len

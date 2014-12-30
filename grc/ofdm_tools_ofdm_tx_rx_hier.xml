@@ -5,18 +5,10 @@
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ofdm_tx_rx_hier(
-    samp_rate=$samp_rate,
     fft_len=$fft_len,
     payload_bps=$payload_bps,
 )</make>
-  <callback>set_samp_rate($samp_rate)</callback>
   <callback>set_fft_len($fft_len)</callback>
-  <param>
-    <name>samp_rate</name>
-    <key>samp_rate</key>
-    <value>125000</value>
-    <type>raw</type>
-  </param>
   <param>
     <name>fft_len</name>
     <key>fft_len</key>
