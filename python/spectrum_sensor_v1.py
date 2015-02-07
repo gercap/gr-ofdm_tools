@@ -39,7 +39,7 @@ from ofdm_cr_tools import frange, movingaverage, src_power
 #log files information
 
 class logger(object):
-	def __init__(self, periodicity, test_duration):
+	def __init__(self, fft_len, periodicity, test_duration):
 		start_dat = time.strftime("%y%m%d")
 		start_tim = time.strftime("%H%M%S")
 
@@ -51,10 +51,13 @@ class logger(object):
 
 		self.stop_time = datetime.datetime.now() + datetime.timedelta(seconds=test_duration)
 
+		#--------cumulatives-------
 		#initialize path for cumulative files
-		self.path_cumulative_psd = self.directory + 'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
-		self.path_cumulative_stat = self.directory + 'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log'
-		self.path_cumulative_max_power = self.directory + 'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'
+		self.path_cumulative_psd = self.directory + 'sdr_psd_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz' #file to log max psd - cumulative
+		self.path_cumulative_stat = self.directory + 'sdr_ss_cumulative_log' + '-' + start_dat + '-' + start_tim + '.log' #file to log detections - cumulative
+		self.path_cumulative_max_power = self.directory + 'sdr_max_power_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz' #file to log max power per channel - cumulative
+		#--------waterfall---------
+		self.path_cumulative_waterfall = self.directory + 'sdr_waterfall_cumulative_log' + '-' + start_dat + '-' + start_tim + '.matz'#file to log waterfall- cumulative
 
 		#initialize cumulative file logs
 		self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
@@ -63,13 +66,19 @@ class logger(object):
 		print 'successfully created', self.psd_file
 		self.max_power_file = open(self.path_cumulative_max_power,'w')
 		print 'successfully created', self.max_power_file
+		#--------waterfall---------
+		self.waterfall_file = open(self.path_cumulative_waterfall,'w')
+		print 'successfully created', self.waterfall_file
 
 		#initialize cumulative vars
 		self.cumulative_statistics = {}
 		self.settings = {} #valid for periodic and cumulative measurements
-		self.cumulative_psd_peaks = None
+		self.cumulative_psd = None
 		self.cumulative_max_power = None
+		#--------waterfall---------
+		self.cumulative_waterfall = []
 
+		#--------periodics-------
 		#variable for periodicity of periodic logs
 		self.periodicity = periodicity
 
@@ -84,13 +93,12 @@ class logger(object):
 		self.periodic_max_power = None
 		self.n_measurements_period = 0
 
-		#initialize log thread
-		self._file_logger = file_logger(self.periodicity, self.directory,
-			self.cumulative_stat_file, self.path_cumulative_stat,
-			self.settings, self.cumulative_statistics, self.periodic_statistic,
-			self.psd_file, self.path_cumulative_psd, self.cumulative_psd_peaks,
-			self.path_periodic_psd, self.periodic_psd_peaks,
+		#initialize log thread --------cumulatives and periodics-------
+		self._file_logger = file_logger(fft_len, self.periodicity, self.directory,
+			self.cumulative_stat_file, self.path_cumulative_stat, self.settings, self.cumulative_statistics, self.periodic_statistic,
+			self.psd_file, self.path_cumulative_psd, self.cumulative_psd, self.path_periodic_psd, self.periodic_psd_peaks,
 			self.max_power_file, self.path_cumulative_max_power, self.cumulative_max_power,
+			self.waterfall_file, self.path_cumulative_waterfall, self.cumulative_waterfall,
 			self.path_periodic_max_power, self.periodic_max_power,
 			self.path_periodic_stat, self.n_measurements_period, self.reset_periodic_vars, self.stop_time)
 
@@ -99,10 +107,12 @@ class logger(object):
 		self.periodic_statistic = {}
 		self.periodic_max_power = None
 		self.n_measurements_period = 0
+		#---waterfall exception---> cumulative but variable resets
+		self.cumulative_waterfall = []
 
-	def set_cumulative_psd_peaks(self, cumulative_psd_peaks):
-		self.cumulative_psd_peaks = cumulative_psd_peaks
-		self._file_logger.cumulative_psd_peaks = cumulative_psd_peaks
+	def set_cumulative_psd(self, cumulative_psd):
+		self.cumulative_psd = cumulative_psd
+		self._file_logger.cumulative_psd = cumulative_psd
 
 	def set_periodic_psd_peaks(self, periodic_psd_peaks):
 		self.periodic_psd_peaks = periodic_psd_peaks
@@ -132,15 +142,20 @@ class logger(object):
 		self.periodic_max_power = periodic_max_power
 		self._file_logger.periodic_max_power = periodic_max_power
 
+	def set_cumulative_waterfall(self, cumulative_waterfall):
+		self.cumulative_waterfall = cumulative_waterfall
+		self._file_logger.cumulative_waterfall = cumulative_waterfall
+
 
 #queue wathcer to log max psd
 class file_logger(_threading.Thread):
-	def __init__(self, periodicity, directory,
+	def __init__(self, fft_len, periodicity, directory,
 	 cumulative_stat_file, path_cumulative_stat,
 	 settings, cumulative_statistics, periodic_statistic,
-	 psd_file, path_cumulative_psd, cumulative_psd_peaks,
+	 psd_file, path_cumulative_psd, cumulative_psd,
 	 path_periodic_psd, periodic_psd_peaks,
 	 max_power_file, path_cumulative_max_power, cumulative_max_power,
+	 waterfall_file, path_cumulative_waterfall, cumulative_waterfall,
 	 path_periodic_max_power, periodic_max_power,
 	 path_periodic_stat, n_measurements_period, reset_periodic_vars, stop_time):
 
@@ -148,6 +163,7 @@ class file_logger(_threading.Thread):
 		self.setDaemon(1)
 		self.periodicity = periodicity
 		self.directory = directory
+		self.fft_len = fft_len
 
 		self.cumulative_stat_file = cumulative_stat_file
 		self.path_cumulative_stat = path_cumulative_stat
@@ -158,7 +174,7 @@ class file_logger(_threading.Thread):
 
 		self.psd_file = psd_file
 		self.path_cumulative_psd = path_cumulative_psd
-		self.cumulative_psd_peaks = cumulative_psd_peaks
+		self.cumulative_psd = cumulative_psd
 		self.path_periodic_psd = path_periodic_psd
 		self.periodic_psd_peaks = periodic_psd_peaks
 
@@ -166,6 +182,10 @@ class file_logger(_threading.Thread):
 		self.path_cumulative_max_power = path_cumulative_max_power
 		self.cumulative_max_power = cumulative_max_power
 		self.periodic_max_power = periodic_max_power
+
+		self.waterfall_file = waterfall_file
+		self.path_cumulative_waterfall = path_cumulative_waterfall
+		self.cumulative_waterfall = cumulative_waterfall
 
 		self.path_periodic_stat = path_periodic_stat
 		self.path_periodic_max_power = path_periodic_max_power
@@ -181,7 +201,7 @@ class file_logger(_threading.Thread):
 	def run(self):
 		while self.keep_running:
 
-			# save comulative statistics
+			# save cumulative statistics
 			self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
 			self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
 			self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
@@ -197,7 +217,7 @@ class file_logger(_threading.Thread):
 
 			#save cumulative psd
 			self.psd_file = open(self.path_cumulative_psd,'w')
-			np.save(self.psd_file, self.cumulative_psd_peaks)
+			np.save(self.psd_file, self.cumulative_psd)
 
 			#save periodic psd
 			periodic_psd_file = open(self.path_periodic_psd,'w')
@@ -206,6 +226,11 @@ class file_logger(_threading.Thread):
 			#save cumulative max powers
 			self.max_power_file = open(self.path_cumulative_max_power,'w')
 			np.save(self.max_power_file, self.cumulative_max_power)
+
+			#--------waterfall---------> 'a' stands for append so its cumulative on the file
+			#save waterfall -> cumulative/appended
+			self.waterfall_file = open(self.path_cumulative_waterfall,'a')
+			np.savetxt(self.waterfall_file, self.cumulative_waterfall, delimiter=',')
 
 			#save periodic max powers
 			periodic_max_power_file = open(self.path_periodic_max_power,'w')
@@ -225,12 +250,52 @@ class file_logger(_threading.Thread):
 			self.periodic_max_power = None
 			self.reset_periodic_vars()
 
+			#--------reset waterfall--------
+			self.cumulative_waterfall = []
+
 			time.sleep(self.periodicity)
 			print 'logged to files'
 
 			if datetime.datetime.now() > self.stop_time:
 				print 'test expired - stopping logging thread'
 				self.keep_running = False
+
+		#--------saves data for the last time---------
+		# save cumulative statistics
+		self.cumulative_stat_file = open(self.path_cumulative_stat,'w')
+		self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
+		self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
+		self.cumulative_stat_file.write('settings ' + str(self.settings) + '\n')
+		self.cumulative_stat_file.write('statistics ' + str(self.cumulative_statistics) + '\n')
+
+		# save periodic stats
+		periodic_stat_file = open(self.path_periodic_stat,'w')
+		periodic_stat_file.write('settings ' + str(self.settings) + '\n')
+		periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
+		periodic_stat_file.write('settings ' + str(self.settings) + '\n')
+		periodic_stat_file.write('statistics ' + str(self.periodic_statistic) + '\n')
+
+		#save cumulative psd
+		self.psd_file = open(self.path_cumulative_psd,'w')
+		np.save(self.psd_file, self.cumulative_psd)
+
+		#save periodic psd
+		periodic_psd_file = open(self.path_periodic_psd,'w')
+		np.save(periodic_psd_file, self.periodic_psd_peaks)
+
+		#save cumulative max powers
+		self.max_power_file = open(self.path_cumulative_max_power,'w')
+		np.save(self.max_power_file, self.cumulative_max_power)
+
+		#--------waterfall--------
+		#save waterfall -> cumulative/appended
+		self.waterfall_file = open(self.path_cumulative_waterfall,'a')
+		np.savetxt(self.waterfall_file, self.cumulative_waterfall, delimiter=',')
+
+		#save periodic max powers
+		periodic_max_power_file = open(self.path_periodic_max_power,'w')
+		np.save(periodic_max_power_file, self.periodic_max_power)
+		print 'last log to files'
 
 
 class spectrum_sensor_v1(gr.hier_block2):
@@ -267,12 +332,19 @@ class spectrum_sensor_v1(gr.hier_block2):
 
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
 		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
+		
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
 		self.connect(self.multiply, self.sink1)
+		
+		#-----waterfall-----> different decimation because operates in a slower rate
+		self.msgq2 = gr.msg_queue(2)
+		self.sink2 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq2, True)
+		self.one_in_n_waterfall = blocks.keep_one_in_n(gr.sizeof_float * self.fft_len, self.sens_per_sec) #keep 1 per second...
+		self.connect(self.multiply, self.one_in_n_waterfall, self.sink2)
 
 		#start periodic logging
-		self._logger = logger(period, test_duration)
+		self._logger = logger(self.fft_len, period, test_duration)
 
 		#Watchers
 		#statistics and power
@@ -281,6 +353,42 @@ class spectrum_sensor_v1(gr.hier_block2):
 		  trunc_band, verbose, self._logger)
 		#psd
 		self._watcher1 = _queue1_watcher(self.msgq1, verbose, self._logger)
+		#waterfall
+		self._watcher2 = _queue2_watcher(self.msgq2, verbose, self._logger)
+
+#queue wathcer to log waterfall
+class _queue2_watcher(_threading.Thread):
+	def __init__(self, rcvd_data, verbose, logger):
+		_threading.Thread.__init__(self)
+		self.setDaemon(1)
+		self.rcvd_data = rcvd_data
+
+		self.verbose = verbose
+		self.logger = logger
+		self.keep_running = True
+		self.start()
+
+	def run(self):
+		while self.keep_running:
+
+			msg = self.rcvd_data.delete_head()
+
+			if self.verbose:
+				itemsize = int(msg.arg1())
+				nitems = int(msg.arg2())
+				if nitems > 1:
+					start = itemsize * (nitems - 1)
+					s = s[start:start+itemsize]
+					print 'nitems in queue =', nitems
+
+			payload = msg.to_string()
+			float_data = np.fromstring (payload, np.float32)
+
+			#append to current period variable which then is appended to the cumulative file and reset
+			self.logger.cumulative_waterfall.append(float_data)
+
+			#update cumulative log
+			self.logger.set_cumulative_waterfall(self.logger.cumulative_waterfall)
 
 #queue wathcer to log max psd
 class _queue1_watcher(_threading.Thread):
@@ -308,14 +416,13 @@ class _queue1_watcher(_threading.Thread):
 					print 'nitems in queue =', nitems
 
 			payload = msg.to_string()
-			complex_data = np.fromstring (payload, np.float32)
+			float_data = np.fromstring (payload, np.float32)
 
 			#cumulative log
-			self.logger.set_cumulative_psd_peaks(np.maximum(complex_data, self.logger.cumulative_psd_peaks))
+			self.logger.set_cumulative_psd(np.maximum(float_data, self.logger.cumulative_psd))
 
 			#periodic log
-			self.logger.set_periodic_psd_peaks(np.maximum(complex_data, self.logger.periodic_psd_peaks))
-
+			self.logger.set_periodic_psd_peaks(np.maximum(float_data, self.logger.periodic_psd_peaks))
 
 #queue wathcer to log statistics and max power per channel
 class _queue0_watcher(_threading.Thread):
@@ -373,10 +480,10 @@ class _queue0_watcher(_threading.Thread):
 
 			#convert received data to numpy vector
 			payload = msg.to_string()
-			complex_data = np.fromstring (payload, np.float32)
+			float_data = np.fromstring (payload, np.float32)
 
 			#scan channels
-			spectrum_constraint_hz = self.spectrum_scanner(complex_data)
+			spectrum_constraint_hz = self.spectrum_scanner(float_data)
 			#count cumulative measurements
 			self.logger.settings['n_measurements'] += 1
 			#count periodic measurements
