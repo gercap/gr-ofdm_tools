@@ -230,7 +230,7 @@ class file_logger(_threading.Thread):
 			#--------waterfall---------> 'a' stands for append so its cumulative on the file
 			#save waterfall -> cumulative/appended
 			self.waterfall_file = open(self.path_cumulative_waterfall,'a')
-			np.savetxt(self.waterfall_file, self.cumulative_waterfall, delimiter=',')
+			np.savetxt(self.waterfall_file, self.cumulative_waterfall, fmt='%1.2e',delimiter=',') #saves w/ 2 decimals precision to save memory...
 
 			#save periodic max powers
 			periodic_max_power_file = open(self.path_periodic_max_power,'w')
@@ -290,7 +290,7 @@ class file_logger(_threading.Thread):
 		#--------waterfall--------
 		#save waterfall -> cumulative/appended
 		self.waterfall_file = open(self.path_cumulative_waterfall,'a')
-		np.savetxt(self.waterfall_file, self.cumulative_waterfall, delimiter=',')
+		np.savetxt(self.waterfall_file, self.cumulative_waterfall, fmt='%1.2e',delimiter=',') #saves w/ 2 decimals precision to save memory...
 
 		#save periodic max powers
 		periodic_max_power_file = open(self.path_periodic_max_power,'w')
