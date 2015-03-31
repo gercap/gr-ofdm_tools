@@ -29,6 +29,7 @@ from gnuradio import fft
 import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
+from bashplotlib.histogram import plot_hist
 
 class ascii_plot(gr.hier_block2):
 
@@ -95,7 +96,7 @@ class ascii_plot(gr.hier_block2):
 		return self.average
 
 
-#main cognitive engine thread
+#main thread
 class main_thread(_threading.Thread):
 	def __init__(self, rcvd_data, fft_len, sample_rate, tune_freq, length, height):
 		_threading.Thread.__init__(self)

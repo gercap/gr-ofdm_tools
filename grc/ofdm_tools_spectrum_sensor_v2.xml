@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>Spectrum Sensor (v1)</name>
-  <key>ofdm_tools_spectrum_sensor_v1</key>
+  <name>Spectrum Sensor (v2)</name>
+  <key>ofdm_tools_spectrum_sensor_v2</key>
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
-  <make>ofdm_tools.spectrum_sensor_v1(
+  <make>ofdm_tools.spectrum_sensor_v2(
 fft_len=$fft_len,
 sens_per_sec=$sens_per_sec,
 sample_rate=$sample_rate,
@@ -19,6 +19,7 @@ trunc_band=$trunc_band,
 verbose=$verbose,
 psd=$psd,
 waterfall=$waterfall,
+display=$display,
 subject_channels=$subject_channels
 )</make>
 <callback>set_tune_freq($tune_freq)</callback>
@@ -136,6 +137,28 @@ subject_channels=$subject_channels
 	</param>
 
 	<param>
+		<name>Output realtime data?</name>
+		<key>display</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Graph</name>
+		<key>'g'</key>
+	</option>
+	<option>
+		<name>Table</name>
+		<key>'t'</key>
+	</option>
+	<option>
+		<name>Out Top4 Only</name>
+		<key>'o'</key>
+	</option>
+	</param>
+
+	<param>
 		<name>Table Subject Channels</name>
 		<key>subject_channels</key>
 		<value>[]</value>
@@ -147,5 +170,35 @@ subject_channels=$subject_channels
 		<type>complex</type>
 		<vlen>1</vlen>
 	</sink>
+
+  <source>
+    <name>freq_out_0</name>
+    <type>message</type>
+    <optional>False</optional>
+  </source>
+
+  <source>
+    <name>freq_out_1</name>
+    <type>message</type>
+    <optional>False</optional>
+  </source>
+  
+    <source>
+    <name>freq_out_2</name>
+    <type>message</type>
+    <optional>False</optional>
+  </source>
+
+  <source>
+    <name>freq_out_3</name>
+    <type>message</type>
+    <optional>False</optional>
+  </source>
+
+  <doc>
+Spectrum sensor w/ statistics and logs
+Optionally outputs top 4 channels (deviation from tune frequency)
+</doc>
+
 
 </block>

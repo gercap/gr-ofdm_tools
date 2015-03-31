@@ -2,7 +2,7 @@
 ##################################################
 # Gnuradio Python Flow Graph
 # Title: Ascii Sink
-# Generated: Thu Mar 12 21:43:55 2015
+# Generated: Mon Mar 30 21:35:00 2015
 ##################################################
 
 from PyQt4 import Qt
@@ -21,7 +21,7 @@ import time
 from distutils.version import StrictVersion
 class ascii_sink(gr.top_block, Qt.QWidget):
 
-    def __init__(self, nfft=1024, samp_rate=2e6):
+    def __init__(self, samp_rate=1e6, nfft=4096):
         gr.top_block.__init__(self, "Ascii Sink")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Ascii Sink")
@@ -48,13 +48,14 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         ##################################################
         # Parameters
         ##################################################
-        self.nfft = nfft
         self.samp_rate = samp_rate
+        self.nfft = nfft
 
         ##################################################
         # Variables
         ##################################################
         self.tune_freq = tune_freq = 97e6
+        self.samp_rate_s = samp_rate_s = samp_rate
         self.rf_gain = rf_gain = 5
         self.ln = ln = 30
         self.if_gain = if_gain = 10
@@ -88,6 +89,29 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         self._tune_freq_slider.valueChanged.connect(self.set_tune_freq)
         self._tune_freq_layout.addWidget(self._tune_freq_slider)
         self.top_layout.addLayout(self._tune_freq_layout)
+        self._samp_rate_s_layout = Qt.QVBoxLayout()
+        self._samp_rate_s_tool_bar = Qt.QToolBar(self)
+        self._samp_rate_s_layout.addWidget(self._samp_rate_s_tool_bar)
+        self._samp_rate_s_tool_bar.addWidget(Qt.QLabel("samp_rate_s"+": "))
+        class qwt_counter_pyslot(Qwt.QwtCounter):
+            def __init__(self, parent=None):
+                Qwt.QwtCounter.__init__(self, parent)
+            @pyqtSlot('double')
+            def setValue(self, value):
+                super(Qwt.QwtCounter, self).setValue(value)
+        self._samp_rate_s_counter = qwt_counter_pyslot()
+        self._samp_rate_s_counter.setRange(250e3, 8e6, 250e3)
+        self._samp_rate_s_counter.setNumButtons(2)
+        self._samp_rate_s_counter.setValue(self.samp_rate_s)
+        self._samp_rate_s_tool_bar.addWidget(self._samp_rate_s_counter)
+        self._samp_rate_s_counter.valueChanged.connect(self.set_samp_rate_s)
+        self._samp_rate_s_slider = Qwt.QwtSlider(None, Qt.Qt.Horizontal, Qwt.QwtSlider.BottomScale, Qwt.QwtSlider.BgSlot)
+        self._samp_rate_s_slider.setRange(250e3, 8e6, 250e3)
+        self._samp_rate_s_slider.setValue(self.samp_rate_s)
+        self._samp_rate_s_slider.setMinimumWidth(200)
+        self._samp_rate_s_slider.valueChanged.connect(self.set_samp_rate_s)
+        self._samp_rate_s_layout.addWidget(self._samp_rate_s_slider)
+        self.top_layout.addLayout(self._samp_rate_s_layout)
         self._rf_gain_layout = Qt.QVBoxLayout()
         self._rf_gain_tool_bar = Qt.QToolBar(self)
         self._rf_gain_layout.addWidget(self._rf_gain_tool_bar)
@@ -227,7 +251,7 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         self._av_layout.addWidget(self._av_slider)
         self.top_layout.addLayout(self._av_layout)
         self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + "" )
-        self.osmosdr_source_0.set_sample_rate(samp_rate)
+        self.osmosdr_source_0.set_sample_rate(samp_rate_s)
         self.osmosdr_source_0.set_center_freq(tune_freq, 0)
         self.osmosdr_source_0.set_freq_corr(0, 0)
         self.osmosdr_source_0.set_dc_offset_mode(0, 0)
@@ -252,26 +276,27 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.osmosdr_source_0, 0), (self.ofdm_tools_ascii_plot_0, 0))    
+        self.connect((self.osmosdr_source_0, 0), (self.ofdm_tools_ascii_plot_0, 0))
+
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "ascii_sink")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
 
-    def get_nfft(self):
-        return self.nfft
-
-    def set_nfft(self, nfft):
-        self.nfft = nfft
-
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
+        self.set_samp_rate_s(self.samp_rate)
         self.ofdm_tools_ascii_plot_0.set_sample_rate(int(self.samp_rate))
-        self.osmosdr_source_0.set_sample_rate(self.samp_rate)
+
+    def get_nfft(self):
+        return self.nfft
+
+    def set_nfft(self, nfft):
+        self.nfft = nfft
 
     def get_tune_freq(self):
         return self.tune_freq
@@ -280,8 +305,17 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         self.tune_freq = tune_freq
         Qt.QMetaObject.invokeMethod(self._tune_freq_counter, "setValue", Qt.Q_ARG("double", self.tune_freq))
         Qt.QMetaObject.invokeMethod(self._tune_freq_slider, "setValue", Qt.Q_ARG("double", self.tune_freq))
-        self.ofdm_tools_ascii_plot_0.set_tune_freq(self.tune_freq)
         self.osmosdr_source_0.set_center_freq(self.tune_freq, 0)
+        self.ofdm_tools_ascii_plot_0.set_tune_freq(self.tune_freq)
+
+    def get_samp_rate_s(self):
+        return self.samp_rate_s
+
+    def set_samp_rate_s(self, samp_rate_s):
+        self.samp_rate_s = samp_rate_s
+        Qt.QMetaObject.invokeMethod(self._samp_rate_s_counter, "setValue", Qt.Q_ARG("double", self.samp_rate_s))
+        Qt.QMetaObject.invokeMethod(self._samp_rate_s_slider, "setValue", Qt.Q_ARG("double", self.samp_rate_s))
+        self.osmosdr_source_0.set_sample_rate(self.samp_rate_s)
 
     def get_rf_gain(self):
         return self.rf_gain
@@ -347,17 +381,17 @@ if __name__ == '__main__':
         except:
             print "Warning: failed to XInitThreads()"
     parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
-    parser.add_option("", "--nfft", dest="nfft", type="intx", default=1024,
-        help="Set nfft [default=%default]")
-    parser.add_option("-s", "--samp-rate", dest="samp_rate", type="eng_float", default=eng_notation.num_to_str(2e6),
+    parser.add_option("-s", "--samp-rate", dest="samp_rate", type="eng_float", default=eng_notation.num_to_str(1e6),
         help="Set samp_rate [default=%default]")
+    parser.add_option("", "--nfft", dest="nfft", type="intx", default=4096,
+        help="Set nfft [default=%default]")
     (options, args) = parser.parse_args()
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print "Error: failed to enable realtime scheduling."
     if(StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0")):
         Qt.QApplication.setGraphicsSystem(gr.prefs().get_string('qtgui','style','raster'))
     qapp = Qt.QApplication(sys.argv)
-    tb = ascii_sink(nfft=options.nfft, samp_rate=options.samp_rate)
+    tb = ascii_sink(samp_rate=options.samp_rate, nfft=options.nfft)
     tb.start()
     tb.show()
     def quitting():

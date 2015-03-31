@@ -5,6 +5,9 @@
 # spectrum sensor - multichannel energy detector
 # log the psd after a peak hold
 # log maximum power per channel
+
+# Selects top 2 channels and outputs to 2 x message out, so they can be used by a frequency translating fir filter
+
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +26,6 @@
 # 
 
 from gnuradio import gr, gru, fft
-import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
 import numpy as np
@@ -37,12 +39,12 @@ from terminaltables import AsciiTable
 from ofdm_cr_tools import frange, movingaverage, src_power, logger, file_logger
 
 
-class spectrum_sensor_v1(gr.hier_block2):
+class spectrum_sensor_v2(gr.hier_block2):
 	def __init__(self, fft_len, sens_per_sec, sample_rate, channel_space = 1,
 	 search_bw = 1, thr_leveler = 10, tune_freq = 0, alpha_avg = 1, test_duration = 1,
-	  period = 3600, trunc_band = 1, verbose = False, psd = False, waterfall = False, subject_channels = []):
+	  period = 3600, trunc_band = 1, verbose = False, psd = False, waterfall = False, display = False, subject_channels = []):
 		gr.hier_block2.__init__(self,
-			"spectrum_sensor_v1",
+			"spectrum_sensor_v2",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
 			gr.io_signature(0, 0, 0))
 		self.fft_len = fft_len #lenght of the fft for spectral analysis
@@ -58,11 +60,28 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.trunc_band = trunc_band
 		self.psd = psd
 		self.waterfall = waterfall
+		self.display = display
 		self.subject_channels = subject_channels
+
+		#data queue to share data between theads
+		self.q = Queue.Queue()
 
 		#gnuradio msg queues
 		self.msgq0 = gr.msg_queue(2)
 		self.msgq1 = gr.msg_queue(2)
+		
+		#output freqs
+		self.freq0 = 0
+		self.freq1 = 0
+		self.freq2 = 0
+		self.freq3 = 0
+		
+		#register message out to other blocks
+		self.message_port_register_hier_in("freq_out_0")
+		self.message_port_register_hier_in("freq_out_1")
+		self.message_port_register_hier_in("freq_out_2")
+		self.message_port_register_hier_in("freq_out_3")
+
 
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
@@ -78,6 +97,12 @@ class spectrum_sensor_v1(gr.hier_block2):
 		#MSG sinks PSD data 
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
 		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
+		
+		#MSG output to other blocks
+		self.message_out0 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq0)), 1000)
+		self.message_out1 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq1)), 1000)
+		self.message_out2 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq0)), 1000)
+		self.message_out3 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq1)), 1000)
 
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.multiply, self.sink0)
@@ -89,6 +114,13 @@ class spectrum_sensor_v1(gr.hier_block2):
 		self.one_in_n_waterfall = blocks.keep_one_in_n(gr.sizeof_float * self.fft_len, self.sens_per_sec) #keep 1 per second...
 		self.connect(self.multiply, self.one_in_n_waterfall, self.sink2)
 
+		#MSG output
+		self.msg_connect(self.message_out0, "strobe", self, "freq_out_0")
+		self.msg_connect(self.message_out1, "strobe", self, "freq_out_1")
+		self.msg_connect(self.message_out2, "strobe", self, "freq_out_2")
+		self.msg_connect(self.message_out3, "strobe", self, "freq_out_3")
+
+
 		#start periodic logging
 		self._logger = logger(self.fft_len, period, test_duration)
 
@@ -96,13 +128,153 @@ class spectrum_sensor_v1(gr.hier_block2):
 		#statistics and power
 		self._stats_watcher = _stats_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 		 self.search_bw, self.fft_len, self.sample_rate, self.thr_leveler, self.alpha_avg, test_duration,
-		  trunc_band, verbose, self._logger)
+		  trunc_band, verbose, self._logger, self.q)
 		#psd
 		if self.psd:
 			self._psd_watcher = _psd_watcher(self.msgq1, verbose, self._logger)
 		#waterfall
 		if self.waterfall:
 			self._waterfall_watcher = _waterfall_watcher(self.msgq2, verbose, self._logger)
+		#display_data 
+		if self.display:
+			self._display_data = _display_data(self.q, self.sample_rate, self.tune_freq, self.fft_len, self.trunc_band,
+			 self.channel_space, self.search_bw, self.display, self.subject_channels, self.set_freq0, self.set_freq1, self.set_freq2, self.set_freq3)
+
+	def set_tune_freq(self, tune_freq):
+		self.tune_freq = tune_freq
+		self._display_data.tune_freq = tune_freq
+
+	def set_freq0(self, freq0):
+		self.freq0 = freq0
+		self.message_out0.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq0) ))
+
+	def set_freq1(self, freq1):
+		self.freq1 = freq1
+		self.message_out1.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq1) ))
+
+	def set_freq2(self, freq2):
+		self.freq2 = freq2
+		self.message_out2.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq2) ))
+
+	def set_freq3(self, freq3):
+		self.freq3 = freq3
+		self.message_out3.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq3) ))
+
+#ascii thread
+class _display_data(_threading.Thread):
+	def __init__(self, data_queue, sample_rate, tune_freq, fft_len, trunc_band,
+	 channel_space, search_bw, display, subject_channels, set_freq0, set_freq1, set_freq2, set_freq3):
+		_threading.Thread.__init__(self)
+		self.setDaemon(1)
+		self.data_queue = data_queue
+		self.fft_len = fft_len
+		self.sample_rate = sample_rate
+		self.tune_freq = tune_freq
+		self.fft_len = fft_len
+		self.channel_space = channel_space
+		self.search_bw = search_bw
+		self.display = display
+		self.set_freq0 = set_freq0
+		self.set_freq1 = set_freq1
+		self.set_freq2 = set_freq2
+		self.set_freq3 = set_freq3
+
+		self.trunc_band = trunc_band
+		self.trunc = sample_rate-trunc_band
+		self.trunc_ch = int(self.trunc/self.channel_space)/2
+
+		self.Fr = float(self.sample_rate)/float(self.fft_len) #freq resolution
+		self.Fstart = self.tune_freq - self.sample_rate/2 #start freq
+		self.Ffinish = self.tune_freq + self.sample_rate/2 #end freq
+		self.bb_freqs = frange(-self.sample_rate/2, self.sample_rate/2, self.channel_space) #baseband freqs
+		self.srch_bins = self.search_bw/self.Fr #binwidth for search
+		self.ax_ch = frange(self.Fstart, self.Ffinish, self.channel_space) #subject channels
+		if self.trunc > 0:
+			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
+
+		self.subject_channels = subject_channels # list of channels to be analysed by the flanck detector
+		self.idx_subject_channels = [0]*len(self.subject_channels) # aux list to index ax_ch
+		k = 0
+		for channel in subject_channels: 
+			self.idx_subject_channels[k] = self.ax_ch.index(channel)
+			k += 1
+		self.subject_channels_pwr = np.array([1.0]*len(self.subject_channels))
+
+		self.state = None
+		self.keep_running = True #set to False to stop thread's main loop
+		self.gnuplot = subprocess.Popen(["/usr/bin/gnuplot"], stdin=subprocess.PIPE)
+		self.start()
+
+
+	def run(self):
+
+		if self.display == 't':
+			while self.keep_running:
+				power_level_ch = self.data_queue.get()
+				k = 0
+				for channel in self.idx_subject_channels:
+					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
+					k += 1
+
+				left_column = np.array([['Freq [Hz]'],['Power [dB]']])
+				table0 = np.vstack((self.subject_channels, self.subject_channels_pwr))
+				table =  np.hstack((left_column, table0))
+				table_plot = AsciiTable(np.ndarray.tolist(table.T))
+				print '\n'
+				print table_plot.table
+				print '\n'
+				sys.stdout.flush()
+
+				#publish top 4 frequencies
+				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
+				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
+				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
+				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
+				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
+
+
+		if self.display == 'g':
+			while self.keep_running:
+				power_level_ch = self.data_queue.get()
+				k = 0
+				for channel in self.idx_subject_channels:
+					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
+					k += 1
+
+				self.gnuplot.stdin.write("set term dumb "+str(140)+" "+str(30)+ " \n")
+				self.gnuplot.stdin.write("plot '-' using 1:2 title 'PowerByChannel' \n")
+
+				for i,j in zip(self.subject_channels, self.subject_channels_pwr):
+					self.gnuplot.stdin.write("%f %f\n" % (i,j))
+
+				min_pwr = min(self.subject_channels_pwr)
+				self.gnuplot.stdin.write("e\n")
+				#self.gnuplot.stdin.write("set yrange [-90:0]")
+				self.gnuplot.stdin.write("set yrange ["+str(min_pwr-10)+":0] \n")
+				self.gnuplot.stdin.flush()
+				print(chr(27) + "[2J")
+
+				#publish top 4 frequencies
+				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
+				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
+				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
+				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
+				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
+
+		if self.display == 'o':
+			while self.keep_running:
+				power_level_ch = self.data_queue.get()
+				k = 0
+				for channel in self.idx_subject_channels:
+					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
+					k += 1
+
+				#publish top 4 frequencies
+				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
+				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
+				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
+				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
+				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
 
 #queue wathcer to log waterfall
 class _waterfall_watcher(_threading.Thread):
@@ -175,7 +347,7 @@ class _psd_watcher(_threading.Thread):
 #queue wathcer to log statistics and max power per channel
 class _stats_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
-		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, logger):
+		 search_bw, fft_len, sample_rate, thr_leveler, alpha_avg, test_duration, trunc_band, verbose, logger, data_queue):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -202,6 +374,9 @@ class _stats_watcher(_threading.Thread):
 		self.ax_ch = frange(self.Fstart, self.Ffinish, self.channel_space) #subject channels
 		if self.trunc > 0:
 			self.ax_ch = self.ax_ch[self.trunc_ch:-self.trunc_ch] #trunked subject channels
+		
+		self.plc = np.array([0.0]*len(self.ax_ch))
+		self.data_queue = data_queue
 
 		self.verbose = verbose
 		self.logger = logger
@@ -267,7 +442,11 @@ class _stats_watcher(_threading.Thread):
 		#trunc channels outside useful band (filter curve) --> trunc band < sample_rate
 		if self.trunc > 0:
 			power_level_ch = power_level_ch[self.trunc_ch:-self.trunc_ch]
-
+		
+		#share data among threads
+		self.plc = self.plc * 0.8 + np.array(power_level_ch) * 0.2
+		self.data_queue.put(self.plc)
+		
 		#log maximum powers - cumulative
 		self.logger.set_cumulative_max_power(np.maximum(power_level_ch, self.logger.cumulative_max_power))
 
