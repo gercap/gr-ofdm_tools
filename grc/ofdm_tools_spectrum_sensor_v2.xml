@@ -22,7 +22,6 @@ waterfall=$waterfall,
 display=$display,
 subject_channels=$subject_channels
 )</make>
-<callback>set_tune_freq($tune_freq)</callback>
 	<param>
 		<name>Scanner FFT/Block length</name>
 		<key>fft_len</key>

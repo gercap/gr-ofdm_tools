@@ -98,7 +98,7 @@ class spectrum_sensor_v2(gr.hier_block2):
 		self.sink0 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq0, True)
 		self.sink1 = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq1, True)
 		
-		#MSG output to other blocks
+		#MSG output blocks to other blocks
 		self.message_out0 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq0)), 1000)
 		self.message_out1 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq1)), 1000)
 		self.message_out2 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.freq0)), 1000)
@@ -120,7 +120,6 @@ class spectrum_sensor_v2(gr.hier_block2):
 		self.msg_connect(self.message_out2, "strobe", self, "freq_out_2")
 		self.msg_connect(self.message_out3, "strobe", self, "freq_out_3")
 
-
 		#start periodic logging
 		self._logger = logger(self.fft_len, period, test_duration)
 
@@ -138,11 +137,8 @@ class spectrum_sensor_v2(gr.hier_block2):
 		#display_data 
 		if self.display:
 			self._display_data = _display_data(self.q, self.sample_rate, self.tune_freq, self.fft_len, self.trunc_band,
-			 self.channel_space, self.search_bw, self.display, self.subject_channels, self.set_freq0, self.set_freq1, self.set_freq2, self.set_freq3)
-
-	def set_tune_freq(self, tune_freq):
-		self.tune_freq = tune_freq
-		self._display_data.tune_freq = tune_freq
+			 self.channel_space, self.search_bw, self.display, self.subject_channels, self.set_freq0, self.set_freq1,
+			  self.set_freq2, self.set_freq3)
 
 	def set_freq0(self, freq0):
 		self.freq0 = freq0
@@ -205,16 +201,23 @@ class _display_data(_threading.Thread):
 		self.gnuplot = subprocess.Popen(["/usr/bin/gnuplot"], stdin=subprocess.PIPE)
 		self.start()
 
+	def publish(self):
+		power_level_ch = self.data_queue.get()
+		k = 0
+		for channel in self.idx_subject_channels:
+			self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
+			k += 1
+
+		ff = self.subject_channels_pwr.argsort()[-4:][::-1]
+		self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
+		self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
+		self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
+		self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
 
 	def run(self):
 
 		if self.display == 't':
 			while self.keep_running:
-				power_level_ch = self.data_queue.get()
-				k = 0
-				for channel in self.idx_subject_channels:
-					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
-					k += 1
 
 				left_column = np.array([['Freq [Hz]'],['Power [dB]']])
 				table0 = np.vstack((self.subject_channels, self.subject_channels_pwr))
@@ -226,20 +229,11 @@ class _display_data(_threading.Thread):
 				sys.stdout.flush()
 
 				#publish top 4 frequencies
-				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
-				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
-				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
-				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
-				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
+				self.publish()
 
 
 		if self.display == 'g':
 			while self.keep_running:
-				power_level_ch = self.data_queue.get()
-				k = 0
-				for channel in self.idx_subject_channels:
-					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
-					k += 1
 
 				self.gnuplot.stdin.write("set term dumb "+str(140)+" "+str(30)+ " \n")
 				self.gnuplot.stdin.write("plot '-' using 1:2 title 'PowerByChannel' \n")
@@ -255,26 +249,15 @@ class _display_data(_threading.Thread):
 				print(chr(27) + "[2J")
 
 				#publish top 4 frequencies
-				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
-				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
-				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
-				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
-				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
+				self.publish()
+				
+				
 
 		if self.display == 'o':
 			while self.keep_running:
-				power_level_ch = self.data_queue.get()
-				k = 0
-				for channel in self.idx_subject_channels:
-					self.subject_channels_pwr[k] = 10*np.log10(power_level_ch[channel])
-					k += 1
 
 				#publish top 4 frequencies
-				ff = self.subject_channels_pwr.argsort()[-4:][::-1]
-				self.set_freq0(self.subject_channels[ff[0]]-self.tune_freq)
-				self.set_freq1(self.subject_channels[ff[1]]-self.tune_freq)
-				self.set_freq2(self.subject_channels[ff[2]]-self.tune_freq)
-				self.set_freq3(self.subject_channels[ff[3]]-self.tune_freq)
+				self.publish()
 
 #queue wathcer to log waterfall
 class _waterfall_watcher(_threading.Thread):
