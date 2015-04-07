@@ -49,7 +49,8 @@ GR_PYTHON_INSTALL(
     flanck_detector.py
     ofdm_tx_rx_hier.py
     ofdm_txrx_modules.py
-    spectrum_sensor_v2.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    spectrum_sensor_v2.py
+    message_pdu.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

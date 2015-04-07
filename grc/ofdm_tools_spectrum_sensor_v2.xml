@@ -17,9 +17,10 @@ test_duration=$test_duration,
 period=$period,
 trunc_band=$trunc_band,
 verbose=$verbose,
+stats=$stats,
 psd=$psd,
 waterfall=$waterfall,
-display=$display,
+output=$output,
 subject_channels=$subject_channels
 )</make>
 	<param>
@@ -108,6 +109,20 @@ subject_channels=$subject_channels
 	</param>
 
 	<param>
+		<name>Produce statistics?</name>
+		<key>stats</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+
+	<param>
 		<name>Log PSD?</name>
 		<key>psd</key>
 		<type>enum</type>
@@ -136,8 +151,8 @@ subject_channels=$subject_channels
 	</param>
 
 	<param>
-		<name>Output realtime data?</name>
-		<key>display</key>
+		<name>Output live data (console)?</name>
+		<key>output</key>
 		<type>enum</type>
 	<option>
 		<name>No</name>
@@ -158,7 +173,7 @@ subject_channels=$subject_channels
 	</param>
 
 	<param>
-		<name>Table Subject Channels</name>
+		<name>Output Channels</name>
 		<key>subject_channels</key>
 		<value>[]</value>
 		<type>real_vector</type>
@@ -190,6 +205,12 @@ subject_channels=$subject_channels
 
   <source>
     <name>freq_out_3</name>
+    <type>message</type>
+    <optional>False</optional>
+  </source>
+
+  <source>
+    <name>freq_msg_PDU</name>
     <type>message</type>
     <optional>False</optional>
   </source>
