@@ -250,6 +250,7 @@ class ofdm_tx(gr.hier_block2):
             rolloff,
             self.packet_length_tag_key
         )
+        cyclic_prefixer.set_min_output_buffer(16000)
         self.connect(header_payload_mux, allocator, ffter, cyclic_prefixer, self)
 
 

@@ -171,11 +171,11 @@ def movingaverage(interval, window_size):
 #computes fft based psd power
 def src_power_fft(vector, npts, nFFT, Fr, Sf, bb_freqs, srch_bins):
 	#win = np.hamming(npts)
-	#win = sg.flattop(npts)
-	#vector = vector * win
-	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(vector, nFFT)))**2)/npts)
+	win = sg.flattop(npts)
+	vector = vector * win
+	psd_fft = np.fft.fftshift(((np.absolute(np.fft.fft(vector, nFFT)))**2)/(nFFT))
 	#TODO - moving average
-	psd_fft = movingaverage(psd_fft, 1*srch_bins)
+	#psd_fft = movingaverage(psd_fft, 1*srch_bins)
 	fft_axis = Sf/2*np.linspace(-1, 1, nFFT) #fft_axis = np.fft.fftshift(f)
 	power_level_ch_fft = []
 
@@ -507,7 +507,7 @@ def fast_spectrum_scan(vct_sample, fc, channel_rate, srch_bw, n_fft, samp_rate, 
 
 def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, receiver, method, thr_leveler, t_wait, show_plot):
 
-	t = t_wait #0.2 # for lower sampling rates, the scanner must fill completely the vector...
+	t = t_wait 
 
 	###-SAMP. FREQ. AND SAMPLES-###
 	Sf = receiver.get_samp_rate()
@@ -530,8 +530,6 @@ def spectrum_scan(Fstart, Ffinish, channel_rate, srch_bw, n_fft, rf_source, rece
 		except: None
 		print 'Tunning to:', f
 		time.sleep(t)
-		#vect_s = receiver.get_probe_vector_levels()
-		#vector = map(complex, vect_s[0:len(vect_s)/2], vect_s[len(vect_s)/2:])   #real and imaginary are received concatenated
 		vector = receiver.get_probe_vector_level()
 		vector_set.append(vector)
 

@@ -218,17 +218,16 @@ class _stats_watcher(_threading.Thread):
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
-			
-			if self.verbose:
-				itemsize = int(msg.arg1())
-				nitems = int(msg.arg2())
-				if nitems > 1:
-					start = itemsize * (nitems - 1)
-					s = s[start:start+itemsize]
+
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+			s = msg.to_string()
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
 
 			#convert received data to numpy vector
-			payload = msg.to_string()
-			float_data = np.fromstring (payload, np.float32)
+			float_data = np.fromstring (s, np.float32)
 
 			#scan channels
 			spectrum_constraint_hz = self.spectrum_scanner(float_data)

@@ -50,7 +50,8 @@ GR_PYTHON_INSTALL(
     ofdm_tx_rx_hier.py
     ofdm_txrx_modules.py
     spectrum_sensor_v2.py
-    message_pdu.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    message_pdu.py
+    coherence_detector.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

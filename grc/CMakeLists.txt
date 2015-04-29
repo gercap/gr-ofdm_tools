@@ -34,5 +34,6 @@ install(FILES
     ofdm_tools_flanck_detector.xml
     ofdm_tools_ofdm_tx_rx_hier.xml
     ofdm_tools_spectrum_sensor_v2.xml
-    ofdm_tools_message_pdu.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_message_pdu.xml
+    ofdm_tools_coherence_detector.xml DESTINATION share/gnuradio/grc/blocks
 )

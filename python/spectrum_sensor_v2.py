@@ -151,7 +151,7 @@ class spectrum_sensor_v2(gr.hier_block2):
 				self._basic_spectrum_watcher = basic_spectrum_watcher(self.msgq0, sens_per_sec, self.tune_freq, self.channel_space,
 				 self.search_bw, self.fft_len, self.sample_rate, trunc_band, verbose, self.q)
 			self._output_data = output_data(self.q, self.sample_rate, self.tune_freq, self.fft_len, self.trunc_band,
-			 self.channel_space, self.search_bw, self.output, self.subject_channels, self.set_freqs)
+			 self.channel_space, self.search_bw, self.output, self.subject_channels, self.top4, self.set_freqs)
 			#send PDU's w/ freq data
 			self._send_PDU_data = send_PDU_data(self.top4, self.PDU_messages)
 
@@ -186,7 +186,7 @@ class send_PDU_data(_threading.Thread):
 #ascii thread
 class output_data(_threading.Thread):
 	def __init__(self, data_queue, sample_rate, tune_freq, fft_len, trunc_band,
-	 channel_space, search_bw, output, subject_channels, set_freqs):
+	 channel_space, search_bw, output, subject_channels, top4, set_freqs):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.data_queue = data_queue
@@ -197,6 +197,7 @@ class output_data(_threading.Thread):
 		self.channel_space = channel_space
 		self.search_bw = search_bw
 		self.output = output
+		self.top4 = top4
 		self.set_freqs = set_freqs
 
 		self.trunc_band = trunc_band
@@ -268,10 +269,20 @@ class output_data(_threading.Thread):
 				#self.gnuplot.stdin.write("set yrange [-90:0]")
 				self.gnuplot.stdin.write("set yrange ["+str(min_pwr-10)+":0] \n")
 				self.gnuplot.stdin.flush()
-				print(chr(27) + "[2J")
 
 				#publish top 4 frequencies
 				self.publish()
+
+				self.gnuplot.stdin.write("print \"Channel 1:\" \n")
+				self.gnuplot.stdin.write("print " + str(self.top4[0]) + " \n")
+				self.gnuplot.stdin.write("print \"Channel 2:\" \n")
+				self.gnuplot.stdin.write("print " + str(self.top4[1]) + " \n")
+				self.gnuplot.stdin.write("print \"Channel 3:\" \n")
+				self.gnuplot.stdin.write("print " + str(self.top4[2]) + " \n")
+				self.gnuplot.stdin.write("print \"Channel 4:\" \n")
+				self.gnuplot.stdin.write("print " + str(self.top4[3]) + " \n")
+
+				print(chr(27) + "[2J")
 
 		if self.output == 'o':
 			while self.keep_running:
@@ -292,19 +303,17 @@ class waterfall_watcher(_threading.Thread):
 
 	def run(self):
 		while self.keep_running:
-
 			msg = self.rcvd_data.delete_head()
 
-			if self.verbose:
-				itemsize = int(msg.arg1())
-				nitems = int(msg.arg2())
-				if nitems > 1:
-					start = itemsize * (nitems - 1)
-					s = s[start:start+itemsize]
-					print 'nitems in queue =', nitems
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+			s = msg.to_string()
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
 
-			payload = msg.to_string()
-			float_data = np.fromstring (payload, np.float32)
+			#convert received data to numpy vector
+			float_data = np.fromstring (s, np.float32)
 
 			#append to current period variable which then is appended to the cumulative file and reset
 			self.logger.cumulative_waterfall.append(float_data)
@@ -326,19 +335,17 @@ class psd_watcher(_threading.Thread):
 
 	def run(self):
 		while self.keep_running:
-
 			msg = self.rcvd_data.delete_head()
 
-			if self.verbose:
-				itemsize = int(msg.arg1())
-				nitems = int(msg.arg2())
-				if nitems > 1:
-					start = itemsize * (nitems - 1)
-					s = s[start:start+itemsize]
-					print 'nitems in queue =', nitems
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+			s = msg.to_string()
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
 
-			payload = msg.to_string()
-			float_data = np.fromstring (payload, np.float32)
+			#convert received data to numpy vector
+			float_data = np.fromstring (s, np.float32)
 
 			#cumulative log
 			self.logger.set_cumulative_psd(np.maximum(float_data, self.logger.cumulative_psd))
@@ -395,17 +402,16 @@ class stats_watcher(_threading.Thread):
 		while self.keep_running:
 
 			msg = self.rcvd_data.delete_head()
-			
-			if self.verbose:
-				itemsize = int(msg.arg1())
-				nitems = int(msg.arg2())
-				if nitems > 1:
-					start = itemsize * (nitems - 1)
-					s = s[start:start+itemsize]
+
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+			s = msg.to_string()
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
 
 			#convert received data to numpy vector
-			payload = msg.to_string()
-			float_data = np.fromstring (payload, np.float32)
+			float_data = np.fromstring (s, np.float32)
 
 			#scan channels
 			spectrum_constraint_hz = self.spectrum_scanner(float_data)
@@ -472,7 +478,6 @@ class stats_watcher(_threading.Thread):
 
 		return spectrum_constraint_hz
 
-
 #queue wathcer to log statistics and max power per channel
 class basic_spectrum_watcher(_threading.Thread):
 	def __init__(self, rcvd_data, sens_per_sec, tune_freq, channel_space,
@@ -511,9 +516,15 @@ class basic_spectrum_watcher(_threading.Thread):
 		while self.keep_running:
 			msg = self.rcvd_data.delete_head()
 
+			itemsize = int(msg.arg1())
+			nitems = int(msg.arg2())
+			s = msg.to_string()
+			if nitems > 1:
+				start = itemsize * (nitems - 1)
+				s = s[start:start+itemsize]
+
 			#convert received data to numpy vector
-			payload = msg.to_string()
-			float_data = np.fromstring (payload, np.float32)
+			float_data = np.fromstring (s, np.float32)
 
 			#scan channels
 			self.spectrum_scanner(float_data)

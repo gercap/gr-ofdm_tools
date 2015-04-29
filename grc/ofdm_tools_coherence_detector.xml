@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+<block>
+  <name>Coherence Detector</name>
+  <key>ofdm_tools_coherence_detector</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.coherence_detector(
+N=$N,
+sample_rate=$sample_rate,
+search_bw=$search_bw,
+threshold=$threshold,
+tune_freq=$tune_freq,
+alpha_avg=$alpha_avg,
+test_duration=$test_duration,
+period=$period,
+stats=$stats,
+output=$output,
+subject_channels=$subject_channels
+)</make>
+	<param>
+		<name>Block length</name>
+		<key>N</key>
+		<value>512</value>
+		<type>int</type>
+	</param>
+
+	<param>
+		<name>Sample Rate</name>
+		<key>sample_rate</key>
+		<value>samp_rate</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Channel BW</name>
+		<key>search_bw</key>
+		<value>80e3</value>
+		<type>float</type>
+	</param>
+	<param>
+		<name>Decision Thre</name>
+		<key>threshold</key>
+		<value>10</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Tune Freq</name>
+		<key>tune_freq</key>
+		<value>0</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Alpha Avg</name>
+		<key>alpha_avg</key>
+		<value>0.9</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>Test Durat (s)</name>
+		<key>test_duration</key>
+		<value>3600</value>
+		<type>int</type>
+	</param>
+
+	<param>
+		<name>Periodic logs (s)</name>
+		<key>period</key>
+		<value>60</value>
+		<type>int</type>
+	</param>
+
+	<param>
+		<name>Produce statistics?</name>
+		<key>stats</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Yes</name>
+		<key>True</key>
+	</option>
+	</param>
+
+	<param>
+		<name>Output live data (console)?</name>
+		<key>output</key>
+		<type>enum</type>
+	<option>
+		<name>No</name>
+		<key>False</key>
+	</option>
+	<option>
+		<name>Graph</name>
+		<key>'g'</key>
+	</option>
+	<option>
+		<name>Table</name>
+		<key>'t'</key>
+	</option>
+	<option>
+		<name>Graph Outcome</name>
+		<key>'g_o'</key>
+	</option>
+	<option>
+		<name>Table Outcome</name>
+		<key>'t_o'</key>
+	</option>
+	</param>
+
+	<param>
+		<name>Channels to Analyse</name>
+		<key>subject_channels</key>
+		<value>[]</value>
+		<type>real_vector</type>
+	</param>
+
+	<sink>
+		<name>vector in</name>
+		<type>float</type>
+		<vlen>$N</vlen>
+	</sink>
+
+	<source>
+		<name>msg_PDU</name>
+		<type>message</type>
+		<optional>False</optional>
+	</source>
+
+  <doc>
+
+</doc>
+
+
+</block>
