@@ -53,7 +53,7 @@ class coherence_detector(gr.hier_block2):
 		self.alpha_avg = alpha_avg #averaging factor for noise level between consecutive measurements
 		self.output = output
 		self.subject_channels = subject_channels
-		self.subject_channels_outcome = []
+		self.subject_channels_outcome = [0.1]*len(subject_channels)
 
 		#data queue to share data between theads
 		self.q0 = Queue.Queue()
@@ -111,17 +111,6 @@ class output_data(_threading.Thread):
 		self.start()
 
 	def run(self):
-		if self.output == 't':
-			while self.keep_running:
-				data = self.data_queue0.get()
-				left_column = np.array([['Freq [Hz]'],['Coherence']])
-				table0 = np.vstack((self.ax_ch, data))
-				table =  np.hstack((left_column, table0))
-				table_plot = AsciiTable(np.ndarray.tolist(table.T))
-				print '\n'
-				print table_plot.table
-				print '\n'
-				sys.stdout.flush()
 
 		if self.output == 'g':
 			while self.keep_running:
@@ -129,7 +118,7 @@ class output_data(_threading.Thread):
 				self.gnuplot.stdin.write("set term dumb "+str(140)+" "+str(30)+ " \n")
 				self.gnuplot.stdin.write("plot '-' using 1:2 title 'Spectral Coherence' \n")
 
-				for i,j in zip(self.ax_ch, data):
+				for i,j in zip(self.subject_channels, data):
 					self.gnuplot.stdin.write("%f %f\n" % (i,j))
 
 				self.gnuplot.stdin.write("e\n")
@@ -139,30 +128,22 @@ class output_data(_threading.Thread):
 
 		if self.output == 't_o':
 			while self.keep_running:
-				print 'Freq [Hz]			Outcome'
-				print self.subject_channels
-				print self.get_subject_channels_outcome()
-				#for a, b in zip((self.subject_channels, self.get_subject_channels_outcome())):
-				#	print a, '			', b
-				print '\n'
-				sys.stdout.flush()
-				'''
-				left_column = np.array([['Freq [Hz]'],['Outcome']])
-				table0 = np.vstack((self.subject_channels, self.get_subject_channels_outcome))
+				data = self.data_queue0.get()
+				left_column = np.array([['Freq [Hz]'],['Coherence'],['Outcome']])
+				table0 = np.vstack((self.subject_channels, data, self.get_subject_channels_outcome()))
 				table =  np.hstack((left_column, table0))
 				table_plot = AsciiTable(np.ndarray.tolist(table.T))
 				print '\n'
 				print table_plot.table
-				print '\n'
 				sys.stdout.flush()
-				'''
+
 
 		if self.output == 'g_o':
 			while self.keep_running:
 				self.gnuplot.stdin.write("set term dumb "+str(140)+" "+str(30)+ " \n")
 				self.gnuplot.stdin.write("plot '-' using 1:2 title 'Spectral Coherence Outcome' \n")
 
-				for i,j in zip(self.subject_channels, self.get_subject_channels_outcome):
+				for i,j in zip(self.subject_channels, self.get_subject_channels_outcome()):
 					self.gnuplot.stdin.write("%f %f\n" % (i,j))
 
 				self.gnuplot.stdin.write("e\n")
@@ -199,6 +180,7 @@ class watcher(_threading.Thread):
 		self.subject_channels = subject_channels
 		self.n_chans = len(self.subject_channels)
 		self.idx_subject_channels = [0]*self.n_chans
+		self.subject_channels_coherence = [0]*self.n_chans
 		k = 0
 		for channel in subject_channels: 
 			self.idx_subject_channels[k] = find_nearest_index(self.ax_ch, channel)
@@ -209,6 +191,9 @@ class watcher(_threading.Thread):
 
 		self.plc = np.array([0.0]*len(self.ax_ch))
 		self.data_queue0 = data_queue0
+
+		print 'subject_channels', self.subject_channels
+		print 'srch_bins', self.srch_bins*2
 
 		self.keep_running = True
 		self.start()
@@ -227,7 +212,6 @@ class watcher(_threading.Thread):
 			#convert received data to numpy vector
 			float_data = np.fromstring (s, np.float32)
 			self.plc = self.plc * 0.6 + np.array(float_data) * 0.4
-			self.data_queue0.put(self.plc)
 
 			#scan channels
 			self.scanner(float_data)
@@ -239,13 +223,14 @@ class watcher(_threading.Thread):
 
 		for j, channel in zip(range(self.n_chans),self.idx_subject_channels):
 			coherence = data[(channel-self.srch_bins):(channel+self.srch_bins)].sum()
-			print 'coherence', coherence
+			self.subject_channels_coherence[j] = coherence
 			if coherence > self.threshold:
-				self.subject_channels_outcome[j] = coherence
+				self.subject_channels_outcome[j] = 1
 			else:
-				self.subject_channels_outcome[j] = coherence
+				self.subject_channels_outcome[j] = 0.1
 
-		self.set_subject_channels_outcome(self.subject_channels_outcome)
+		self.set_subject_channels_outcome(self.subject_channels_outcome) #publish detection outcome
+		self.data_queue0.put(self.subject_channels_coherence) #send coherence to threads
 
 def find_nearest_index(array, value):
 	idx = (np.abs(array-value)).argmin()

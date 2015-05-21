@@ -95,12 +95,8 @@ subject_channels=$subject_channels
 		<key>False</key>
 	</option>
 	<option>
-		<name>Graph</name>
+		<name>Graph Coherence</name>
 		<key>'g'</key>
-	</option>
-	<option>
-		<name>Table</name>
-		<key>'t'</key>
 	</option>
 	<option>
 		<name>Graph Outcome</name>
