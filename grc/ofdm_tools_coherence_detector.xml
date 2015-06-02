@@ -15,7 +15,8 @@ test_duration=$test_duration,
 period=$period,
 stats=$stats,
 output=$output,
-subject_channels=$subject_channels
+subject_channels=$subject_channels,
+rate=$rate
 )</make>
 	<param>
 		<name>Block length</name>
@@ -113,6 +114,13 @@ subject_channels=$subject_channels
 		<key>subject_channels</key>
 		<value>[]</value>
 		<type>real_vector</type>
+	</param>
+
+	<param>
+		<name>Rate</name>
+		<key>rate</key>
+		<value>rate</value>
+		<type>int</type>
 	</param>
 
 	<sink>
