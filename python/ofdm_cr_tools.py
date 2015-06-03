@@ -377,6 +377,37 @@ def spectrum_enforcer(fft_len, spectrum_constraint_fft, lobe_len):
 	return occupied_carriers, pilot_carriers, _pilot_symbols, sync_word1.tolist(), sync_word2.tolist()
     #return occupied_carriers, pilot_carriers, _pilot_symbols, sync_word1, sync_word2
 
+#enforce spectrum rules generating occupied carriers, pilots and synch words
+def spectrum_enforcer_v2(fft_len, spectrum_constraint_fft, lobe_len):
+
+	# Dynamic pilot carrier allocation
+	usable = range(-fft_len/2, fft_len/2, 1)
+	# Remove DC carrier
+	usable.remove(0)
+	# Remove side lobes
+	del usable[0:lobe_len]
+	del usable[-lobe_len:] 
+
+	# Remove constrained carriers
+	for carr in spectrum_constraint_fft:
+		if carr in usable: usable.remove(carr)
+
+	# Assign pilot carriers
+	space = len(usable)/8
+	middle = len(usable)/2
+	p1 = usable[middle-3*space]
+	p2 = usable[middle-space]
+	p3 = usable[middle+space]
+	p4 = usable[middle+3*space]
+	pilot_carriers = ((p1, p2, p3, p4),)
+
+	# Remove pilots from usable
+	for carr in pilot_carriers[0]: usable.remove(carr)
+	occupied_carriers = ((usable),)
+
+	return occupied_carriers, pilot_carriers, _pilot_symbols
+
+
 '''
 def spectrum_enforcer(fft_len, spectrum_constraint_fft, lobe_len):
     st = -fft_len/2+lobe_len
