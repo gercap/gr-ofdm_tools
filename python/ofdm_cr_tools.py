@@ -1772,7 +1772,6 @@ def unmake_packet(frame, w_crc):
 	#U- UNKNOWN
 
 def make_packet_evo(fm, tpe, full_length, payload):
-	# fm - 2bytes; to - 2bytes; tpe - 1byte
 	paylaod_length_s = str(len(payload))
 	paylaod_length_s = (4-len(paylaod_length_s))*'0' + paylaod_length_s
 	pkt = str(fm) + tpe + paylaod_length_s + payload
@@ -1808,6 +1807,24 @@ def unmake_packet_evo(frame, w_crc):
 		else:
 			print 'CRC NOK'
 			return 'BAD', 'BAD', 'BAD', 'BAD', ok
+
+def make_packet_evo1(fm, tpe, payload):
+	paylaod_length_s = str(len(payload))
+	paylaod_length_s = (4-len(paylaod_length_s))*'0' + paylaod_length_s
+	pkt = str(fm) + tpe + paylaod_length_s + payload + ''.join(random.choice(string.ascii_uppercase) for i in range(len(payload)+10))
+	return pkt
+
+def unmake_packet_evo1(frame):
+	try:
+		fm = frame[0]
+		tpe = frame[1]
+		length = int(frame[2:6])
+		data = frame[6:6+length]
+		return fm, tpe, length, data
+	except:
+		print 'an error occoured while unmaking ofdm packet - in-flowgraph CRC'
+		return 'BAD', 'BAD', 'BAD', 'BAD'
+
 
 def make_packet_evo2(fm, tpe, payload):
 	pkt = str(fm) + tpe + payload
