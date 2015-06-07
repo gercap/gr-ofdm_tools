@@ -64,6 +64,10 @@ from ofdm_tx_rx_hier import ofdm_tx_rx_hier
 from spectrum_sensor_v2 import spectrum_sensor_v2
 from message_pdu import message_pdu
 from coherence_detector import coherence_detector
+from payload_source_pdu import payload_source_pdu
+from payload_sink_pdu import payload_sink_pdu
+
+
 
 import ofdm_txrx_modules
 import ofdm_cr_tools

@@ -27,8 +27,7 @@
 import string
 import numpy
 import pmt
-from gnuradio import gr
-from gnuradio import digital
+from gnuradio import gr, digital, blocks
 
 class message_pdu(gr.basic_block):
     """
@@ -37,12 +36,13 @@ class message_pdu(gr.basic_block):
     prepend a prefix, and send the string as a uint8 vector out on
     the message port named 'msg_out'.
     """
-    def __init__(self, prefix=None, access_code=None):
+    def __init__(self, callback, prefix=None, access_code=None):
         gr.basic_block.__init__(self,
             name="message_pdu",
             in_sig=[],
             out_sig=[])
         self.prefix = prefix
+        self.callback = callback
 
         # Register the message port IN
         self.message_port_register_in(pmt.intern('in'))
@@ -85,6 +85,7 @@ class message_pdu(gr.basic_block):
         for i in range(len(send_str)):
             pmt.u8vector_set(send_pmt, i, ord(send_str[i]))
         # Send the message:
+        #self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt({}), send_pmt))
         self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt(meta), send_pmt))
 
 
@@ -103,9 +104,12 @@ class message_pdu(gr.basic_block):
         # Just for good measure, and to avoid attacks, let's filter again:
         msg_str = filter(lambda x: x in string.printable, msg_str)
         # Print string, and if available, the metadata:
-        print msg_str
-        if meta is not None:
-            print "[METADATA]: ", meta
+        if self.callback is not None:
+            self.callback(msg_str)
+        else:
+            print msg_str
+        #if meta is not None:
+        #    print "[METADATA]: ", meta
 
 
 if __name__ == "__main__":
@@ -115,8 +119,12 @@ if __name__ == "__main__":
     # Create chat blocks
     chat_tx = message_pdu()
     chat_rx = message_pdu()
+    pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
+    tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
     # Connect them up
-    tb.msg_connect(chat_tx, 'out', chat_rx, 'in')
+    tb.msg_connect(chat_tx, 'out', pdu_to_tagged_stream, 'pdus')
+    tb.msg_connect(tagged_stream_to_pdu, 'pdus', chat_rx, 'in')
+    tb.connect(pdu_to_tagged_stream, tagged_stream_to_pdu)
     # Start flow graph
     tb.start()
     chat_str = ""

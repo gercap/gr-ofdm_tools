@@ -1809,6 +1809,19 @@ def unmake_packet_evo(frame, w_crc):
 			print 'CRC NOK'
 			return 'BAD', 'BAD', 'BAD', 'BAD', ok
 
+def make_packet_evo2(fm, tpe, payload):
+	pkt = str(fm) + tpe + payload
+	return pkt
+
+def unmake_packet_evo2(frame):
+	try:
+		fm = frame[0]
+		tpe = frame[1]
+		data = frame[2:]
+		return fm, tpe, len(data), data
+	except:
+		print 'an error occoured while unmaking ofdm packet - in-flowgraph CRC'
+		return 'BAD', 'BAD', 'BAD', 'BAD'
 
 #######-------Spectrum Scanner Stuff------############
 #logger class to log data and statistics to files
