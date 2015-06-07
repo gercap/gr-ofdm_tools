@@ -98,8 +98,8 @@ class sync_radio_hier(gr.hier_block2):
                   samp_rate,
                   (),
             )
-        self.digital_crc32_bb_txpath = digital.crc32_bb(False, packet_length_tag_key)
-        self.digital_crc32_bb_rxpath = digital.crc32_bb(True, packet_length_tag_key)
+        #self.digital_crc32_bb_txpath = digital.crc32_bb(False, packet_length_tag_key)
+        #self.digital_crc32_bb_rxpath = digital.crc32_bb(True, packet_length_tag_key)
         self.digital_constellation_decoder_cb_1_rxpath = digital.constellation_decoder_cb(payload_mod.base())
         self.digital_constellation_decoder_cb_0 = digital.constellation_decoder_cb(header_mod.base())
         self.digital_chunks_to_symbols_x_txpath = digital.chunks_to_symbols_bc((payload_mod.points()), 1)
@@ -148,11 +148,20 @@ class sync_radio_hier(gr.hier_block2):
         self.connect((self, 1), (self.analog_agc2_xx_0, 0))
         self.connect((self.blocks_tag_gate_txpath, 0), (self.blocks_multiply_const_vxx_0, 0))
         self.connect((self.iir_filter_xxx_1, 0), (self, 1))
+        '''
+        self.connect((self, 0), (self.digital_crc32_bb_txpath, 0))
+        self.connect((self.digital_crc32_bb_txpath, 0), (self.blocks_repack_bits_bb_txpath, 0))
         self.connect((self.digital_crc32_bb_txpath, 0), (self.digital_packet_headergenerator_bb_txpath, 0))
+        '''
+        self.connect((self, 0), (self.blocks_repack_bits_bb_txpath, 0))
+        self.connect((self, 0), (self.digital_packet_headergenerator_bb_txpath, 0))
+
+        '''
         self.connect((self.blocks_repack_bits_bb_rxpath, 0), (self.digital_crc32_bb_rxpath, 0))
         self.connect((self.digital_crc32_bb_rxpath, 0), (self, 0))
-        self.connect((self.digital_crc32_bb_txpath, 0), (self.blocks_repack_bits_bb_txpath, 0))
-        self.connect((self, 0), (self.digital_crc32_bb_txpath, 0))
+        '''
+        self.connect((self.blocks_repack_bits_bb_rxpath, 0), (self, 0))
+
         self.connect((self.blocks_multiply_const_vxx_0, 0), (self.iir_filter_xxx_1, 0))
 
         ##################################################
