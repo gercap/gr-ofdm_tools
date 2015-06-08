@@ -21,7 +21,7 @@
 
 from gnuradio import gr, blocks, digital
 import gnuradio.gr.gr_threading as _threading
-import ofdm_tools
+import ofdm_tools, ofdm_cr_tools
 
 class payload_sink_pdu(gr.hier_block2):
 	"""
@@ -35,7 +35,7 @@ class payload_sink_pdu(gr.hier_block2):
 		#blocks
 		self.tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
 		self.check_crc = digital.crc32_async_bb(True)
-		self.msg_sink = ofdm_tools.message_pdu(self.callback)
+		self.msg_sink = ofdm_cr_tools.message_handler(self.callback)
 
 		# Connections
 		self.connect(self, self.tagged_stream_to_pdu)

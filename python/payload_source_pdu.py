@@ -20,7 +20,7 @@
 # 
 
 from gnuradio import gr, blocks, digital
-import ofdm_tools
+import ofdm_tools, ofdm_cr_tools
 
 class payload_source_pdu(gr.hier_block2):
 	"""
@@ -34,7 +34,7 @@ class payload_source_pdu(gr.hier_block2):
 		self.callback = callback
 		##################################################
 		# Blocks
-		self.msg_source = ofdm_tools.message_pdu(self.callback)
+		self.msg_source = ofdm_cr_tools.message_handler(self.callback)
 		self.generate_crc = digital.crc32_async_bb(False)
 		self.pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
 

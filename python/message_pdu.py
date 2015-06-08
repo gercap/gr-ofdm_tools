@@ -62,10 +62,6 @@ class message_pdu(gr.basic_block):
 
 
     def post_message(self, meta, msg_str):
-        """ Take a string, remove all non-printable characters,
-        prepend the prefix and post to the next block. """
-        # Do string sanitization:
-        msg_str = filter(lambda x: x in string.printable, msg_str)
         if self.prefix is not None:
             send_str = "[{}] {}".format(self.prefix, msg_str)
         else:
@@ -85,7 +81,6 @@ class message_pdu(gr.basic_block):
         for i in range(len(send_str)):
             pmt.u8vector_set(send_pmt, i, ord(send_str[i]))
         # Send the message:
-        #self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt({}), send_pmt))
         self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt(meta), send_pmt))
 
 
@@ -102,14 +97,14 @@ class message_pdu(gr.basic_block):
         # Convert to string:
         msg_str = "".join([chr(x) for x in pmt.u8vector_elements(msg)])
         # Just for good measure, and to avoid attacks, let's filter again:
-        msg_str = filter(lambda x: x in string.printable, msg_str)
+        # msg_str = filter(lambda x: x in string.printable, msg_str)
         # Print string, and if available, the metadata:
         if self.callback is not None:
             self.callback(msg_str)
         else:
             print msg_str
-        #if meta is not None:
-        #    print "[METADATA]: ", meta
+        if meta is not None:
+            print "[METADATA]: ", meta
 
 
 if __name__ == "__main__":
@@ -117,8 +112,8 @@ if __name__ == "__main__":
     # Create a flow graph
     tb = gr.top_block()
     # Create chat blocks
-    chat_tx = message_pdu()
-    chat_rx = message_pdu()
+    chat_tx = message_str()
+    chat_rx = message_str()
     pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
     tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
     # Connect them up
