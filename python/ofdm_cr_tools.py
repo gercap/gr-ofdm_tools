@@ -2140,9 +2140,9 @@ class message_handler(gr.basic_block):
 		self.message_port_pub(pmt.intern('out'), pdu)
 
 	def handle_msg(self, msg_pmt):
-		""" Receiver a u8vector on the input port, and print it out. """
+		""" Receiver a u8vector on the input port"""
 		# Collect metadata, convert to Python format:
-		meta = pmt.to_python(pmt.car(msg_pmt))
+		# meta = pmt.to_python(pmt.car(msg_pmt))
 		# Collect message, convert to Python format:
 		msg = pmt.cdr(msg_pmt)
 		# Make sure it's a u8vector
@@ -2150,11 +2150,7 @@ class message_handler(gr.basic_block):
 			print "[ERROR] Received invalid message type.\n"
 			return
 		data = pmt.u8vector_elements(msg)
-		addr = data[0]
-		tpe = data[1]
-		nr = data[2]
-		payload = data[3:]
 
 		if self.callback is not None:
-			self.callback(addr, tpe, nr, payload)
+			self.callback(data[0], data[1], data[2], "".join([chr(x) for x in (data[3:])])) #(addr, tpe, nr, payload)
 
