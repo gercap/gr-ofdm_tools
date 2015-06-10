@@ -1576,9 +1576,13 @@ IFF_ONE_QUEUE = 0x2000   # beats me ;)
 # iperf server: iperf -s -B 192.168.200.2
 # iperf client: iperf -c 192.168.200.2 -t 60 -i 10
 
-def open_tun_interface(tun_device_filename):
+def open_tun_interface(tun_device_filename, md):
 	from fcntl import ioctl
-	mode = IFF_TAP | IFF_NO_PI
+	if md == 'IP':
+		mode = IFF_TUN | IFF_NO_PI
+	elif md == 'ETHERNET':
+		mode = IFF_TAP | IFF_NO_PI
+	print 'using', md, 'as TUNTAP interface'
 	TUNSETIFF = 0x400454ca
 	tun = os.open(tun_device_filename, os.O_RDWR)
 	ifs = ioctl(tun, TUNSETIFF, struct.pack("16sH", "gr%d", mode))
@@ -2119,22 +2123,15 @@ class message_handler(gr.basic_block):
 
 	def post_message(self, addr, tpe, nr, payload):
 
-		if payload is None:
-			payload = []
-		elif isinstance(payload, str):
+		if isinstance(payload, str):
 			payload = map(ord, list(payload))
-		elif not isinstance(payload, list):
-			payload = list(payload)
 
 		#create header, merge with payload, convert to pmt for message_pub
 		data = [addr, tpe, nr]
 		data += payload
 
-		data = pmt.init_u8vector(len(data), data)
-		meta = pmt.to_pmt({})
-
 		#construct pdu and publish to radio port
-		pdu = pmt.cons(meta, data)
+		pdu = pmt.cons(pmt.to_pmt({}), pmt.init_u8vector(len(data), data))
 		
 		#publish to msg port
 		self.message_port_pub(pmt.intern('out'), pdu)
