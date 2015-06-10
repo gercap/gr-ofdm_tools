@@ -2104,12 +2104,11 @@ class file_logger(_threading.Thread):
 
 #PDUs message handler
 class message_handler(gr.basic_block):
-	def __init__(self, callback, prefix=None, access_code=None):
+	def __init__(self, callback):
 		gr.basic_block.__init__(self,
 			name="message_pdu",
 			in_sig=[],
 			out_sig=[])
-		self.prefix = prefix
 		self.callback = callback
 		# Register the message port IN
 		self.message_port_register_in(pmt.intern('in'))
@@ -2118,37 +2117,27 @@ class message_handler(gr.basic_block):
 		# Register the message port OUT
 		self.message_port_register_out(pmt.intern('out'))
 
-		# access_code = digital.packet_utils.default_access_code
-		#  1010110011011101101001001110001011110010100011000010000011111100
-		if access_code:
-			if not digital.packet_utils.is_1_0_string(access_code):
-				raise ValueError, \
-					"Invalid access_code %r. Must be string of 1's and 0's" % (access_code,)
+	def post_message(self, addr, tpe, nr, payload):
 
-		self.access_code = access_code
+		if payload is None:
+			payload = []
+		elif isinstance(payload, str):
+			payload = map(ord, list(payload))
+		elif not isinstance(payload, list):
+			payload = list(payload)
 
-	def post_message(self, meta, msg_str):
-		if self.prefix is not None:
-			send_str = "[{}] {}".format(self.prefix, msg_str)
-		else:
-			send_str = msg_str
+		#create header, merge with payload, convert to pmt for message_pub
+		data = [addr, tpe, nr]
+		data += payload
 
-		# prepend AC to sent packet
-		if self.access_code:
-			(packed_access_code, padded) = digital.packet_utils.conv_1_0_string_to_packed_binary_string(self.access_code)
-			print self.access_code
-			print map(ord, packed_access_code)
-			print padded
-			send_str = packed_access_code + send_str
+		data = pmt.init_u8vector(len(data), data)
+		meta = pmt.to_pmt({})
 
-		# Create an empty PMT (contains only spaces):
-		send_pmt = pmt.make_u8vector(len(send_str), ord(' '))
-		# Copy all characters to the u8vector:
-		for i in range(len(send_str)):
-			pmt.u8vector_set(send_pmt, i, ord(send_str[i]))
-		# Send the message:
-		self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt(meta), send_pmt))
-
+		#construct pdu and publish to radio port
+		pdu = pmt.cons(meta, data)
+		
+		#publish to msg port
+		self.message_port_pub(pmt.intern('out'), pdu)
 
 	def handle_msg(self, msg_pmt):
 		""" Receiver a u8vector on the input port, and print it out. """
@@ -2160,15 +2149,12 @@ class message_handler(gr.basic_block):
 		if not pmt.is_u8vector(msg):
 			print "[ERROR] Received invalid message type.\n"
 			return
-		# Convert to string:
-		msg_str = "".join([chr(x) for x in pmt.u8vector_elements(msg)])
-		# Just for good measure, and to avoid attacks, let's filter again:
-		# msg_str = filter(lambda x: x in string.printable, msg_str)
-		# Print string, and if available, the metadata:
+		data = pmt.u8vector_elements(msg)
+		addr = data[0]
+		tpe = data[1]
+		nr = data[2]
+		payload = data[3:]
+
 		if self.callback is not None:
-			self.callback(msg_str)
-		else:
-			print msg_str
-		#if meta is not None:
-		#	print "[METADATA]: ", meta
+			self.callback(addr, tpe, nr, payload)
 
