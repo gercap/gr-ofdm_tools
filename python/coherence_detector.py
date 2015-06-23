@@ -236,7 +236,8 @@ class watcher(_threading.Thread):
 		self.subject_channels_outcome = [0]*self.n_chans
 
 		for j, channel in zip(range(self.n_chans),self.idx_subject_channels):
-			coherence = data[(channel-self.srch_bins):(channel+self.srch_bins)].sum()
+			#coherence = data[(channel-self.srch_bins):(channel+self.srch_bins)].sum()
+			coherence = data[(channel-1):(channel+1)].sum()
 			self.subject_channels_coherence[j] = coherence
 			if coherence > self.threshold:
 				self.subject_channels_outcome[j] = 1
