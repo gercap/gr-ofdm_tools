@@ -39,7 +39,7 @@ from ofdm_tools import message_pdu
 class coherence_detector(gr.hier_block2):
 	def __init__(self, N, sample_rate, search_bw = 1, threshold = 10,
 	 tune_freq = 0, alpha_avg = 1, test_duration = 1, period = 3600, stats = False, output = False, rate = 10,
-	  subject_channels = []):
+	  subject_channels = [], valve_callback = None):
 
 		gr.hier_block2.__init__(self,
 			"coherence_detector",
@@ -55,6 +55,7 @@ class coherence_detector(gr.hier_block2):
 		self.subject_channels = subject_channels
 		self.subject_channels_outcome = [0.1]*len(subject_channels)
 		self.rate = rate
+		self.valve_callback = valve_callback
 
 		#data queue to share data between theads
 		self.q0 = Queue.Queue()
@@ -69,7 +70,7 @@ class coherence_detector(gr.hier_block2):
 		self.connect(self, self.sink)
 
 		self._watcher = watcher(self.msgq, self.tune_freq, self.threshold, self.search_bw, self.N,
-		 self.sample_rate, self.q0, self.subject_channels, self.set_subject_channels_outcome, self.rate)
+		 self.sample_rate, self.q0, self.subject_channels, self.set_subject_channels_outcome, self.rate, self.valve_callback)
 		if self.output != False:
 			self._output_data = output_data(self.q0, self.sample_rate, self.tune_freq, self.N,
 				 self.search_bw, self.output, self.subject_channels, self.get_subject_channels_outcome)
@@ -157,7 +158,7 @@ class output_data(_threading.Thread):
 #queue wathcer to log statistics and max power per channel
 class watcher(_threading.Thread):
 	def __init__(self, rcvd_data, tune_freq, threshold,
-		 search_bw, N, sample_rate, data_queue0, subject_channels, set_subject_channels_outcome, rate):
+		 search_bw, N, sample_rate, data_queue0, subject_channels, set_subject_channels_outcome, rate, valve_callback):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
@@ -168,6 +169,7 @@ class watcher(_threading.Thread):
 		self.N = N
 		self.sample_rate = sample_rate
 		self.rate = rate
+		self.valve_callback = valve_callback
 
 		self.Fr = float(self.sample_rate)/float(self.N) #freq resolution
 		self.Fstart = self.tune_freq - self.sample_rate/2 #start freq
@@ -241,8 +243,10 @@ class watcher(_threading.Thread):
 			self.subject_channels_coherence[j] = coherence
 			if coherence > self.threshold:
 				self.subject_channels_outcome[j] = 1
+				self.valve_callback(0)
 			else:
 				self.subject_channels_outcome[j] = 0.1
+				self.valve_callback(1)
 
 		self.coherence_file.write(str(self.subject_channels_coherence) + '\n')
 

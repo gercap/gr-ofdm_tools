@@ -16,7 +16,8 @@ period=$period,
 stats=$stats,
 output=$output,
 subject_channels=$subject_channels,
-rate=$rate
+rate=$rate,
+valve_callback=$valve_callback
 )</make>
 	<param>
 		<name>Block length</name>
@@ -114,6 +115,13 @@ rate=$rate
 		<key>subject_channels</key>
 		<value>[]</value>
 		<type>real_vector</type>
+	</param>
+
+	<param>
+		<name>Valve Callback (set_***)</name>
+		<key>valve_callback</key>
+		<value></value>
+		<type>raw</type>
 	</param>
 
 	<param>
