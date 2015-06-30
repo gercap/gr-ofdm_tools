@@ -37,7 +37,7 @@ from ofdm_tools import message_pdu
 
 
 class coherence_detector(gr.hier_block2):
-	def __init__(self, N, sample_rate, search_bw = 1, threshold = 10,
+	def __init__(self, N, sample_rate, search_bw = 1, threshold = 10, threshold_mtm = 0.2,
 	 tune_freq = 0, alpha_avg = 1, test_duration = 1, period = 3600, stats = False, output = False, rate = 10,
 	  subject_channels = [], valve_callback = None):
 
@@ -49,6 +49,7 @@ class coherence_detector(gr.hier_block2):
 		self.sample_rate = sample_rate 
 		self.search_bw = search_bw #search bandwidth within each channel
 		self.threshold = threshold #threshold comparison
+		self.threshold_mtm = threshold_mtm
 		self.tune_freq = tune_freq #center frequency
 		self.alpha_avg = alpha_avg #averaging factor for noise level between consecutive measurements
 		self.output = output
@@ -75,7 +76,7 @@ class coherence_detector(gr.hier_block2):
 		self.connect((self,1), self.sink1)
 		self.connect((self,2), self.sink2)
 
-		self._watcher = watcher(self.msgq, self.msgq1, self.msgq2, self.tune_freq, self.threshold, self.search_bw, self.N,
+		self._watcher = watcher(self.msgq, self.msgq1, self.msgq2, self.tune_freq, self.threshold, self.threshold_mtm, self.search_bw, self.N,
 		 self.sample_rate, self.q0, self.subject_channels, self.set_subject_channels_outcome, self.rate, self.valve_callback)
 		if self.output != False:
 			self._output_data = output_data(self.q0, self.sample_rate, self.tune_freq, self.N,
@@ -163,7 +164,7 @@ class output_data(_threading.Thread):
 
 #queue wathcer to log statistics and max power per channel
 class watcher(_threading.Thread):
-	def __init__(self, rcvd_data, rcvd_data1, rcvd_data2, tune_freq, threshold,
+	def __init__(self, rcvd_data, rcvd_data1, rcvd_data2, tune_freq, threshold, threshold_mtm,
 		 search_bw, N, sample_rate, data_queue0, subject_channels, set_subject_channels_outcome, rate, valve_callback):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
@@ -173,6 +174,7 @@ class watcher(_threading.Thread):
 
 		self.tune_freq = tune_freq
 		self.threshold = threshold
+		self.threshold_mtm = threshold_mtm
 		self.search_bw = search_bw
 		self.N = N
 		self.sample_rate = sample_rate
@@ -259,7 +261,7 @@ class watcher(_threading.Thread):
 			mtmR = data2[(channel-1):(channel+1)].sum()
 
 			self.subject_channels_coherence[j] = coherence
-			if coherence > self.threshold and mtmL < 0.2 and mtmR < 0.2: #only self BPSK is present
+			if coherence > self.threshold and mtmL < self.threshold_mtm and mtmR < self.threshold_mtm: #only self BPSK is present
 				self.subject_channels_outcome[j] = 1
 				self.valve_callback(0)
 			else:

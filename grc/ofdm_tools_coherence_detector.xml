@@ -9,6 +9,7 @@ N=$N,
 sample_rate=$sample_rate,
 search_bw=$search_bw,
 threshold=$threshold,
+threshold_mtm=$threshold_mtm,
 tune_freq=$tune_freq,
 alpha_avg=$alpha_avg,
 test_duration=$test_duration,
@@ -43,6 +44,13 @@ valve_callback=$valve_callback
 		<name>Decision Thre</name>
 		<key>threshold</key>
 		<value>10</value>
+		<type>float</type>
+	</param>
+
+	<param>
+		<name>MTM Decis. Thre</name>
+		<key>threshold_mtm</key>
+		<value>0.2</value>
 		<type>float</type>
 	</param>
 
