@@ -43,7 +43,7 @@ class coherence_detector(gr.hier_block2):
 
 		gr.hier_block2.__init__(self,
 			"coherence_detector",
-			gr.io_signature(1, 1, gr.sizeof_float*N),
+			gr.io_signature3(3, 3, gr.sizeof_float*N, gr.sizeof_float*N, gr.sizeof_float*N),
 			gr.io_signature(0, 0, 0))
 		self.N = N #lenght of the fft for spectral analysis
 		self.sample_rate = sample_rate 
@@ -62,14 +62,20 @@ class coherence_detector(gr.hier_block2):
 
 		#gnuradio msg queues
 		self.msgq = gr.msg_queue(2)
+		self.msgq1 = gr.msg_queue(2)
+		self.msgq2 = gr.msg_queue(2)
 
 		#######BLOCKS#####
 		self.sink = blocks.message_sink(gr.sizeof_float * self.N, self.msgq, True)
+		self.sink1 = blocks.message_sink(gr.sizeof_float * self.N, self.msgq1, True)
+		self.sink2 = blocks.message_sink(gr.sizeof_float * self.N, self.msgq2, True)
 
 		#####CONNECTIONS####
-		self.connect(self, self.sink)
+		self.connect((self,0), self.sink)
+		self.connect((self,1), self.sink1)
+		self.connect((self,2), self.sink2)
 
-		self._watcher = watcher(self.msgq, self.tune_freq, self.threshold, self.search_bw, self.N,
+		self._watcher = watcher(self.msgq, self.msgq1, self.msgq2, self.tune_freq, self.threshold, self.search_bw, self.N,
 		 self.sample_rate, self.q0, self.subject_channels, self.set_subject_channels_outcome, self.rate, self.valve_callback)
 		if self.output != False:
 			self._output_data = output_data(self.q0, self.sample_rate, self.tune_freq, self.N,
@@ -157,11 +163,13 @@ class output_data(_threading.Thread):
 
 #queue wathcer to log statistics and max power per channel
 class watcher(_threading.Thread):
-	def __init__(self, rcvd_data, tune_freq, threshold,
+	def __init__(self, rcvd_data, rcvd_data1, rcvd_data2, tune_freq, threshold,
 		 search_bw, N, sample_rate, data_queue0, subject_channels, set_subject_channels_outcome, rate, valve_callback):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
+		self.rcvd_data1 = rcvd_data1
+		self.rcvd_data2 = rcvd_data2
 
 		self.tune_freq = tune_freq
 		self.threshold = threshold
@@ -201,55 +209,65 @@ class watcher(_threading.Thread):
 		start_dat = time.strftime("%y%m%d")
 		start_tim = time.strftime("%H%M%S")
 		
-		self.coherence_path = './coherence_log' + '-' + start_dat + '-' + start_tim + '.log'
-		self.coherence_file = open(self.coherence_path,'w')
-
+		#self.coherence_path = './coherence_log' + '-' + start_dat + '-' + start_tim + '.log'
+		#self.coherence_file = open(self.coherence_path,'w')
+		'''
 		self.coherence_file.write('Freqs' + '\n')
 		self.coherence_file.write(str(self.subject_channels) + '\n')
 		self.coherence_file.write('Coherences at ' + str(self.rate) + ' measurements per second' + '\n')
-		
 		print "Created file: ", self.coherence_path
-
+		'''
 		self.keep_running = True
 		self.start()
 
 	def run(self):
 		while self.keep_running:
 			msg = self.rcvd_data.delete_head()
+			msg1 = self.rcvd_data1.delete_head()
+			msg2 = self.rcvd_data2.delete_head()
 
 			itemsize = int(msg.arg1())
 			nitems = int(msg.arg2())
 			s = msg.to_string()
+			s1 = msg1.to_string()
+			s2 = msg2.to_string()
 			if nitems > 1:
 				print 'Discarded: ', nitems, ' vectors'
 				start = itemsize * (nitems - 1)
 				s = s[start:start+itemsize]
+				s1 = s1[start:start+itemsize]
+				s2 = s2[start:start+itemsize]
 
 			#convert received data to numpy vector
 			float_data = np.fromstring (s, np.float32)
-			self.plc = self.plc * 0.6 + np.array(float_data) * 0.4
+			float_data1 = np.fromstring (s1, np.float32)
+			float_data2 = np.fromstring (s2, np.float32)
+			#self.plc = self.plc * 0.6 + np.array(float_data) * 0.4
 
 			#scan channels
-			self.scanner(float_data)
+			self.scanner(float_data, float_data1, float_data2)
 			#self.scanner(self.plc)
 
 	#function that scans channels and compares with threshold to determine occupied / not occupied
-	def scanner(self, data):
+	def scanner(self, data, data1, data2):
 		self.subject_channels_outcome = [0]*self.n_chans
 
 		for j, channel in zip(range(self.n_chans),self.idx_subject_channels):
 			#coherence = data[(channel-self.srch_bins):(channel+self.srch_bins)].sum()
 			coherence = data[(channel-1):(channel+1)].sum()
+			mtmL = data1[(channel-1):(channel+1)].sum()
+			mtmR = data2[(channel-1):(channel+1)].sum()
+
 			self.subject_channels_coherence[j] = coherence
-			if coherence > self.threshold:
+			if coherence > self.threshold and mtmL < 0.2 and mtmR < 0.2: #only self BPSK is present
 				self.subject_channels_outcome[j] = 1
 				self.valve_callback(0)
 			else:
 				self.subject_channels_outcome[j] = 0.1
 				self.valve_callback(1)
-
+		'''
 		self.coherence_file.write(str(self.subject_channels_coherence) + '\n')
-
+		'''
 		self.set_subject_channels_outcome(self.subject_channels_outcome) #publish detection outcome
 		self.data_queue0.put(self.subject_channels_coherence) #send coherence to threads
 

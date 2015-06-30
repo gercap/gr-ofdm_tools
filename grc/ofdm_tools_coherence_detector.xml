@@ -137,6 +137,18 @@ valve_callback=$valve_callback
 		<vlen>$N</vlen>
 	</sink>
 
+	<sink>
+		<name>MTM L</name>
+		<type>float</type>
+		<vlen>$N</vlen>
+	</sink>
+
+	<sink>
+		<name>MTM R</name>
+		<type>float</type>
+		<vlen>$N</vlen>
+	</sink>
+
 	<source>
 		<name>msg_PDU</name>
 		<type>message</type>
