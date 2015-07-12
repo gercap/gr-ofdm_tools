@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<block>
+  <name>Chat Sender</name>
+  <key>ofdm_tools_chat_sender</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <import>from gnuradio.digital import packet_utils</import>
+  <make>ofdm_tools.chat_sender($prefix, $access_code, $AESkey)</make>
+  <callback>post_message($msg)</callback>
+  <param>
+    <name>Chat Prefix</name>
+    <key>prefix</key>
+    <type>string</type>
+  </param>
+  <param>
+    <name>Message</name>
+    <key>msg</key>
+    <value>Hello World!</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>Access code</name>
+    <key>access_code</key>
+    <value></value>
+    <type>string</type>
+    <hide>part</hide>
+  </param>
+  <param>
+    <name>Crypto Key</name>
+    <key>AESkey</key>
+    <value></value>
+    <type>string</type>
+    <hide>part</hide>
+  </param>
+  <source>
+    <name>out</name>
+    <type>message</type>
+  </source>
+</block>
+

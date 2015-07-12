@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<block>
+  <name>Chat Receiver</name>
+  <key>ofdm_tools_chat_receiver</key>
+  <category>ofdm_tools</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.chat_receiver($AESkey)</make>
+  <param>
+    <name>Crypto Key</name>
+    <key>AESkey</key>
+    <value></value>
+    <type>string</type>
+    <hide>part</hide>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>message</type>
+  </sink>
+</block>
+

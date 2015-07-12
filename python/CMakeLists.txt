@@ -53,7 +53,8 @@ GR_PYTHON_INSTALL(
     message_pdu.py
     coherence_detector.py
     payload_source_pdu.py
-    payload_sink_pdu.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    payload_sink_pdu.py
+    chat_blocks.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
