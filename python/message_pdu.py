@@ -112,14 +112,12 @@ if __name__ == "__main__":
     # Create a flow graph
     tb = gr.top_block()
     # Create chat blocks
-    chat_tx = message_str()
-    chat_rx = message_str()
+    chat_tx = message_pdu(None)
+    chat_rx = message_pdu(None)
     pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
     tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
     # Connect them up
-    tb.msg_connect(chat_tx, 'out', pdu_to_tagged_stream, 'pdus')
-    tb.msg_connect(tagged_stream_to_pdu, 'pdus', chat_rx, 'in')
-    tb.connect(pdu_to_tagged_stream, tagged_stream_to_pdu)
+    tb.msg_connect(chat_tx, 'out',  chat_rx, 'in')
     # Start flow graph
     tb.start()
     chat_str = ""

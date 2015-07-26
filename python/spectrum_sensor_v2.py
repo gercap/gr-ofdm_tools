@@ -110,7 +110,7 @@ class spectrum_sensor_v2(gr.hier_block2):
 		self.message_out1 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.top4[1])), 1000)
 		self.message_out2 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.top4[2])), 1000)
 		self.message_out3 = blocks.message_strobe( pmt.cons( pmt.intern("freq"), pmt.to_pmt(self.top4[3])), 1000)
-		self.PDU_messages = message_pdu.message_pdu()
+		self.PDU_messages = message_pdu.message_pdu(None)
 
 		#####CONNECTIONS####
 		#main stream
