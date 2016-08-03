@@ -32,7 +32,6 @@ from scipy import signal as sg
 import threading, os, pmt, subprocess, time, datetime, Queue, sys, pmt
 from os.path import expanduser
 from operator import add
-from terminaltables import AsciiTable
 
 from ofdm_cr_tools import frange, movingaverage, src_power, logger, file_logger
 

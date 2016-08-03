@@ -29,7 +29,6 @@ from gnuradio import fft
 import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
-from bashplotlib.histogram import plot_hist
 
 class ascii_plot(gr.hier_block2):
 
