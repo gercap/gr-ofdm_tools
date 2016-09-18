@@ -30,7 +30,6 @@ from scipy import signal as sg
 import threading, os, pmt, subprocess, time, datetime, Queue, sys, pmt
 from os.path import expanduser
 from operator import add
-from terminaltables import AsciiTable
 
 from ofdm_cr_tools import frange, movingaverage, src_power, logger, file_logger
 from ofdm_tools import message_pdu
@@ -137,6 +136,7 @@ class output_data(_threading.Thread):
 				print(chr(27) + "[2J")
 
 		if self.output == 't_o':
+			from terminaltables import AsciiTable
 			while self.keep_running:
 				data = self.data_queue0.get()
 				left_column = np.array([['Freq [Hz]'],['Coherence'],['Outcome']])
