@@ -25,7 +25,6 @@ include(GrPlatform) #define LIB_SUFFIX
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 list(APPEND ofdm_tools_sources
-    clipper_cc_impl.cc
     )
 
 set(ofdm_tools_sources "${ofdm_tools_sources}" PARENT_SCOPE)

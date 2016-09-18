@@ -22,6 +22,5 @@
 ########################################################################
 install(FILES
     api.h
-    clipper_cc.h
     DESTINATION include/ofdm_tools
 )

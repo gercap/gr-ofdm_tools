@@ -17,7 +17,6 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 install(FILES
-    ofdm_tools_clipper.xml
     ofdm_tools_papr_sink.xml
     ofdm_tools_ofdm_radio_hier.xml
     ofdm_tools_payload_source.xml

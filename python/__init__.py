@@ -42,10 +42,10 @@ if _RTLD_GLOBAL != 0:
 
 
 # import swig generated symbols into the ofdm_tools namespace
-from ofdm_tools_swig import *
+#from ofdm_tools_swig import *
 
 # import any pure python here
-from clipper import clipper
+
 from papr_sink import papr_sink
 from ofdm_radio_hier import ofdm_radio_hier
 from payload_source import payload_source
