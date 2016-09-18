@@ -34,7 +34,6 @@ from scipy import signal as sg
 import threading, os, pmt, subprocess, time, datetime, Queue, sys, pmt
 from os.path import expanduser
 from operator import add
-from terminaltables import AsciiTable
 
 from ofdm_cr_tools import frange, movingaverage, src_power, logger, file_logger
 from ofdm_tools import message_pdu
@@ -240,6 +239,7 @@ class output_data(_threading.Thread):
 	def run(self):
 
 		if self.output == 't':
+			from terminaltables import AsciiTable
 			while self.keep_running:
 
 				left_column = np.array([['Freq [Hz]'],['Power [dB]']])
