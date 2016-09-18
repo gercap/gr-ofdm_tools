@@ -53,7 +53,8 @@ GR_PYTHON_INSTALL(
     coherence_detector.py
     payload_source_pdu.py
     payload_sink_pdu.py
-    chat_blocks.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    chat_blocks.py
+    ascii_gnuplot.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

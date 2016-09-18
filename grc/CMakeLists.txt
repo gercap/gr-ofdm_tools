@@ -38,5 +38,6 @@ install(FILES
     ofdm_tools_payload_source_pdu.xml
     ofdm_tools_payload_sink_pdu.xml
     ofdm_tools_chat_receiver.xml
-    ofdm_tools_chat_sender.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_chat_sender.xml
+    ofdm_tools_ascii_gnuplot.xml DESTINATION share/gnuradio/grc/blocks
 )

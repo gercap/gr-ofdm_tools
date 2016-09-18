@@ -32,7 +32,7 @@ from gnuradio.filter import window
 
 class ascii_plot(gr.hier_block2):
 
-	def __init__(self, fft_len, sample_rate, tune_freq, average, rate, length, height):
+	def __init__(self, fft_len, sample_rate, tune_freq, average, rate, width, height):
 		gr.hier_block2.__init__(self,
 			"ascii plot",
 			gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -42,7 +42,7 @@ class ascii_plot(gr.hier_block2):
 		self.average = average
 		self.tune_freq = tune_freq
 		self.rate = rate
-		self.length = length
+		self.width = width
 		self.height = height
 
 		self.msgq = gr.msg_queue(2)
@@ -65,13 +65,15 @@ class ascii_plot(gr.hier_block2):
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.avg, self.log, self.sink)
 
-		self._main = main_thread(self.msgq, self.fft_len, self.sample_rate, self.tune_freq, self.length, self.height)
+		self._main = main_thread(self.msgq, self.fft_len, self.sample_rate, self.tune_freq, self.width, self.height)
 
-	def set_length(self, length):
-		self._main.length = length
+	def set_width(self, width):
+		self._main.width = width
+		self._main.updateWindow()
 
 	def set_height(self, height):
 		self._main.height = height
+		self._main.updateWindow()
 
 	def get_sample_rate(self):
 		return self.sample_rate
@@ -79,6 +81,7 @@ class ascii_plot(gr.hier_block2):
 	def set_sample_rate(self, sample_rate):
 		self.sample_rate = sample_rate
 		self._main.sample_rate = sample_rate
+		self._main.updateWindow()
 
 	def get_tune_freq(self):
 		return self.tune_freq
@@ -86,6 +89,7 @@ class ascii_plot(gr.hier_block2):
 	def set_tune_freq(self, tune_freq):
 		self.tune_freq = tune_freq
 		self._main.tune_freq = tune_freq
+		self._main.updateWindow()
 
 	def set_average(self, average):
 		self.average = average
@@ -97,24 +101,35 @@ class ascii_plot(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-	def __init__(self, rcvd_data, fft_len, sample_rate, tune_freq, length, height):
+	def __init__(self, rcvd_data, fft_len, sample_rate, tune_freq, width, height):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
 		self.fft_len = fft_len
 		self.sample_rate = sample_rate
 		self.tune_freq = tune_freq
-		self.length = length
-		self.height = height
+
+		self.width = int(width)
+		self.height = int(height)
+
+		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
+		#self.axis = self.axis[len(self.axis)/2:]
+		self.absc = range(self.width)
+		self.widthDens = len(self.axis)/int(self.width)
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
 
 		self.state = None
 		self.keep_running = True #set to False to stop thread's main loop
-		self.gnuplot = subprocess.Popen(["/usr/bin/gnuplot"], stdin=subprocess.PIPE)
 		self.start()
 
+	def updateWindow(self):
+		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
+		#self.axis = self.axis[len(self.axis)/2:]
+		self.absc = range(self.width)
+		self.widthDens = len(self.axis)/int(self.width)
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
+	
 	def run(self):
-		print 'main thread started'
-
 		while self.keep_running:
 			msg = self.rcvd_data.delete_head()
 			itemsize = int(msg.arg1())
@@ -124,17 +139,60 @@ class main_thread(_threading.Thread):
 				start = itemsize * (nitems - 1)
 				s = s[start:start+itemsize]
 
-			payload = msg.to_string()
-			complex_data = np.fromstring (payload, np.float32)
+			fft_data = np.fromstring (msg.to_string(), np.float32)
+			minValue = min(fft_data)
+			maxValue = max(fft_data)
+			
+			toClient = ''
+			auxWidth = 0
+			for i in range(self.width):
+				htValue = sum(fft_data[auxWidth:auxWidth+self.widthDens])/self.widthDens
+				htValueNormed = int(math.floor(((htValue - minValue) * (self.height-1)) / math.floor((maxValue - minValue))))
 
-			self.gnuplot.stdin.write("set term dumb "+str(self.length)+" "+str(self.height)+ " \n")
-			self.gnuplot.stdin.write("plot '-' using 1:2 title 'GNURadio PSD' with linespoints \n")
+				self.matrix[i][htValueNormed] = '^'
+				for k in range(htValueNormed): self.matrix[i][k] = '|'
 
-			axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len)
-			axis = axis + self.tune_freq
+				auxWidth += self.widthDens
+				toClient += '_ '
 
-			for i,j in zip(axis, complex_data):
-				self.gnuplot.stdin.write("%f %f\n" % (i,j))
+			toClient += '_ _ _ _\n'
 
-			self.gnuplot.stdin.write("e\n")
-			self.gnuplot.stdin.flush()
+			for i in reversed(range(self.height)):
+				#print vert scale
+				if i%5 == 0:
+					NewValue = (((i - 0) * math.floor((maxValue - minValue))) / self.height) + minValue
+					toP = "%.3f" % (NewValue)
+					toClient += toP[:6]
+					toClient += ' '
+				else:
+					toClient += '------ '
+
+				#print the actual matrix of values
+				for j in range(self.width):
+					toClient += self.matrix[j][i]
+					toClient += ' '
+				toClient += '\n'
+
+			#ptint horiz scale
+			toClient += '------ '
+			for a in range(self.width):
+				if a%10 == 0:
+					NewValue = (((a - 0) * (self.axis[-1]-self.axis[0])) / self.width) + self.axis[0]
+					toP = "%.3f" % (NewValue)
+					
+					toClient += '| '
+					toClient += toP[:5]
+					toClient += ' ' * (2*10-5-2)
+
+			toClient += '\n'
+			
+			#print bottom
+			toClient += "Tune freq: %s MHz, Sample rate: %s MS/s, FFT: %s \n" % (self.tune_freq/1e6, self.sample_rate/1e6, self.fft_len)
+			for a in range(self.width):
+				toClient += '_ '
+			toClient += '_ _ _ _'
+			
+			print toClient
+
+			#time.sleep(.2)
+			self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]

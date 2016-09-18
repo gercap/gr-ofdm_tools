@@ -10,13 +10,13 @@
   tune_freq=$tune_freq, 
   average=$average, 
   rate=$rate,
-  length=$length,
+  width=$width,
   height=$height,
   )</make>
 <callback>set_sample_rate($sample_rate)</callback>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_average($average)</callback>
-<callback>set_length($length)</callback>
+<callback>set_width($width)</callback>
 <callback>set_height($height)</callback>
 
 	<param>
@@ -26,7 +26,7 @@
 		<type>float</type>
 	</param>
 	<param>
-		<name>FFT Length</name>
+		<name>FFT width</name>
 		<key>fft_len</key>
 		<value>fft_len</value>
 		<type>int</type>
@@ -51,8 +51,8 @@
 		<type>int</type>
 	</param>
 	<param>
-		<name>Length</name>
-		<key>length</key>
+		<name>Width</name>
+		<key>width</key>
 		<value>80</value>
 		<type>int</type>
 	</param>
