@@ -68,6 +68,7 @@ from payload_source_pdu import payload_source_pdu
 from payload_sink_pdu import payload_sink_pdu
 from chat_blocks import chat_sender, chat_receiver
 from ascii_gnuplot import ascii_gnuplot
+from multichannel_scanner import multichannel_scanner
 
 
 

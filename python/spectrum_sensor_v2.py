@@ -75,11 +75,11 @@ class spectrum_sensor_v2(gr.hier_block2):
 		self.top4 = [0, 0, 0, 0]
 		
 		#register message out to other blocks
-		self.message_port_register_hier_in("freq_out_0")
-		self.message_port_register_hier_in("freq_out_1")
-		self.message_port_register_hier_in("freq_out_2")
-		self.message_port_register_hier_in("freq_out_3")
-		self.message_port_register_hier_in("freq_msg_PDU")
+		self.message_port_register_hier_out("freq_out_0")
+		self.message_port_register_hier_out("freq_out_1")
+		self.message_port_register_hier_out("freq_out_2")
+		self.message_port_register_hier_out("freq_out_3")
+		self.message_port_register_hier_out("freq_msg_PDU")
 
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
