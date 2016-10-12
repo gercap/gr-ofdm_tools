@@ -65,35 +65,35 @@ class ascii_plot(gr.hier_block2):
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.avg, self.log, self.sink)
 
-		self._main = main_thread(self.msgq, self.fft_len, self.sample_rate, self.tune_freq, self.width, self.height)
+		self._ascii_plotter = ascii_plotter(self.width, self.height, self.tune_freq, self.sample_rate, self.fft_len)
+
+		self._main = main_thread(self.msgq, self._ascii_plotter)
 
 	def set_width(self, width):
-		self._main.width = width
-		self._main.updateWindow()
+		self._ascii_plotter.width = width
+		self._ascii_plotter.updateWindow()
 
 	def set_height(self, height):
-		self._main.height = height
-		self._main.updateWindow()
-
-	def get_sample_rate(self):
-		return self.sample_rate
+		self._ascii_plotter.height = height
+		self._ascii_plotter.updateWindow()
 
 	def set_sample_rate(self, sample_rate):
-		self.sample_rate = sample_rate
-		self._main.sample_rate = sample_rate
-		self._main.updateWindow()
+		self._ascii_plotter.sample_rate = sample_rate
+		self._ascii_plotter.updateWindow()
+
+	def set_tune_freq(self, tune_freq):
+		self._ascii_plotter.tune_freq = tune_freq
+		self._ascii_plotter.updateWindow()
+
+	def set_average(self, average):
+		average = average
+		self.avg.set_taps(self.average)
 
 	def get_tune_freq(self):
 		return self.tune_freq
 
-	def set_tune_freq(self, tune_freq):
-		self.tune_freq = tune_freq
-		self._main.tune_freq = tune_freq
-		self._main.updateWindow()
-
-	def set_average(self, average):
-		self.average = average
-		self.avg.set_taps(self.average)
+	def get_sample_rate(self):
+		return self.sample_rate
 
 	def get_average(self):
 		return self.average
@@ -101,33 +101,15 @@ class ascii_plot(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-	def __init__(self, rcvd_data, fft_len, sample_rate, tune_freq, width, height):
+	def __init__(self, rcvd_data, plotter):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
-		self.fft_len = fft_len
-		self.sample_rate = sample_rate
-		self.tune_freq = tune_freq
-
-		self.width = int(width)
-		self.height = int(height)
-
-		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
-		#self.axis = self.axis[len(self.axis)/2:]
-		self.absc = range(self.width)
-		self.widthDens = len(self.axis)/int(self.width)
-		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
+		self.plotter = plotter
 
 		self.state = None
 		self.keep_running = True #set to False to stop thread's main loop
 		self.start()
-
-	def updateWindow(self):
-		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
-		#self.axis = self.axis[len(self.axis)/2:]
-		self.absc = range(self.width)
-		self.widthDens = len(self.axis)/int(self.width)
-		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
 	
 	def run(self):
 		while self.keep_running:
@@ -140,59 +122,80 @@ class main_thread(_threading.Thread):
 				s = s[start:start+itemsize]
 
 			fft_data = np.fromstring (msg.to_string(), np.float32)
-			minValue = min(fft_data)
-			maxValue = max(fft_data)
-			
-			toClient = ''
-			auxWidth = 0
-			for i in range(self.width):
-				htValue = sum(fft_data[auxWidth:auxWidth+self.widthDens])/self.widthDens
-				htValueNormed = int(math.floor(((htValue - minValue) * (self.height-1)) / math.floor((maxValue - minValue))))
+			print self.plotter.make_plot(fft_data)
 
-				self.matrix[i][htValueNormed] = '^'
-				for k in range(htValueNormed): self.matrix[i][k] = '|'
 
-				auxWidth += self.widthDens
-				toClient += '_ '
 
-			toClient += '_ _ _ _\n'
+class ascii_plotter(object):
+	def __init__(self, width, height, tune_freq, sample_rate, fft_len):
+		self.width = width
+		self.height = height
+		self.tune_freq = tune_freq
+		self.sample_rate = sample_rate
+		self.fft_len = fft_len
 
-			for i in reversed(range(self.height)):
-				#print vert scale
-				if i%5 == 0:
-					NewValue = (((i - 0) * math.floor((maxValue - minValue))) / self.height) + minValue
-					toP = "%.3f" % (NewValue)
-					toClient += toP[:6]
-					toClient += ' '
-				else:
-					toClient += '------ '
+		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
+		self.widthDens = len(self.axis)/int(self.width)
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
 
-				#print the actual matrix of values
-				for j in range(self.width):
-					toClient += self.matrix[j][i]
-					toClient += ' '
-				toClient += '\n'
+	def updateWindow(self):
+		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
+		self.widthDens = len(self.axis)/int(self.width)
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
 
-			#ptint horiz scale
-			toClient += '------ '
-			for a in range(self.width):
-				if a%10 == 0:
-					NewValue = (((a - 0) * (self.axis[-1]-self.axis[0])) / self.width) + self.axis[0]
-					toP = "%.3f" % (NewValue)
-					
-					toClient += '| '
-					toClient += toP[:5]
-					toClient += ' ' * (2*10-5-2)
+	def make_plot(self, fft_data):
+		minValue = min(fft_data)
+		maxValue = max(fft_data)
+		
+		toClient = ''
+		auxWidth = 0
+		for i in range(self.width):
+			htValue = sum(fft_data[auxWidth:auxWidth+self.widthDens])/self.widthDens
+			htValueNormed = int(math.floor(((htValue - minValue) * (self.height-1)) / math.floor((maxValue - minValue))))
 
+			for k in range(htValueNormed+1, self.height): self.matrix[i][k] = ' '
+			self.matrix[i][htValueNormed] = '^'
+			for k in range(htValueNormed): self.matrix[i][k] = '|'
+
+			auxWidth += self.widthDens
+			toClient += '_ '
+
+		toClient += '_ _ _ _\n'
+
+		for i in reversed(range(self.height)):
+			#print vert scale
+			if i%5 == 0:
+				NewValue = (((i - 0) * math.floor((maxValue - minValue))) / self.height) + minValue
+				toP = "%.3f" % (NewValue)
+				toClient += toP[:6]
+				toClient += ' '
+			else:
+				toClient += '------ '
+
+			#print the actual matrix of values
+			for j in range(self.width):
+				toClient += self.matrix[j][i]
+				toClient += ' '
 			toClient += '\n'
-			
-			#print bottom
-			toClient += "Tune freq: %s MHz, Sample rate: %s MS/s, FFT: %s \n" % (self.tune_freq/1e6, self.sample_rate/1e6, self.fft_len)
-			for a in range(self.width):
-				toClient += '_ '
-			toClient += '_ _ _ _'
-			
-			print toClient
 
-			#time.sleep(.2)
-			self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
+		#ptint horiz scale
+		toClient += '------ '
+		for a in range(self.width):
+			if a%10 == 0:
+				NewValue = (((a - 0) * (self.axis[-1]-self.axis[0])) / self.width) + self.axis[0]
+				toP = "%.3f" % (NewValue)
+				
+				toClient += '| '
+				toClient += toP[:5]
+				toClient += ' ' * (2*10-5-2)
+
+		toClient += '\n'
+		
+		#print bottom
+		toClient += "Tune freq: %s MHz, Sample rate: %s MS/s, FFT: %s \n" % (self.tune_freq/1e6, self.sample_rate/1e6, self.fft_len)
+		for a in range(self.width):
+			toClient += '_ '
+		toClient += '_ _ _ _'
+		
+		return toClient
+
