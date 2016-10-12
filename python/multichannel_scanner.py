@@ -65,7 +65,7 @@ class multichannel_scanner(gr.hier_block2):
         self.msgq0 = gr.msg_queue(2)
         
         #output top 4 freqs
-        self.top4 = [0, 0, 0, 0]
+        self.top4 = [self.subject_channels[0], self.subject_channels[0], self.subject_channels[0], self.subject_channels[0]]
         
         #register message out to other blocks
         self.message_port_register_hier_out("freq_out_0")
@@ -108,52 +108,27 @@ class multichannel_scanner(gr.hier_block2):
         self.msg_connect(self.PDU_messages, 'out', self, 'freq_msg_PDU')
 
         self._output_data = output_data(self.output, self.subject_channels, self.subject_channels_pwr,
-            self.top4, self.PDU_messages)
+            self.PDU_messages)
 
         self._basic_spectrum_watcher = basic_spectrum_watcher(self.msgq0, sens_per_sec, self.tune_freq,
          self.channel_space, self.search_bw, self.fft_len, self.sample_rate, trunc_band, verbose,
           self.subject_channels, self.set_freqs, self._output_data)
 
-        #send PDU's w/ freq data
-        self._send_PDU_data = send_PDU_data(self.top4, self.PDU_messages)
-
     def set_freqs(self, freq0, freq1, freq2, freq3):
-        self.top4[0] = freq0
-        self.top4[1] = freq1
-        self.top4[2] = freq2
-        self.top4[3] = freq3
         self.message_out0.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq0-self.tune_freq) )) #send differencial frequency
         self.message_out1.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq1-self.tune_freq) ))
         self.message_out2.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq2-self.tune_freq) ))
         self.message_out3.set_msg(pmt.cons( pmt.to_pmt("freq"), pmt.to_pmt(freq3-self.tune_freq) ))
 
-#PDU thread
-class send_PDU_data(_threading.Thread):
-    def __init__(self, top4, PDU_messages):
-        _threading.Thread.__init__(self)
-        self.setDaemon(1)
-        self.top4 = top4
-        self.PDU_messages = PDU_messages
-
-        self.state = None
-        self.keep_running = True #set to False to stop thread's main loop
-        self.start()
-
-    def run(self):
-        while self.keep_running:
-            for freq in self.top4:
-                self.PDU_messages.post_message("freq", str(freq))
-            time.sleep(1)
-
 #ascii thread
 class output_data(_threading.Thread):
-    def __init__(self, output, subject_channels, subject_channels_pwr, top4, PDU_messages):
+    def __init__(self, output, subject_channels, subject_channels_pwr, PDU_messages):
         _threading.Thread.__init__(self)
         self.setDaemon(1)
         self.output = output
         self.subject_channels = subject_channels # list of channels to be analysed by the flanck detector
         self.subject_channels_pwr = subject_channels_pwr
-        self.top4 = top4
+        self.top4 = [subject_channels[0]]*4
         self.PDU_messages = PDU_messages
 
 
@@ -166,12 +141,10 @@ class output_data(_threading.Thread):
             if self.output == 't':
                 #clear()
                 print "%-10s %-10s" % ('Freq [Hz]', 'Power [dB]')
-                for f, b in zip(self.subject_channels, self.subject_channels_pwr):
-                    print "%-10s %-10s" % (f, b)
-                print ""
-          
-            for freq in self.top4:
-                self.PDU_messages.post_message("freq", str(freq))
+                for f in self.top4:
+                    print "%-10s %-10s" % (f, self.subject_channels_pwr[self.subject_channels.index(f)])
+                    self.PDU_messages.post_message("freq", str(f))
+                print ""                
 
             time.sleep(1)
 
@@ -210,7 +183,7 @@ class basic_spectrum_watcher(_threading.Thread):
         self.subject_channels = subject_channels # list of channels to be analysed by the flanck detector
         self.idx_subject_channels = [0]*len(self.subject_channels) # aux list to index ax_ch
         k = 0
-        for channel in subject_channels: 
+        for channel in subject_channels:
             self.idx_subject_channels[k] = self.ax_ch.index(channel)
             k += 1
         self.subject_channels_pwr = np.array([1.0]*len(self.subject_channels))
@@ -256,12 +229,12 @@ class basic_spectrum_watcher(_threading.Thread):
         for channel in self.idx_subject_channels:
             self.subject_channels_pwr[k] = 10*np.log10(self.plc[channel])
             k += 1
-        self.output_data.subject_channels_pwr = self.subject_channels_pwr
 
         ff = self.subject_channels_pwr.argsort()[-4:][::-1]
         self.set_freqs(self.subject_channels[ff[0]], self.subject_channels[ff[1]],
          self.subject_channels[ff[2]], self.subject_channels[ff[3]])
 
+        self.output_data.subject_channels_pwr = self.subject_channels_pwr
         self.output_data.top4 = [self.subject_channels[ff[0]], self.subject_channels[ff[1]],
          self.subject_channels[ff[2]], self.subject_channels[ff[3]]]
 
