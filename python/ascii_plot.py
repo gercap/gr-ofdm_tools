@@ -199,3 +199,82 @@ class ascii_plotter(object):
 		
 		return toClient
 
+
+class ascii_bars(object):
+	def __init__(self, width, height, tune_freq, sample_rate, fft_len, tones):
+		self.width = width
+		self.height = height
+		self.tune_freq = tune_freq
+		self.sample_rate = sample_rate
+		self.fft_len = fft_len
+		self.tones = tones
+		self.widthDens = width/len(tones)
+
+	def make_plot(self, fft_data):
+
+		minValue = min(fft_data)
+		maxValue = max(fft_data)
+		
+		toClient = ''
+		auxWidth = 0
+		for htValue in fft_data:
+			htValueNormed = int(mt.floor(((htValue - minValue) * (self.height-1)) / mt.floor(maxValue - minValue)))
+
+			for j in range(self.widthDens):
+				self.matrix[auxWidth+j][htValueNormed] = '^'
+				for k in range(htValueNormed):
+					self.matrix[auxWidth+j][k] = '|'
+
+			auxWidth += self.widthDens
+			toClient += '_ ' * self.widthDens
+
+		toClient += '_ _ _ _\n'
+		
+		#mark 0 line
+		zeroHoriz = int(mt.floor(((0 - minValue) * (self.height-1)) / mt.floor(maxValue - minValue)))
+		for i in range(len(self.matrix)):
+			if zeroHoriz < aspectRatio[1]: self.matrix[i][zeroHoriz] = '-'
+
+		for i in reversed(range(self.height)):
+			#print vert scale
+			if i%5 == 0:
+				NewValue = (((i - 0) * mt.floor((maxValue - minValue))) / self.height) + minValue
+				toP = "%.3f" % (NewValue)
+				toClient += toP[:6]
+				toClient += ' '
+			elif i == zeroHoriz: 
+				toClient += '---- 0 '
+			else:
+				toClient += '------ '
+
+			#print the actual matrix of values
+			for j in range(self.width):
+				toClient += self.matrix[j][i]
+				toClient += ' '
+			toClient += '\n'
+
+		#ptint horiz scale
+		''' '''
+		toClient += '------ '
+		for a in self.tones:
+			toClient += '| '
+			toClient += str(a)
+			toClient += ' ' * (2*self.widthDens-len(str(a))-2)
+		toClient += '\n'
+		
+		#print button
+		for a in range(self.width):
+			toClient += '_ '
+		toClient += '_ _ _ _\n'
+		toClient += '\n\n'
+		
+		if self.sck_server.isAvailable:
+			self.sck_server.send_data(toClient)
+		if options.printascii:
+			print toClient
+
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
+
+		return toClient
+
+
