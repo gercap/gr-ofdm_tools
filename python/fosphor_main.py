@@ -65,6 +65,7 @@ class fosphor_main(gr.hier_block2):
 			self.p = subprocess.Popen(decoder_exec, shell=True)
 		except Exception, e:
 			print e
+			print 'please make sure you have a copy of gr-fosphor/lib/fosphor/main as /usr/bin/fosphor_main'
 			raise
 
 		self.file_sink = blocks.file_sink(gr.sizeof_gr_complex*1, self.filename)	# os.dup
