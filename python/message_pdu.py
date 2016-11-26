@@ -61,7 +61,7 @@ class message_pdu(gr.basic_block):
         self.access_code = access_code
 
 
-    def post_message(self, meta, msg_str):
+    def post_message(self, msg_str, meta=None):
         if self.prefix is not None:
             send_str = "[{}] {}".format(self.prefix, msg_str)
         else:
@@ -81,10 +81,12 @@ class message_pdu(gr.basic_block):
         for i in range(len(send_str)):
             pmt.u8vector_set(send_pmt, i, ord(send_str[i]))
         # Send the message:
-        self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt(meta), send_pmt))
+        if meta is not None:
+            self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.to_pmt(meta), send_pmt))
+        else:
+            self.message_port_pub(pmt.intern('out'), pmt.cons(pmt.PMT_NIL, send_pmt))
 
-
-    def handle_msg(self, msg_pmt):
+    def handle_msg(self, msg_pmt, printMetadata=False):
         """ Receiver a u8vector on the input port, and print it out. """
         # Collect metadata, convert to Python format:
         meta = pmt.to_python(pmt.car(msg_pmt))
@@ -103,7 +105,7 @@ class message_pdu(gr.basic_block):
             self.callback(msg_str)
         else:
             print msg_str
-        if meta is not None:
+        if meta is not None and printMetadata:
             print "[METADATA]: ", meta
 
 
@@ -117,7 +119,9 @@ if __name__ == "__main__":
     pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
     tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
     # Connect them up
-    tb.msg_connect(chat_tx, 'out',  chat_rx, 'in')
+    tb.msg_connect(chat_tx, 'out',  pdu_to_tagged_stream, 'pdus')
+    tb.connect(pdu_to_tagged_stream, tagged_stream_to_pdu)
+    tb.msg_connect(tagged_stream_to_pdu, 'pdus',  chat_rx, 'in')
     # Start flow graph
     tb.start()
     chat_str = ""
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     try:
         while chat_str != "/quit":
             chat_str = raw_input('> ')
-            chat_tx.post_message("freq.", chat_str)
+            chat_tx.post_message(chat_str)
             time.sleep(0.1)
     except KeyboardInterrupt:
         print "\n"

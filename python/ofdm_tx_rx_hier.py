@@ -65,7 +65,7 @@ class ofdm_tx_rx_hier(gr.hier_block2):
         self.ofdm_rx = ofdm_tools.ofdm_txrx_modules.ofdm_rx(
         	  fft_len=fft_len, cp_len=fft_len/4,
         	  frame_length_tag_key='frame_'+"rx_len",
-        	  packet_length_tag_key="rx_len",
+        	  packet_length_tag_key=len_tag_key,
         	  bps_header=1,
         	  bps_payload=payload_bps,
         	  debug_log=False,

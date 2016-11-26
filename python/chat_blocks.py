@@ -25,8 +25,7 @@
 import string
 import numpy
 import pmt
-from gnuradio import gr
-from gnuradio import digital
+from gnuradio import gr, digital, blocks
 
 import base64
 from Crypto.Cipher import AES
@@ -163,8 +162,12 @@ if __name__ == "__main__":
     # Create chat blocks
     chat_tx = chat_sender(prefix="DemoUser", AESkey = 'key123')
     chat_rx = chat_receiver(AESkey = 'key123')
+    pdu_to_tagged_stream = blocks.pdu_to_tagged_stream(blocks.byte_t, "packet_len")
+    tagged_stream_to_pdu = blocks.tagged_stream_to_pdu(blocks.byte_t, "packet_len")
     # Connect them up
-    tb.msg_connect(chat_tx, 'out', chat_rx, 'in')
+    tb.msg_connect(chat_tx, 'out',  pdu_to_tagged_stream, 'pdus')
+    tb.connect(pdu_to_tagged_stream, tagged_stream_to_pdu)
+    tb.msg_connect(tagged_stream_to_pdu, 'pdus',  chat_rx, 'in')
     # Start flow graph
     tb.start()
     chat_str = ""

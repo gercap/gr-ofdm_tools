@@ -22,5 +22,7 @@
 ########################################################################
 install(FILES
     api.h
-    DESTINATION include/ofdm_tools
+    clipper.h DESTINATION include/ofdm_tools
 )
+list(APPEND ofdm_tools_sources
+    clipper_impl.cc )
