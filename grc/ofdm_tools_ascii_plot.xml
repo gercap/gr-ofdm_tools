@@ -2,7 +2,7 @@
 <block>
   <name>ascii_plot</name>
   <key>ofdm_tools_ascii_plot</key>
-  <category>ofdm_tools</category>
+  <category>[ofdm_tools]</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.ascii_plot(
   fft_len=$fft_len,
@@ -66,4 +66,10 @@
     <name>in</name>
     <type>complex</type>
   </sink>
+
+  <source>
+    <name>pkt_out</name>
+    <type>message</type>
+  </source>
+
 </block>

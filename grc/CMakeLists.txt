@@ -41,5 +41,6 @@ install(FILES
     ofdm_tools_chat_sender.xml
     ofdm_tools_ascii_gnuplot.xml
     ofdm_tools_multichannel_scanner.xml
-    ofdm_tools_clipper.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_clipper.xml
+    DESTINATION share/gnuradio/grc/blocks
 )

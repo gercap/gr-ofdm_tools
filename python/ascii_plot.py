@@ -29,6 +29,7 @@ from gnuradio import fft
 import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
+import ofdm_tools as of
 
 class ascii_plot(gr.hier_block2):
 
@@ -52,6 +53,9 @@ class ascii_plot(gr.hier_block2):
 
 		self.msgq = gr.msg_queue(2)
 
+		#register message out to other blocks
+		self.message_port_register_hier_out("ascii_out")
+
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
 		self.one_in_n = blocks.keep_one_in_n(gr.sizeof_gr_complex * self.fft_len,
@@ -67,12 +71,22 @@ class ascii_plot(gr.hier_block2):
 								-10*math.log10(self.sample_rate))                # Adjust for sample rate
 
 		self.sink = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq, True)
+
+		#register message out to other blocks
+		self.message_port_register_hier_out("pkt_out")
+		#packet generator
+		self.packet_generator = of.chat_blocks.chat_sender()
+
 		#####CONNECTIONS####
 		self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.avg, self.log, self.sink)
 
+		#MSG output
+		self.msg_connect(self.packet_generator, "out", self, "pkt_out")
+
+		####THREADS####
 		self._ascii_plotter = ascii_plotter(self.width, self.height, self.tune_freq, self.sample_rate, self.fft_len)
 
-		self._main = main_thread(self.msgq, self._ascii_plotter)
+		self._main = main_thread(self.msgq, self._ascii_plotter, self.packet_generator)
 
 	def set_width(self, width):
 		self._ascii_plotter.width = width
@@ -106,11 +120,12 @@ class ascii_plot(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-	def __init__(self, rcvd_data, plotter):
+	def __init__(self, rcvd_data, plotter, packet_gen):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.rcvd_data = rcvd_data
 		self.plotter = plotter
+		self.packet_gen = packet_gen
 
 		self.state = None
 		self.keep_running = True #set to False to stop thread's main loop
@@ -127,7 +142,9 @@ class main_thread(_threading.Thread):
 				s = s[start:start+itemsize]
 
 			fft_data = np.fromstring (msg.to_string(), np.float32)
-			print self.plotter.make_plot(fft_data)
+			ascii_data = self.plotter.make_plot(fft_data)
+			print ascii_data
+			self.packet_gen.post_message(ascii_data)
 
 
 

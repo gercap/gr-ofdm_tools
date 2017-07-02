@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Ascii Sink
-# Generated: Sun Jul  2 21:07:25 2017
+# Generated: Sun Jul  2 22:10:44 2017
 ##################################################
 
 if __name__ == '__main__':
@@ -17,6 +17,7 @@ if __name__ == '__main__':
             print "Warning: failed to XInitThreads()"
 
 from PyQt4 import Qt
+from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import gr
 from gnuradio.eng_option import eng_option
@@ -125,10 +126,12 @@ class ascii_sink(gr.top_block, Qt.QWidget):
           width=width,
           height=height,
           )
+        self.blocks_socket_pdu_0 = blocks.socket_pdu("TCP_SERVER", 'localhost', '8888', 10000, False)
 
         ##################################################
         # Connections
         ##################################################
+        self.msg_connect((self.ofdm_tools_ascii_plot_0, 'pkt_out'), (self.blocks_socket_pdu_0, 'pdus'))
         self.connect((self.osmosdr_source_0, 0), (self.ofdm_tools_ascii_plot_0, 0))
 
     def closeEvent(self, event):
