@@ -117,6 +117,34 @@ if(NOT CPPUNIT_FOUND)
 endif()
 
 ########################################################################
+# Find Scipy
+########################################################################
+include(GrPython)
+GR_PYTHON_CHECK_MODULE("scipy" scipy True SCIPY_FOUND)
+if(NOT SCIPY_FOUND)
+    message(FATAL_ERROR "Scipy not found.")
+endif()
+
+
+########################################################################
+# Find Numpy
+########################################################################
+include(GrPython)
+GR_PYTHON_CHECK_MODULE("numpy" numpy True NUMPY_FOUND)
+if(NOT NUMPY_FOUND)
+    message(FATAL_ERROR "Numpy not found.")
+endif()
+
+########################################################################
+# Find Matplotlib
+########################################################################
+include(GrPython)
+GR_PYTHON_CHECK_MODULE("matplotlib" matplotlib True MATPLOTLIB_FOUND)
+if(NOT MATPLOTLIB_FOUND)
+    message(FATAL_ERROR "Matplotlib not found.")
+endif()
+
+########################################################################
 # Setup the include and linker paths
 ########################################################################
 include_directories(
