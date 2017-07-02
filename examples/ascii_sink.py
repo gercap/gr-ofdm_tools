@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Ascii Sink
-# Generated: Sun Sep 18 14:38:21 2016
+# Generated: Sun Jul  2 21:07:25 2017
 ##################################################
 
 if __name__ == '__main__':
@@ -27,14 +27,16 @@ import ofdm_tools
 import osmosdr
 import sys
 import time
+from gnuradio import qtgui
 
 
 class ascii_sink(gr.top_block, Qt.QWidget):
 
-    def __init__(self, nfft=8092, sr=int(1e6)):
+    def __init__(self, def_height=0, def_width=0, nfft=8092, sr=int(1e6)):
         gr.top_block.__init__(self, "Ascii Sink")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Ascii Sink")
+        qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
         except:
@@ -57,25 +59,27 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         ##################################################
         # Parameters
         ##################################################
+        self.def_height = def_height
+        self.def_width = def_width
         self.nfft = nfft
         self.sr = sr
 
         ##################################################
         # Variables
         ##################################################
-        self.width = width = 65
+        self.width = width = def_width
         self.tune_freq = tune_freq = 97e6
         self.samp_rate = samp_rate = sr
         self.rf_gain = rf_gain = 5
-        self.if_gain = if_gain = 10
-        self.height = height = 30
-        self.bb_gain = bb_gain = 10
+        self.if_gain = if_gain = 20
+        self.height = height = def_height
+        self.bb_gain = bb_gain = 20
         self.av = av = 0.8
 
         ##################################################
         # Blocks
         ##################################################
-        self._width_range = Range(0, 200, 1, 65, 200)
+        self._width_range = Range(0, 200, 1, def_width, 200)
         self._width_win = RangeWidget(self._width_range, self.set_width, "width", "counter_slider", int)
         self.top_grid_layout.addWidget(self._width_win, 0,0,1,1)
         self._tune_freq_range = Range(28e6, 1800e6, 1000, 97e6, 200)
@@ -87,13 +91,13 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         self._rf_gain_range = Range(0, 50, 1, 5, 200)
         self._rf_gain_win = RangeWidget(self._rf_gain_range, self.set_rf_gain, "rf_gain", "counter_slider", float)
         self.top_grid_layout.addWidget(self._rf_gain_win, 1,0,1,1)
-        self._if_gain_range = Range(0, 50, 1, 10, 200)
+        self._if_gain_range = Range(0, 50, 1, 20, 200)
         self._if_gain_win = RangeWidget(self._if_gain_range, self.set_if_gain, "if_gain", "counter_slider", float)
         self.top_grid_layout.addWidget(self._if_gain_win, 1,1,1,1)
-        self._height_range = Range(0, 200, 1, 30, 200)
+        self._height_range = Range(0, 200, 1, def_height, 200)
         self._height_win = RangeWidget(self._height_range, self.set_height, "height", "counter_slider", int)
         self.top_grid_layout.addWidget(self._height_win, 0,1,1,1)
-        self._bb_gain_range = Range(0, 50, 1, 10, 200)
+        self._bb_gain_range = Range(0, 50, 1, 20, 200)
         self._bb_gain_win = RangeWidget(self._bb_gain_range, self.set_bb_gain, "bb_gain", "counter_slider", float)
         self.top_grid_layout.addWidget(self._bb_gain_win, 1,2,1,1)
         self._av_range = Range(0, 1, 0.001, 0.8, 200)
@@ -111,12 +115,12 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_bb_gain(bb_gain, 0)
         self.osmosdr_source_0.set_antenna('', 0)
         self.osmosdr_source_0.set_bandwidth(0, 0)
-          
+
         self.ofdm_tools_ascii_plot_0 = ofdm_tools.ascii_plot(
           fft_len=int(nfft),
-          sample_rate=int(samp_rate), 
-          tune_freq=tune_freq, 
-          average=av, 
+          sample_rate=int(samp_rate),
+          tune_freq=tune_freq,
+          average=av,
           rate=5,
           width=width,
           height=height,
@@ -125,12 +129,26 @@ class ascii_sink(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.osmosdr_source_0, 0), (self.ofdm_tools_ascii_plot_0, 0))    
+        self.connect((self.osmosdr_source_0, 0), (self.ofdm_tools_ascii_plot_0, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "ascii_sink")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
+
+    def get_def_height(self):
+        return self.def_height
+
+    def set_def_height(self, def_height):
+        self.def_height = def_height
+        self.set_height(self.def_height)
+
+    def get_def_width(self):
+        return self.def_width
+
+    def set_def_width(self, def_width):
+        self.def_width = def_width
+        self.set_width(self.def_width)
 
     def get_nfft(self):
         return self.nfft
@@ -207,6 +225,12 @@ class ascii_sink(gr.top_block, Qt.QWidget):
 def argument_parser():
     parser = OptionParser(usage="%prog: [options]", option_class=eng_option)
     parser.add_option(
+        "-e", "--def-height", dest="def_height", type="intx", default=0,
+        help="Set def_height [default=%default]")
+    parser.add_option(
+        "-w", "--def-width", dest="def_width", type="intx", default=0,
+        help="Set def_width [default=%default]")
+    parser.add_option(
         "-f", "--nfft", dest="nfft", type="intx", default=8092,
         help="Set nfft [default=%default]")
     parser.add_option(
@@ -227,7 +251,7 @@ def main(top_block_cls=ascii_sink, options=None):
         Qt.QApplication.setGraphicsSystem(style)
     qapp = Qt.QApplication(sys.argv)
 
-    tb = top_block_cls(nfft=options.nfft, sr=options.sr)
+    tb = top_block_cls(def_height=options.def_height, def_width=options.def_width, nfft=options.nfft, sr=options.sr)
     tb.start()
     tb.show()
 

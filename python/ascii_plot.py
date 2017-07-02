@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import numpy as np, time, math
+import numpy as np, time, math, os
 from gnuradio import gr
 import subprocess
 from operator import add
@@ -42,8 +42,13 @@ class ascii_plot(gr.hier_block2):
 		self.average = average
 		self.tune_freq = tune_freq
 		self.rate = rate
-		self.width = width
-		self.height = height
+		if width == 0 and height == 0:
+			rows, columns = os.popen('stty size', 'r').read().split()
+			self.height = int(rows)-5
+			self.width = int(columns)/2-10
+		else:
+			self.height = height
+			self.width = width
 
 		self.msgq = gr.msg_queue(2)
 
@@ -56,7 +61,7 @@ class ascii_plot(gr.hier_block2):
 		self.fft = fft.fft_vcc(self.fft_len, True, (), True)
 
 		self.c2mag2 = blocks.complex_to_mag_squared(self.fft_len)
-		self.avg = grfilter.single_pole_iir_filter_ff(1.0, self.fft_len)
+		self.avg = grfilter.single_pole_iir_filter_ff(self.average, self.fft_len)
 		self.log = blocks.nlog10_ff(10, self.fft_len,
 								-10*math.log10(self.fft_len)                # Adjust for number of bins
 								-10*math.log10(self.sample_rate))                # Adjust for sample rate
@@ -192,7 +197,7 @@ class ascii_plotter(object):
 		toClient += '\n'
 		
 		#print bottom
-		toClient += "Tune freq: %s MHz, Sample rate: %s MS/s, FFT: %s \n" % (self.tune_freq/1e6, self.sample_rate/1e6, self.fft_len)
+		toClient += "Tune freq: %s MHz, Sample rate: %s MS/s, FFT: %s W:%d L:%d\n" % (self.tune_freq/1e6, self.sample_rate/1e6, self.fft_len, self.width, self.height)
 		for a in range(self.width):
 			toClient += '_ '
 		toClient += '_ _ _ _'
