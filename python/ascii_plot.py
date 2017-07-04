@@ -180,11 +180,12 @@ class ascii_plotter(object):
 			for k in range(htValueNormed): self.matrix[i][k] = '|'
 
 			auxWidth += self.widthDens
-			toClient += '_ '
 
-		toClient += '_ _ _ _\n'
+		#for i in range(self.height):
+		#	self.matrix[self.width/2][i] = '*'
 
 		for i in reversed(range(self.height)):
+			self.matrix[self.width/2][i] = '*'
 			#print vert scale
 			if i%5 == 0:
 				NewValue = (((i - 0) * math.floor((maxValue - minValue))) / self.height) + minValue
