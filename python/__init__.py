@@ -69,9 +69,11 @@ from payload_sink_pdu import payload_sink_pdu
 from chat_blocks import chat_sender, chat_receiver
 from ascii_gnuplot import ascii_gnuplot
 from multichannel_scanner import multichannel_scanner
+from local_worker import local_worker
+from remote_client import remote_client
 
 
-
+from ascii_plot import ascii_plotter, ascii_bars
 
 import ofdm_txrx_modules
 import ofdm_cr_tools

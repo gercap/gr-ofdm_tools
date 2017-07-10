@@ -56,7 +56,8 @@ GR_PYTHON_INSTALL(
     chat_blocks.py
     ascii_gnuplot.py
     multichannel_scanner.py
-    DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    local_worker.py
+    remote_client.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
