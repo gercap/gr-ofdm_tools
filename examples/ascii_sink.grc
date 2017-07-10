@@ -902,10 +902,6 @@
   <block>
     <key>ofdm_tools_ascii_proxy</key>
     <param>
-      <key>average</key>
-      <value>av</value>
-    </param>
-    <param>
       <key>alias</key>
       <value></value>
     </param>
@@ -914,16 +910,8 @@
       <value></value>
     </param>
     <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
       <key>_enabled</key>
       <value>0</value>
-    </param>
-    <param>
-      <key>fft_len</key>
-      <value>int(nfft)</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -934,12 +922,24 @@
       <value>0</value>
     </param>
     <param>
-      <key>height</key>
-      <value>height</value>
-    </param>
-    <param>
       <key>id</key>
       <value>ofdm_tools_ascii_proxy_0</value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>average</key>
+      <value>av</value>
+    </param>
+    <param>
+      <key>fft_len</key>
+      <value>int(nfft)</value>
+    </param>
+    <param>
+      <key>height</key>
+      <value>height</value>
     </param>
     <param>
       <key>rate</key>
