@@ -53,9 +53,6 @@ class ascii_plot(gr.hier_block2):
 
 		self.msgq = gr.msg_queue(2)
 
-		#register message out to other blocks
-		self.message_port_register_hier_out("ascii_out")
-
 		#######BLOCKS#####
 		self.s2p = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_len)
 		self.one_in_n = blocks.keep_one_in_n(gr.sizeof_gr_complex * self.fft_len,
@@ -137,11 +134,13 @@ class main_thread(_threading.Thread):
 			itemsize = int(msg.arg1())
 			nitems = int(msg.arg2())
 
+			s = msg.to_string()            # get the body of the msg as a string
+
 			if nitems > 1:
 				start = itemsize * (nitems - 1)
 				s = s[start:start+itemsize]
 
-			fft_data = np.fromstring (msg.to_string(), np.float32)
+			fft_data = np.fromstring (s, np.float32)
 			ascii_data = self.plotter.make_plot(fft_data)
 			print ascii_data
 			self.packet_gen.post_message(ascii_data)

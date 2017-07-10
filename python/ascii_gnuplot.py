@@ -120,12 +120,13 @@ class main_thread(_threading.Thread):
             itemsize = int(msg.arg1())
             nitems = int(msg.arg2())
 
+            s = msg.to_string()            # get the body of the msg as a string
+
             if nitems > 1:
                 start = itemsize * (nitems - 1)
                 s = s[start:start+itemsize]
 
-            payload = msg.to_string()
-            complex_data = np.fromstring (payload, np.float32)
+            complex_data = np.fromstring (s, np.float32)
 
             self.gnuplot.stdin.write("set term dumb "+str(self.width)+" "+str(self.height)+ " \n")
             self.gnuplot.stdin.write("plot '-' using 1:2 title 'GNURadio PSD' with linespoints \n")
