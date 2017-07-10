@@ -114,11 +114,12 @@ class chat_sender(gr.basic_block):
 class chat_receiver(gr.basic_block):
     """ Inverse block to the chat_sanitizer: Receives a u8vector on the input,
     and prints it out nicely. """
-    def __init__(self, AESkey=None):
+    def __init__(self, AESkey=None, callback=None):
         gr.basic_block.__init__(self,
             name="chat_receiver",
             in_sig=[], # No streaming ports!
             out_sig=[])
+        self.callback = callback
         # Register the message port
         self.AESkey = AESkey
         if self.AESkey:
@@ -145,7 +146,8 @@ class chat_receiver(gr.basic_block):
         if self.AESkey:
             msg_str = self.crypter.decrypt(msg_str)
         # Print string, and if available, the metadata:
-        print msg_str
+        if self.callback is not None: self.callback(msg_str)
+        else: print msg_str
         #if meta is not None:
         #    print "[METADATA]: ", meta
 
