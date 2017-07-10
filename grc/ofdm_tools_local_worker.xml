@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<block>
+  <name>local_worker</name>
+  <key>ofdm_tools_local_worker</key>
+  <category>[ofdm_tools]</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.local_worker(
+  fft_len=$fft_len,
+  sample_rate=$sample_rate, 
+  tune_freq=$tune_freq, 
+  average=$average, 
+  rate=$rate,
+  )</make>
+<callback>set_sample_rate($sample_rate)</callback>
+<callback>set_tune_freq($tune_freq)</callback>
+<callback>set_average($average)</callback>
+  <param>
+    <name>Tune Freq</name>
+    <key>tune_freq</key>
+    <value>tune_freq</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>FFT width</name>
+    <key>fft_len</key>
+    <value>fft_len</value>
+    <type>int</type>
+  </param>
+
+  <param>
+    <name>Sample Rate</name>
+    <key>sample_rate</key>
+    <value>samp_rate</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Average</name>
+    <key>average</key>
+    <value>0.8</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Refresh Rate</name>
+    <key>rate</key>
+    <value>15</value>
+    <type>int</type>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>pkt_out</name>
+    <type>message</type>
+  </source>
+
+</block>
