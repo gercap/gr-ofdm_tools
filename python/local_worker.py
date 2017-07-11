@@ -82,6 +82,7 @@ class local_worker(gr.hier_block2):
 
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
+        self.set_rate(self.rate)
 
     def set_tune_freq(self, tune_freq):
         self.tune_freq = tune_freq
