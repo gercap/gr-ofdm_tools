@@ -52,7 +52,7 @@ class remote_client(gr.hier_block2):
 
         #register message out to other blocks
         self.message_port_register_hier_in("pkt_in")
-        #packet generator
+        #packet generator/receiver
         self.packet_receiver = of.chat_blocks.chat_receiver(callback=self.rx_callback)
 
         #####CONNECTIONS####
@@ -87,4 +87,5 @@ class remote_client(gr.hier_block2):
     def rx_callback(self, payload):
         fft_data = np.fromstring (payload, np.float32)
         ascii_data = self._ascii_plotter.make_plot(fft_data)
+
         print ascii_data
