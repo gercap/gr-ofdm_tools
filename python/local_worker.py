@@ -76,6 +76,10 @@ class local_worker(gr.hier_block2):
         ####THREADS####
         self._main = main_thread(self.msgq, self.packet_generator)
 
+    def set_rate(self, rate):
+        self.rate = rate
+        self.one_in_n.set_n(max(1, int(self.sample_rate/self.fft_len/self.rate)))
+
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
 
@@ -83,8 +87,8 @@ class local_worker(gr.hier_block2):
         self.tune_freq = tune_freq
 
     def set_average(self, average):
-        average = average
-        self.avg.set_taps(self.average)
+        self.average = average
+        self.avg.set_taps(average)
 
     def get_tune_freq(self):
         return self.tune_freq
