@@ -14,6 +14,7 @@
 <callback>set_sample_rate($sample_rate)</callback>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_average($average)</callback>
+<callback>set_rate($rate)</callback>
   <param>
     <name>Tune Freq</name>
     <key>tune_freq</key>

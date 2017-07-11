@@ -89,7 +89,7 @@ class ascii_gnuplot(gr.hier_block2):
 
     def set_average(self, average):
         self.average = average
-        self.avg.set_taps(self.average)
+        self.avg.set_taps(average)
 
     def get_average(self):
         return self.average

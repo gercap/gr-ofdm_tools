@@ -18,6 +18,7 @@
 <callback>set_average($average)</callback>
 <callback>set_width($width)</callback>
 <callback>set_height($height)</callback>
+<callback>set_rate($rate)</callback>
 
 	<param>
 		<name>Tune Freq</name>
