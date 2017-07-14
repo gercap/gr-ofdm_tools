@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <block>
-  <name>remote_client</name>
+  <name>Remote Client ASCII</name>
   <key>ofdm_tools_remote_client</key>
   <category>[ofdm_tools]</category>
   <import>import ofdm_tools</import>
@@ -50,7 +50,7 @@
   </param>
 
   <sink>
-    <name>pkt_in</name>
+    <name>pdus</name>
     <type>message</type>
   </sink>
 

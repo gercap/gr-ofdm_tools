@@ -53,7 +53,7 @@
   </sink>
 
   <source>
-    <name>pkt_out</name>
+    <name>pdus</name>
     <type>message</type>
   </source>
 

@@ -601,7 +601,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -881,65 +881,6 @@
     <param>
       <key>minoutbuf</key>
       <value>0</value>
-    </param>
-    <param>
-      <key>rate</key>
-      <value>5</value>
-    </param>
-    <param>
-      <key>sample_rate</key>
-      <value>int(samp_rate)</value>
-    </param>
-    <param>
-      <key>tune_freq</key>
-      <value>tune_freq</value>
-    </param>
-    <param>
-      <key>width</key>
-      <value>width</value>
-    </param>
-  </block>
-  <block>
-    <key>ofdm_tools_ascii_proxy</key>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(576, 588)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>ofdm_tools_ascii_proxy_0</value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>average</key>
-      <value>av</value>
-    </param>
-    <param>
-      <key>fft_len</key>
-      <value>int(nfft)</value>
-    </param>
-    <param>
-      <key>height</key>
-      <value>height</value>
     </param>
     <param>
       <key>rate</key>
@@ -4061,12 +4002,6 @@
   <connection>
     <source_block_id>osmosdr_source_0</source_block_id>
     <sink_block_id>ofdm_tools_ascii_plot_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>osmosdr_source_0</source_block_id>
-    <sink_block_id>ofdm_tools_ascii_proxy_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

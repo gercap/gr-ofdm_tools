@@ -22,23 +22,13 @@
 
 import numpy as np, time, math, os
 from gnuradio import gr
-import subprocess
-from operator import add
-import gnuradio.gr.gr_threading as _threading
-
-from gnuradio import fft
-import gnuradio.filter as grfilter
-from gnuradio import blocks
-from gnuradio.filter import window
 import ofdm_tools as of
+import pmt
 
-class remote_client(gr.hier_block2):
+class remote_client(gr.sync_block):
 
     def __init__(self, fft_len, sample_rate, tune_freq, width, height):
-        gr.hier_block2.__init__(self,
-            "remote_client",
-            gr.io_signature(0,0,0),
-            gr.io_signature(0,0,0))
+        gr.sync_block.__init__(self, "remote_client", [], [])
         self.fft_len = fft_len
         self.sample_rate = sample_rate
         self.tune_freq = tune_freq
@@ -50,14 +40,8 @@ class remote_client(gr.hier_block2):
             self.height = height
             self.width = width
 
-        #register message out to other blocks
-        self.message_port_register_hier_in("pkt_in")
-        #packet generator/receiver
-        self.packet_receiver = of.chat_blocks.chat_receiver(callback=self.rx_callback)
-
-        #####CONNECTIONS####
-        #MSG output
-        self.msg_connect(self, "pkt_in", self.packet_receiver, "in")
+        self.message_port_register_in(pmt.intern("pdus"));
+        self.set_msg_handler(pmt.intern("pdus"), self.handler);
 
         ####ASCII PLOTTER####
         self._ascii_plotter = of.ascii_plotter(self.width, self.height, self.tune_freq, self.sample_rate, self.fft_len)
@@ -84,8 +68,15 @@ class remote_client(gr.hier_block2):
     def get_sample_rate(self):
         return self.sample_rate
 
-    def rx_callback(self, payload):
-        fft_data = np.fromstring (payload, np.float32)
-        ascii_data = self._ascii_plotter.make_plot(fft_data)
+    def handler(self, msg_pmt):
 
-        print ascii_data
+        meta = pmt.to_python(pmt.car(msg_pmt))
+        # Collect message, convert to Python format:
+        msg = pmt.cdr(msg_pmt)
+        # Convert to string:
+        msg_str = "".join([chr(x) for x in pmt.u8vector_elements(msg)])
+
+        fft_data = np.fromstring(msg_str, np.float32)
+
+        ascii_data = self._ascii_plotter.make_plot(fft_data)
+        print ascii_data 

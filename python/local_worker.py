@@ -30,6 +30,8 @@ import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
 import ofdm_tools as of
+import pmt
+import numpy as np
 
 class local_worker(gr.hier_block2):
 
@@ -63,18 +65,16 @@ class local_worker(gr.hier_block2):
         self.sink = blocks.message_sink(gr.sizeof_float * self.fft_len, self.msgq, True)
 
         #register message out to other blocks
-        self.message_port_register_hier_out("pkt_out")
-        #packet generator
-        self.packet_generator = of.chat_blocks.chat_sender()
+        self.message_port_register_hier_out("pdus")
+
+        self._packet_source = packet_source()
 
         #####CONNECTIONS####
         self.connect(self, self.s2p, self.one_in_n, self.fft, self.c2mag2, self.avg, self.log, self.sink)
-
-        #MSG output
-        self.msg_connect(self.packet_generator, "out", self, "pkt_out")
+        self.msg_connect(self._packet_source, "out", self, "pdus")
 
         ####THREADS####
-        self._main = main_thread(self.msgq, self.packet_generator)
+        self._main = main_thread(self.msgq, self._packet_source)
 
     def set_rate(self, rate):
         self.rate = rate
@@ -100,14 +100,13 @@ class local_worker(gr.hier_block2):
     def get_average(self):
         return self.average
 
-
 #main thread
 class main_thread(_threading.Thread):
-    def __init__(self, rcvd_data, packet_gen):
+    def __init__(self, rcvd_data, packet_source):
         _threading.Thread.__init__(self)
         self.setDaemon(1)
         self.rcvd_data = rcvd_data
-        self.packet_gen = packet_gen
+        self.packet_source = packet_source
 
         self.state = None
         self.keep_running = True #set to False to stop thread's main loop
@@ -119,12 +118,29 @@ class main_thread(_threading.Thread):
             itemsize = int(msg.arg1())
             nitems = int(msg.arg2())
 
-            s = msg.to_string()            # get the body of the msg as a string
+            data = msg.to_string()            # get the body of the msg as a string
 
             if nitems > 1:
                 start = itemsize * (nitems - 1)
-                s = s[start:start+itemsize]
+                data = data[start:start+itemsize]
 
-            #fft_data = np.fromstring (s, np.float32)
+            #fft_data = np.fromstring(data, np.float32)
+            meta = pmt.PMT_NIL
+            self.packet_source.send_packet(meta, data)
+        
 
-            self.packet_gen.post_message(s)
+class packet_source(gr.sync_block):
+    def __init__(self):
+        gr.sync_block.__init__(self,"packet_source",[],[])
+
+        # set up message ports
+        self.message_port_register_out(pmt.intern("out"));
+
+    def send_packet(self, meta, data):
+
+        # Create an empty PMT (contains only spaces):
+        data_pmt = pmt.make_u8vector(len(data), ord(' '))
+        # Copy all characters to the u8vector:
+        for i in range(len(data)): pmt.u8vector_set(data_pmt, i, ord(data[i]))
+
+        self.message_port_pub(pmt.intern("out"), pmt.cons(pmt.PMT_NIL, data_pmt))

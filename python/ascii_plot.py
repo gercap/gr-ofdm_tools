@@ -184,9 +184,6 @@ class ascii_plotter(object):
 
 			auxWidth += self.widthDens
 
-		#for i in range(self.height):
-		#	self.matrix[self.width/2][i] = '*'
-
 		for i in reversed(range(self.height)):
 			self.matrix[self.width/2][i] = '*'
 			#print vert scale
