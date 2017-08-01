@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import math
+import math, struct
 from gnuradio import gr
 import subprocess
 from operator import add
@@ -35,7 +35,7 @@ import numpy as np
 
 class local_worker(gr.hier_block2):
 
-    def __init__(self, fft_len, sample_rate, tune_freq, average, rate):
+    def __init__(self, fft_len, sample_rate, tune_freq, average, rate, max_tu):
         gr.hier_block2.__init__(self,
             "ascii plot",
             gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -45,7 +45,10 @@ class local_worker(gr.hier_block2):
         self.average = average
         self.tune_freq = tune_freq
         self.rate = rate
-
+        self.max_tu = max_tu-2 #reserve two bytes for segmentation
+        self.fragments = int(math.ceil((self.fft_len*4.0)/(self.max_tu))) #4 bytes per fft bin
+        print 'data split in', self.fragments, 'fragments'
+        
         self.msgq = gr.msg_queue(2)
 
         #######BLOCKS#####
@@ -74,7 +77,7 @@ class local_worker(gr.hier_block2):
         self.msg_connect(self._packet_source, "out", self, "pdus")
 
         ####THREADS####
-        self._main = main_thread(self.msgq, self._packet_source)
+        self._main = main_thread(self.msgq, self._packet_source, self.max_tu, self.fragments)
 
     def set_rate(self, rate):
         self.rate = rate
@@ -102,11 +105,13 @@ class local_worker(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-    def __init__(self, rcvd_data, packet_source):
+    def __init__(self, rcvd_data, packet_source, max_tu, fragments):
         _threading.Thread.__init__(self)
         self.setDaemon(1)
         self.rcvd_data = rcvd_data
         self.packet_source = packet_source
+        self.max_tu = max_tu
+        self.fragments = fragments
 
         self.state = None
         self.keep_running = True #set to False to stop thread's main loop
@@ -124,10 +129,7 @@ class main_thread(_threading.Thread):
                 start = itemsize * (nitems - 1)
                 data = data[start:start+itemsize]
 
-            #fft_data = np.fromstring(data, np.float32)
-            meta = pmt.PMT_NIL
-            self.packet_source.send_packet(meta, data)
-        
+            self.packet_source.send_packet(data, self.max_tu, self.fragments)
 
 class packet_source(gr.sync_block):
     def __init__(self):
@@ -136,11 +138,19 @@ class packet_source(gr.sync_block):
         # set up message ports
         self.message_port_register_out(pmt.intern("out"));
 
-    def send_packet(self, meta, data):
+    def send_packet(self, data, max_tu, fragments):
+                
+        j = 0
+        for i in range(fragments):
 
-        # Create an empty PMT (contains only spaces):
-        data_pmt = pmt.make_u8vector(len(data), ord(' '))
-        # Copy all characters to the u8vector:
-        for i in range(len(data)): pmt.u8vector_set(data_pmt, i, ord(data[i]))
+            n_frags = struct.pack('!B', fragments) #1 bute for number of fragments
+            frag_id = struct.pack('!B', i) #1 byte for fragment number
+            frag = data[j:j+max_tu]
 
-        self.message_port_pub(pmt.intern("out"), pmt.cons(pmt.PMT_NIL, data_pmt))
+            frame = n_frags + frag_id + frag #construct frame
+
+            data_pmt = pmt.make_u8vector(len(frame), ord(' '))
+            # Copy all characters to the u8vector:
+            for i in range(len(frame)): pmt.u8vector_set(data_pmt, i, ord(frame[i]))
+            self.message_port_pub(pmt.intern("out"), pmt.cons(pmt.PMT_NIL, data_pmt))
+            j += max_tu

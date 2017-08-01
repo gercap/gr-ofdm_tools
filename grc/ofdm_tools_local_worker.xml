@@ -10,6 +10,7 @@
   tune_freq=$tune_freq, 
   average=$average, 
   rate=$rate,
+  max_tu=$max_tu,
   )</make>
 <callback>set_sample_rate($sample_rate)</callback>
 <callback>set_tune_freq($tune_freq)</callback>
@@ -46,7 +47,12 @@
     <value>15</value>
     <type>int</type>
   </param>
-
+  <param>
+    <name>MTU</name>
+    <key>max_tu</key>
+    <value>1472</value>
+    <type>int</type>
+  </param>
   <sink>
     <name>in</name>
     <type>complex</type>
