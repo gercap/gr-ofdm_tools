@@ -74,6 +74,7 @@ from remote_client import remote_client
 
 
 from ascii_plot import ascii_plotter, ascii_bars
+from remote_client_qt import remote_client_qt
 
 import ofdm_txrx_modules
 import ofdm_cr_tools

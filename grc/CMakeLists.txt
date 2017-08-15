@@ -42,5 +42,6 @@ install(FILES
     ofdm_tools_ascii_gnuplot.xml
     ofdm_tools_multichannel_scanner.xml
     ofdm_tools_local_worker.xml
-    ofdm_tools_remote_client.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_remote_client.xml
+    ofdm_tools_remote_client_qt.xml DESTINATION share/gnuradio/grc/blocks
 )

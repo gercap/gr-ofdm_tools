@@ -57,7 +57,8 @@ GR_PYTHON_INSTALL(
     ascii_gnuplot.py
     multichannel_scanner.py
     local_worker.py
-    remote_client.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    remote_client.py
+    remote_client_qt.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
