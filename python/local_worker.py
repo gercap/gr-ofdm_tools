@@ -32,6 +32,7 @@ from gnuradio.filter import window
 import ofdm_tools as of
 import pmt
 import numpy as np
+import zlib
 
 class local_worker(gr.hier_block2):
 
@@ -46,9 +47,10 @@ class local_worker(gr.hier_block2):
         self.tune_freq = tune_freq
         self.rate = rate
         self.max_tu = max_tu-2 #reserve two bytes for segmentation
+
         self.fragments = int(math.ceil((self.fft_len*4.0)/(self.max_tu))) #4 bytes per fft bin
         print 'data split in', self.fragments, 'fragments'
-        
+     
         self.msgq = gr.msg_queue(2)
 
         #######BLOCKS#####
@@ -77,7 +79,7 @@ class local_worker(gr.hier_block2):
         self.msg_connect(self._packet_source, "out", self, "pdus")
 
         ####THREADS####
-        self._main = main_thread(self.msgq, self._packet_source, self.max_tu, self.fragments)
+        self._main = main_thread(self.msgq, self._packet_source, self.max_tu)
 
     def set_rate(self, rate):
         self.rate = rate
@@ -105,13 +107,12 @@ class local_worker(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-    def __init__(self, rcvd_data, packet_source, max_tu, fragments):
+    def __init__(self, rcvd_data, packet_source, max_tu):
         _threading.Thread.__init__(self)
         self.setDaemon(1)
         self.rcvd_data = rcvd_data
         self.packet_source = packet_source
         self.max_tu = max_tu
-        self.fragments = fragments
 
         self.state = None
         self.keep_running = True #set to False to stop thread's main loop
@@ -129,7 +130,7 @@ class main_thread(_threading.Thread):
                 start = itemsize * (nitems - 1)
                 data = data[start:start+itemsize]
 
-            self.packet_source.send_packet(data, self.max_tu, self.fragments)
+            self.packet_source.send_packet(data, self.max_tu)
 
 class packet_source(gr.sync_block):
     def __init__(self):
@@ -138,15 +139,19 @@ class packet_source(gr.sync_block):
         # set up message ports
         self.message_port_register_out(pmt.intern("out"));
 
-    def send_packet(self, data, max_tu, fragments):
-                
+    def send_packet(self, data, max_tu):
+
+        data = zlib.compress(data)
+        fragments = int(math.ceil(len(data)/(max_tu)))+1 #4 bytes per fft bin
+
         j = 0
         for i in range(fragments):
 
             n_frags = struct.pack('!B', fragments) #1 bute for number of fragments
             frag_id = struct.pack('!B', i) #1 byte for fragment number
             frag = data[j:j+max_tu]
-
+            if i == fragments-1: frag = data[j:]
+            
             frame = n_frags + frag_id + frag #construct frame
 
             data_pmt = pmt.make_u8vector(len(frame), ord(' '))

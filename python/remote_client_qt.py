@@ -25,6 +25,7 @@
 import pyqt
 import struct
 from pyqt.plotter_base import *
+import zlib
 
 class remote_client_qt(plotter_base):
     def __init__(self, label="", *args):
@@ -55,6 +56,7 @@ class remote_client_qt(plotter_base):
         #print 'fragment', frag_id, 'of', n_frags, 'len', len(msg_str)
 
         if n_frags == 1: #single fragment
+            msg_str = zlib.decompress(msg_str)
             fft_data = numpy.fromstring(msg_str, numpy.float32)
             # pass data
             self.curve_data[0] = (numpy.linspace(1,len(fft_data),len(fft_data)), fft_data);
@@ -64,7 +66,9 @@ class remote_client_qt(plotter_base):
         else: #multiple fragments situation
             self.reasembled_frame += msg_str
             if frag_id == n_frags - 1: #final fragment
-                fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                data = zlib.decompress(self.reasembled_frame)
+                fft_data = numpy.fromstring(data, numpy.float32)
+                #fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
                 # pass data
                 self.curve_data[0] = (numpy.linspace(1,len(fft_data),len(fft_data)), fft_data);
                 # trigger update
