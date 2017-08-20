@@ -28,10 +28,13 @@ from pyqt.plotter_base import *
 import zlib
 
 class remote_client_qt(plotter_base):
-    def __init__(self, label="", *args):
+    def __init__(self, tune_freq, sample_rate, label="", *args):
         plotter_base.__init__(self, blkname="remote_client_qt", label=label, *args)
         self.message_port_register_in(pmt.intern("pdus"));
         self.set_msg_handler(pmt.intern("pdus"), self.handler);
+        self.sample_rate = sample_rate
+        self.tune_freq = tune_freq
+
         self.reasembled_frame = ''
 
         # set up curves
@@ -41,6 +44,22 @@ class remote_client_qt(plotter_base):
         curve.setPen( Qt.QPen(Qt.Qt.green) );
 
         self.curve_data = [([],[]), ([],[])];
+
+
+    def set_sample_rate(self, sample_rate):
+        self.sample_rate = sample_rate
+        self.alignScales()
+
+    def set_tune_freq(self, tune_freq):
+        self.tune_freq = tune_freq
+        self.alignScales()
+
+    def get_tune_freq(self):
+        return self.tune_freq
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
 
     def handler(self, msg_pmt):
         #meta = pmt.to_python(pmt.car(msg_pmt))
@@ -53,26 +72,29 @@ class remote_client_qt(plotter_base):
         frag_id = struct.unpack('!B', msg_str[1])[0] #obtain fragment number
         msg_str = msg_str[2:] #grab fft data
 
-        #print 'fragment', frag_id, 'of', n_frags, 'len', len(msg_str)
-
         if n_frags == 1: #single fragment
-            msg_str = zlib.decompress(msg_str)
-            fft_data = numpy.fromstring(msg_str, numpy.float32)
-            # pass data
-            self.curve_data[0] = (numpy.linspace(1,len(fft_data),len(fft_data)), fft_data);
-            # trigger update
-            self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+            try:
+                fft_data = numpy.fromstring(msg_str, numpy.float32)
+                # pass data
+                axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
+                self.curve_data[0] = (axis, fft_data);
+                # trigger update
+                self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+
+            except: print 'error reassembling data'
 
         else: #multiple fragments situation
             self.reasembled_frame += msg_str
             if frag_id == n_frags - 1: #final fragment
-                data = zlib.decompress(self.reasembled_frame)
-                fft_data = numpy.fromstring(data, numpy.float32)
-                #fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
-                # pass data
-                self.curve_data[0] = (numpy.linspace(1,len(fft_data),len(fft_data)), fft_data);
-                # trigger update
-                self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
-                self.reasembled_frame = ''
+                try:
+                    fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                    # pass data
+                    axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
+                    self.curve_data[0] = (axis, fft_data);
+                    # trigger update
+                    self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+
+                    self.reasembled_frame = ''
+                except: print 'error reassembling data'
             else:
                 pass

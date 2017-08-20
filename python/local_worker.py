@@ -141,7 +141,6 @@ class packet_source(gr.sync_block):
 
     def send_packet(self, data, max_tu):
 
-        data = zlib.compress(data)
         fragments = int(math.ceil(len(data)/(max_tu)))+1 #4 bytes per fft bin
 
         j = 0
