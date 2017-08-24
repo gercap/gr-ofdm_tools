@@ -28,12 +28,15 @@ from pyqt.plotter_base import *
 import zlib
 
 class remote_client_qt(plotter_base):
-    def __init__(self, tune_freq, sample_rate, label="", *args):
+    def __init__(self, tune_freq, sample_rate, show_axes, label="", *args):
         plotter_base.__init__(self, blkname="remote_client_qt", label=label, *args)
         self.message_port_register_in(pmt.intern("pdus"));
         self.set_msg_handler(pmt.intern("pdus"), self.handler);
         self.sample_rate = sample_rate
         self.tune_freq = tune_freq
+        self.show_axes = show_axes
+        if show_axes:
+            self.toggle_axes()
 
         self.reasembled_frame = ''
 
@@ -44,7 +47,6 @@ class remote_client_qt(plotter_base):
         curve.setPen( Qt.QPen(Qt.Qt.green) );
 
         self.curve_data = [([],[]), ([],[])];
-
 
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
@@ -60,6 +62,9 @@ class remote_client_qt(plotter_base):
     def get_sample_rate(self):
         return self.sample_rate
 
+    def set_show_axes(self, show_axes):
+        self.show_axes = show_axes
+        self.toggle_axes()
 
     def handler(self, msg_pmt):
         #meta = pmt.to_python(pmt.car(msg_pmt))
