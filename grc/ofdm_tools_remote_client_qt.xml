@@ -7,13 +7,15 @@
   <make>#set $win = 'self._%s_win'%$id
 ofdm_tools.remote_client_qt($tune_freq,
 $samp_rate,
-$l)
+$l,
+$axes)
 self._$(id)_win = self.$(id);
 $(gui_hint()($win))
 
 </make>
 <callback>set_tune_freq($tune_freq)</callback>
 <callback>set_sample_rate($samp_rate)</callback>
+<callback>set_show_axes($axes)</callback>
   <param>
     <name>GUI Hint</name>
     <key>gui_hint</key>
@@ -38,6 +40,12 @@ $(gui_hint()($win))
     <key>samp_rate</key>
     <value></value>
     <type>float</type>
+  </param>
+  <param>
+    <name>Show Axes</name>
+    <key>axes</key>
+    <value></value>
+    <type>string</type>
   </param>
   <sink>
     <name>pdus</name>
