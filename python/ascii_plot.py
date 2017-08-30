@@ -163,6 +163,11 @@ class ascii_plotter(object):
 		self.widthDens = len(self.axis)/int(self.width)
 		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]
 
+	def set_axis(self, axis):
+		self.axis = axis
+		self.widthDens = len(self.axis)/int(self.width)
+		self.matrix = [[' ' for x in range(self.height)] for y in range(self.width)]		
+
 	def updateWindow(self):
 		self.axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len) + self.tune_freq
 		self.widthDens = len(self.axis)/int(self.width)
