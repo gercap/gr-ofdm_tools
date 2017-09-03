@@ -79,7 +79,9 @@ class remote_client_qt(plotter_base):
 
         if n_frags == 1: #single fragment
             try:
-                fft_data = numpy.fromstring(msg_str, numpy.float32)
+                fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                #fmt = "<%df" % (len(msg_str) // 4)
+                #fft_data = struct.unpack(fmt, msg_str)
                 # pass data
                 axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
                 self.curve_data[0] = (axis, fft_data);
@@ -93,6 +95,8 @@ class remote_client_qt(plotter_base):
             if frag_id == n_frags - 1: #final fragment
                 try:
                     fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                    #fmt = "<%df" % (len(self.reasembled_frame) // 4)
+                    #fft_data = struct.unpack(fmt, self.reasembled_frame)
                     # pass data
                     axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
                     self.curve_data[0] = (axis, fft_data);

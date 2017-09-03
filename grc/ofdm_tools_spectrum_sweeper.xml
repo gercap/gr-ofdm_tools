@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<block>
+  <name>spectrum_sweeper</name>
+  <key>ofdm_tools_spectrum_sweeper</key>
+  <category>[ofdm_tools]</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.spectrum_sweeper(
+  rf_receiver=$rf_receiver,
+  fft_len=$fft_len,
+  sample_rate=$sample_rate, 
+  trunc_sample_rate=$trunc_sample_rate,
+  fstart=$fstart,
+  ffinish=$ffinish,
+  rate=$rate,
+  average=$average,
+  t_obs=$t_obs,
+  tune_delay=$tune_delay,
+  max_tu=$max_tu,
+  )</make>
+<callback>set_sample_rate($sample_rate)</callback>
+<callback>set_rate($rate)</callback>
+<callback>set_tune_delay($tune_delay)</callback>
+<callback>set_average($average)</callback>
+  <param>
+    <name>RF Receiver</name>
+    <key>rf_receiver</key>
+    <value>rf_receiver</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>FFT width</name>
+    <key>fft_len</key>
+    <value>fft_len</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Sample Rate</name>
+    <key>sample_rate</key>
+    <value>samp_rate</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Truncated Sample Rate</name>
+    <key>trunc_sample_rate</key>
+    <value>trunc_sample_rate</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Start Frequency</name>
+    <key>fstart</key>
+    <value>fstart</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Stop Frequency</name>
+    <key>ffinish</key>
+    <value>ffinish</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Average</name>
+    <key>average</key>
+    <value>av</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Refresh Rate</name>
+    <key>rate</key>
+    <value>15</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Observ Period ms</name>
+    <key>t_obs</key>
+    <value>5</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Tuning delay ms</name>
+    <key>tune_delay</key>
+    <value>20</value>
+    <type>float</type>
+  </param>
+
+  <param>
+    <name>MTU</name>
+    <key>max_tu</key>
+    <value>1472</value>
+    <type>int</type>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>pdus</name>
+    <type>message</type>
+  </source>
+
+</block>

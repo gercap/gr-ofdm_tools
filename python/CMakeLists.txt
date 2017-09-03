@@ -58,7 +58,8 @@ GR_PYTHON_INSTALL(
     multichannel_scanner.py
     local_worker.py
     remote_client.py
-    remote_client_qt.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    remote_client_qt.py
+    spectrum_sweeper.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################
