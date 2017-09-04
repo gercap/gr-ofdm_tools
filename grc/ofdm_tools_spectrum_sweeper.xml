@@ -5,7 +5,8 @@
   <category>[ofdm_tools]</category>
   <import>import ofdm_tools</import>
   <make>ofdm_tools.spectrum_sweeper(
-  rf_receiver=$rf_receiver,
+  rf_receiver=self.rf_source,
+  receiver_type=$receiver_type,
   fft_len=$fft_len,
   sample_rate=$sample_rate, 
   trunc_sample_rate=$trunc_sample_rate,
@@ -22,11 +23,19 @@
 <callback>set_tune_delay($tune_delay)</callback>
 <callback>set_average($average)</callback>
   <param>
-    <name>RF Receiver</name>
-    <key>rf_receiver</key>
-    <value>rf_receiver</value>
-    <type>string</type>
+    <name>Receiver Type</name>
+    <key>receiver_type</key>
+    <type>enum</type>
+  <option>
+    <name>RTL</name>
+    <key>"rtl"</key>
+  </option>
+  <option>
+    <name>UHD</name>
+    <key>"uhd"</key>
+  </option>
   </param>
+
   <param>
     <name>FFT width</name>
     <key>fft_len</key>

@@ -43,13 +43,14 @@ def frange(x, y, jump):
 
 class spectrum_sweeper(gr.hier_block2):
 
-    def __init__(self, rf_receiver, fft_len, sample_rate, trunc_sample_rate, fstart, ffinish,
+    def __init__(self, rf_receiver, receiver_type, fft_len, sample_rate, trunc_sample_rate, fstart, ffinish,
      rate, average, t_obs, tune_delay, max_tu):
         gr.hier_block2.__init__(self,
             "ascii plot",
             gr.io_signature(1, 1, gr.sizeof_gr_complex),
             gr.io_signature(0,0,0))
         self.rf_receiver = rf_receiver
+        self.receiver_type = receiver_type
         self.fft_len = fft_len
         self.sample_rate = sample_rate
         self.trunc_sample_rate = trunc_sample_rate
@@ -58,38 +59,25 @@ class spectrum_sweeper(gr.hier_block2):
         self.rate = rate
         self.average = average
         self.max_tu = max_tu-2 #reserve two bytes for segmentation
-
         self.t_obs = t_obs*1e-3 #time window for observation
-        #self.t_obs_real = int(2**math.ceil(math.log(sample_rate*self.t_obs,2)))/float(sample_rate) #convert previous in a power of 2
         self.vector_probe_pts = int(2**math.ceil(math.log(sample_rate*self.t_obs,2)))
-        print 'obs time', self.t_obs
-        print 'number of samples per FFT', self.vector_probe_pts
-
-        #self.channel_spacing = channel_spacing #channel spacing for further channel analysis
-        #self.srch_bw = srch_bw
+        print 'number of samples per FFT block', self.vector_probe_pts
         self.tune_delay = tune_delay*1e-3
-
         self.tune_frequencies = frange(self.fstart+self.trunc_sample_rate/2, self.ffinish, self.trunc_sample_rate)
         if len(self.tune_frequencies)<1: #IN CASE SCANNING SR < TX SAMPLING RATE
-            self.tune_frequencies = []
-            self.tune_frequencies.append((self.fstart + self.ffinish)/2)
-
+            self.tune_frequencies = [(self.fstart + self.ffinish)/2]
         self.freq_resolution = float(self.sample_rate)/float(self.fft_len)
-        #self.bb_freqs = frange(-self.trunc_sample_rate/2, self.trunc_sample_rate/2, self.channel_spacing)
-        #self.srch_bins = srch_bw/self.freq_resolution
-        #####self.excess_bins are those bins from the edge of the spectrum that will be discarded
         self.excess_bins = int(math.floor((self.sample_rate - self.trunc_sample_rate)/2/self.freq_resolution))
         print 'excess_bins', self.excess_bins
-        #self.channels_axis = frange(self.fstart, self.ffinish, self.channel_spacing)
 
+        #not used, but available
         self.freq_axis = self.sample_rate/2*np.linspace(-1, 1, self.fft_len)
-        if self.excess_bins > 0:
-            self.freq_axis = self.freq_axis[(self.excess_bins):-(self.excess_bins)]
-        print 'len axis', len(self.freq_axis)
+        if self.excess_bins > 0: self.freq_axis = self.freq_axis[(self.excess_bins):-(self.excess_bins)]
 
+        #packet fragmentation to match MTU
         self.fragments = int(math.ceil((self.fft_len*4.0)/(self.max_tu))) #4 bytes per fft bin
         print 'data split in', self.fragments, 'fragments'
-     
+
         self.msgq = gr.msg_queue(2)
 
         self.samples = [1e-10]*self.vector_probe_pts
@@ -107,7 +95,6 @@ class spectrum_sweeper(gr.hier_block2):
 
         #####CONNECTIONS####
         self.connect(self, self.s2p, self.one_in_n, self.sink)
-        #self.connect(self, self.s2p, self.sink)
         self.msg_connect(self._packet_source, "out", self, "pdus")
 
         ####THREADS####
@@ -241,7 +228,6 @@ class spectrum_stitcher(_threading.Thread):
             psd_old = psd
 
             fmt = "<%df" % len(psd)
-
             self.packet_source.send_packet(struct.pack(fmt, *psd), self.max_tu)
 
 class packet_source(gr.sync_block):
@@ -258,7 +244,7 @@ class packet_source(gr.sync_block):
         j = 0
         for i in range(fragments):
 
-            n_frags = struct.pack('!B', fragments) #1 bute for number of fragments
+            n_frags = struct.pack('!B', fragments) #1 byte for number of fragments
             frag_id = struct.pack('!B', i) #1 byte for fragment number
             frag = data[j:j+max_tu]
             if i == fragments-1: frag = data[j:]
@@ -273,7 +259,7 @@ class packet_source(gr.sync_block):
 
 def _src_power(vector, nFFT, samp_rate, excess_bins):
 
-
+    #welch method
     welch_axis, psd_welch = sg.welch(vector, window='flattop', fs = samp_rate, nperseg= nFFT/4.0, nfft = nFFT)
 
     psd_fft = np.fft.fftshift(psd_welch)
