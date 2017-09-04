@@ -5,17 +5,19 @@
   <category>ofdm_tools</category>
   <import>import ofdm_tools</import>
   <make>#set $win = 'self._%s_win'%$id
-ofdm_tools.remote_client_qt($tune_freq,
-$samp_rate,
-$l,
-$axes)
+ofdm_tools.remote_client_qt(
+tune_freq=$tune_freq,
+sample_rate=$sample_rate,
+show_axes=$axes,
+label=$l)
 self._$(id)_win = self.$(id);
 $(gui_hint()($win))
 
 </make>
 <callback>set_tune_freq($tune_freq)</callback>
-<callback>set_sample_rate($samp_rate)</callback>
+<callback>set_sample_rate($sample_rate)</callback>
 <callback>set_show_axes($axes)</callback>
+<callback>set_reset_max($reset_max)</callback>
   <param>
     <name>GUI Hint</name>
     <key>gui_hint</key>
@@ -37,7 +39,7 @@ $(gui_hint()($win))
   </param>
     <param>
     <name>Sample Rate</name>
-    <key>samp_rate</key>
+    <key>sample_rate</key>
     <value></value>
     <type>float</type>
   </param>
@@ -46,6 +48,12 @@ $(gui_hint()($win))
     <key>axes</key>
     <value></value>
     <type>string</type>
+  </param>
+  <param>
+    <name>Reset Max</name>
+    <key>reset_max</key>
+    <value>reset_max</value>
+    <type>raw</type>
   </param>
   <sink>
     <name>pdus</name>

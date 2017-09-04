@@ -146,7 +146,7 @@ class packet_source(gr.sync_block):
         j = 0
         for i in range(fragments):
 
-            n_frags = struct.pack('!B', fragments) #1 bute for number of fragments
+            n_frags = struct.pack('!B', fragments) #1 byte for number of fragments
             frag_id = struct.pack('!B', i) #1 byte for fragment number
             frag = data[j:j+max_tu]
             if i == fragments-1: frag = data[j:]

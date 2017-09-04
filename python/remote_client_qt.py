@@ -38,15 +38,25 @@ class remote_client_qt(plotter_base):
         if show_axes:
             self.toggle_axes()
 
+        self.strt = True
         self.reasembled_frame = ''
+        self.max_fft_data = numpy.array([])
 
         # set up curves
+        curve = Qwt.QwtPlotCurve("MAX");
+        curve.attach(self);
+        self.curves.append(curve);
+        curve.setPen( Qt.QPen(Qt.Qt.blue) );
+
         curve = Qwt.QwtPlotCurve("PSD");
         curve.attach(self);
         self.curves.append(curve);
         curve.setPen( Qt.QPen(Qt.Qt.green) );
 
         self.curve_data = [([],[]), ([],[])];
+
+    def set_reset_max(self, reset_max):
+        self.strt = True
 
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
@@ -82,9 +92,16 @@ class remote_client_qt(plotter_base):
                 fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
                 #fmt = "<%df" % (len(msg_str) // 4)
                 #fft_data = struct.unpack(fmt, msg_str)
+
+                if self.strt:
+                    self.max_fft_data = fft_data
+                    self.strt = False
+
                 # pass data
                 axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
-                self.curve_data[0] = (axis, fft_data);
+                self.max_fft_data = numpy.maximum(self.max_fft_data, fft_data)
+                self.curve_data[0] = (axis/1e6, fft_data);
+                self.curve_data[1] = (axis/1e6, self.max_fft_data);
                 # trigger update
                 self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
 
@@ -93,17 +110,24 @@ class remote_client_qt(plotter_base):
         else: #multiple fragments situation
             self.reasembled_frame += msg_str
             if frag_id == n_frags - 1: #final fragment
-                try:
-                    fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
-                    #fmt = "<%df" % (len(self.reasembled_frame) // 4)
-                    #fft_data = struct.unpack(fmt, self.reasembled_frame)
-                    # pass data
-                    axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
-                    self.curve_data[0] = (axis, fft_data);
-                    # trigger update
-                    self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+                #try:
+                fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                #fmt = "<%df" % (len(self.reasembled_frame) // 4)
+                #fft_data = struct.unpack(fmt, self.reasembled_frame)
 
-                    self.reasembled_frame = ''
-                except: print 'error reassembling data'
+                if self.strt:
+                    self.max_fft_data = fft_data
+                    self.strt = False
+
+                # pass data
+                axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
+                self.max_fft_data = numpy.maximum(self.max_fft_data, fft_data)
+                self.curve_data[1] = (axis/1e6, fft_data);
+                self.curve_data[0] = (axis/1e6, self.max_fft_data);
+                # trigger update
+                self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+
+                self.reasembled_frame = ''
+                #except: print 'error reassembling data'
             else:
                 pass
