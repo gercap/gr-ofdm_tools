@@ -7,21 +7,13 @@
   <make>ofdm_tools.local_worker(
   fft_len=$fft_len,
   sample_rate=$sample_rate, 
-  tune_freq=$tune_freq, 
   average=$average, 
   rate=$rate,
   max_tu=$max_tu,
   )</make>
 <callback>set_sample_rate($sample_rate)</callback>
-<callback>set_tune_freq($tune_freq)</callback>
 <callback>set_average($average)</callback>
 <callback>set_rate($rate)</callback>
-  <param>
-    <name>Tune Freq</name>
-    <key>tune_freq</key>
-    <value>tune_freq</value>
-    <type>float</type>
-  </param>
   <param>
     <name>FFT width</name>
     <key>fft_len</key>

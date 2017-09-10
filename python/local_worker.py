@@ -32,11 +32,10 @@ from gnuradio.filter import window
 import ofdm_tools as of
 import pmt
 import numpy as np
-import zlib
 
 class local_worker(gr.hier_block2):
 
-    def __init__(self, fft_len, sample_rate, tune_freq, average, rate, max_tu):
+    def __init__(self, fft_len, sample_rate, average, rate, max_tu):
         gr.hier_block2.__init__(self,
             "ascii plot",
             gr.io_signature(1, 1, gr.sizeof_gr_complex),
@@ -44,7 +43,6 @@ class local_worker(gr.hier_block2):
         self.fft_len = fft_len
         self.sample_rate = sample_rate
         self.average = average
-        self.tune_freq = tune_freq
         self.rate = rate
         self.max_tu = max_tu-2 #reserve two bytes for segmentation
 
@@ -59,7 +57,7 @@ class local_worker(gr.hier_block2):
          max(1, int(self.sample_rate/self.fft_len/self.rate)))
 
         mywindow = window.blackmanharris(self.fft_len)
-        self.fft = fft.fft_vcc(self.fft_len, True, (), True)
+        self.fft = fft.fft_vcc(self.fft_len, True, mywindow, True)
 
         self.c2mag2 = blocks.complex_to_mag_squared(self.fft_len)
         self.avg = grfilter.single_pole_iir_filter_ff(self.average, self.fft_len)
@@ -89,15 +87,9 @@ class local_worker(gr.hier_block2):
         self.sample_rate = sample_rate
         self.set_rate(self.rate)
 
-    def set_tune_freq(self, tune_freq):
-        self.tune_freq = tune_freq
-
     def set_average(self, average):
         self.average = average
         self.avg.set_taps(average)
-
-    def get_tune_freq(self):
-        return self.tune_freq
 
     def get_sample_rate(self):
         return self.sample_rate
@@ -127,6 +119,7 @@ class main_thread(_threading.Thread):
             data = msg.to_string()            # get the body of the msg as a string
 
             if nitems > 1:
+                print 'nitems exceeded'
                 start = itemsize * (nitems - 1)
                 data = data[start:start+itemsize]
 

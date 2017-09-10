@@ -110,24 +110,24 @@ class remote_client_qt(plotter_base):
         else: #multiple fragments situation
             self.reasembled_frame += msg_str
             if frag_id == n_frags - 1: #final fragment
-                #try:
-                fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
-                #fmt = "<%df" % (len(self.reasembled_frame) // 4)
-                #fft_data = struct.unpack(fmt, self.reasembled_frame)
+                try:
+                    fft_data = numpy.fromstring(self.reasembled_frame, numpy.float32)
+                    #fmt = "<%df" % (len(self.reasembled_frame) // 4)
+                    #fft_data = struct.unpack(fmt, self.reasembled_frame)
 
-                if self.strt:
-                    self.max_fft_data = fft_data
-                    self.strt = False
+                    if self.strt:
+                        self.max_fft_data = fft_data
+                        self.strt = False
 
-                # pass data
-                axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
-                self.max_fft_data = numpy.maximum(self.max_fft_data, fft_data)
-                self.curve_data[1] = (axis/1e6, fft_data);
-                self.curve_data[0] = (axis/1e6, self.max_fft_data);
-                # trigger update
-                self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
+                    # pass data
+                    axis = self.sample_rate/2*numpy.linspace(-1, 1, len(fft_data)) + self.tune_freq
+                    self.max_fft_data = numpy.maximum(self.max_fft_data, fft_data)
+                    self.curve_data[1] = (axis/1e6, fft_data);
+                    self.curve_data[0] = (axis/1e6, self.max_fft_data);
+                    # trigger update
+                    self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
 
-                self.reasembled_frame = ''
-                #except: print 'error reassembling data'
+                    self.reasembled_frame = ''
+                except: print 'error reassembling data'
             else:
                 pass
