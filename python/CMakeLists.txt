@@ -59,7 +59,8 @@ GR_PYTHON_INSTALL(
     local_worker.py
     remote_client.py
     remote_client_qt.py
-    spectrum_sweeper.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
+    spectrum_sweeper.py
+    clipper.py DESTINATION ${GR_PYTHON_DIR}/ofdm_tools
 )
 
 ########################################################################

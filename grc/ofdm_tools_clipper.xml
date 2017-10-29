@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<block>
+  <name>clipper</name>
+  <key>ofdm_tools_clipper</key>
+  <category>[ofdm_tools]</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.clipper($clipping_factor)</make>
+  <callback>set_clipping_factor($clipping_factor)</callback>
+  <param>
+    <name>Clipping Factor</name>
+    <key>clipping_factor</key>
+    <value>10</value>
+    <type>float</type>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>complex</type>
+  </source>
+</block>

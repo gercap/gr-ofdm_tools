@@ -87,7 +87,7 @@ class ofdm_radio_hier(gr.hier_block2):
         ##################################################
         # Blocks
         ##################################################
-        self.ofdm_tools_clipper_0 = ofdm_tools.clipper_cc(clipping_factor)
+        self.ofdm_tools_clipper_0 = ofdm_tools.clipper(clipping_factor)
         self.iir_filter_xxx_1 = filter.iir_filter_ccd((forward_OOB), (feedback_OOB), False)
         self.fft_vxx_txpath = fft.fft_vcc(fft_len, False, (()), True, 1)
         self.fft_vxx_2_rxpath = fft.fft_vcc(fft_len, True, (), True, 1)
