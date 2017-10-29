@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Radioa
-# Generated: Sun Oct 29 14:22:32 2017
+# Generated: Sun Oct 29 14:38:33 2017
 ##################################################
 
 if __name__ == '__main__':
@@ -123,7 +123,6 @@ class radioA(gr.top_block, Qt.QWidget):
             clipper_mode=0,
             filter_mode=1,
         )
-        self.blocks_throttle_0_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
         self.blocks_tagged_stream_to_pdu_0 = blocks.tagged_stream_to_pdu(blocks.byte_t, 'packet_len')
         self.blocks_pdu_to_tagged_stream_0 = blocks.pdu_to_tagged_stream(blocks.byte_t, 'packet_len')
@@ -136,9 +135,8 @@ class radioA(gr.top_block, Qt.QWidget):
         self.msg_connect((self.blocks_message_strobe_0_0, 'strobe'), (self.blocks_pdu_to_tagged_stream_0, 'pdus'))
         self.msg_connect((self.blocks_tagged_stream_to_pdu_0, 'pdus'), (self.blocks_message_debug_0, 'print'))
         self.connect((self.blocks_pdu_to_tagged_stream_0, 0), (self.ofdm_radio_hier_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.blocks_throttle_0_0, 0))
+        self.connect((self.blocks_throttle_0, 0), (self.ofdm_radio_hier_0, 1))
         self.connect((self.blocks_throttle_0, 0), (self.qtgui_freq_sink_x_0, 0))
-        self.connect((self.blocks_throttle_0_0, 0), (self.ofdm_radio_hier_0, 1))
         self.connect((self.ofdm_radio_hier_0, 0), (self.blocks_tagged_stream_to_pdu_0, 0))
         self.connect((self.ofdm_radio_hier_0, 1), (self.blocks_throttle_0, 0))
 
@@ -153,7 +151,6 @@ class radioA(gr.top_block, Qt.QWidget):
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
         self.qtgui_freq_sink_x_0.set_frequency_range(0, self.samp_rate)
-        self.blocks_throttle_0_0.set_sample_rate(self.samp_rate)
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
 
 
