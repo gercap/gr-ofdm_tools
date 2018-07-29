@@ -10,10 +10,12 @@
   average=$average, 
   rate=$rate,
   max_tu=$max_tu,
+  data_precision=$data_precision,
   )</make>
 <callback>set_sample_rate($sample_rate)</callback>
 <callback>set_average($average)</callback>
 <callback>set_rate($rate)</callback>
+<callback>set_data_precision($data_precision)</callback>
   <param>
     <name>FFT width</name>
     <key>fft_len</key>
@@ -44,6 +46,12 @@
     <key>max_tu</key>
     <value>1472</value>
     <type>int</type>
+  </param>
+  <param>
+    <name>32bit FFT</name>
+    <key>data_precision</key>
+    <value>True</value>
+    <type>raw</type>
   </param>
   <sink>
     <name>in</name>

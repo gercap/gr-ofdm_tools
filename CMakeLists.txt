@@ -132,6 +132,10 @@ GR_PYTHON_CHECK_MODULE("matplotlib" matplotlib True MATPLOTLIB_FOUND)
 if(NOT MATPLOTLIB_FOUND)
     message(FATAL_ERROR "Matplotlib not found.")
 endif()
+GR_PYTHON_CHECK_MODULE("Crypto" Crypto True CRYPTO_FOUND)
+if(NOT MATPLOTLIB_FOUND)
+    message(FATAL_ERROR "Crypto not found.")
+endif()
 
 ########################################################################
 # Setup the include and linker paths

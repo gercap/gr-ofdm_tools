@@ -9,6 +9,7 @@ ofdm_tools.remote_client_qt(
 tune_freq=$tune_freq,
 sample_rate=$sample_rate,
 show_axes=$axes,
+precision=$precision,
 label=$l)
 self._$(id)_win = self.$(id);
 $(gui_hint()($win))
@@ -18,6 +19,7 @@ $(gui_hint()($win))
 <callback>set_sample_rate($sample_rate)</callback>
 <callback>set_show_axes($axes)</callback>
 <callback>set_reset_max($reset_max)</callback>
+<callback>set_precision($precision)</callback>
   <param>
     <name>GUI Hint</name>
     <key>gui_hint</key>
@@ -53,6 +55,12 @@ $(gui_hint()($win))
     <name>Reset Max</name>
     <key>reset_max</key>
     <value>reset_max</value>
+    <type>raw</type>
+  </param>
+  <param>
+    <name>32bit FFT</name>
+    <key>precision</key>
+    <value>True</value>
     <type>raw</type>
   </param>
   <sink>
