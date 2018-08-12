@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-# Copyright 2017Germano Capela at gmail.com
+# Copyright 2017 Germano Capela at gmail.com
 # 
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import math, struct
+import math, struct, socket
 from gnuradio import gr
 import subprocess
 from operator import add
@@ -29,7 +29,6 @@ from gnuradio import fft
 import gnuradio.filter as grfilter
 from gnuradio import blocks
 from gnuradio.filter import window
-import ofdm_tools as of
 import pmt
 import numpy as np
 
@@ -141,7 +140,8 @@ class main_thread(_threading.Thread):
 class packet_source(gr.sync_block):
     def __init__(self):
         gr.sync_block.__init__(self,"packet_source",[],[])
-
+        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+        print "reporting fft data on localhost UDP 5005 port"
         # set up message ports
         self.message_port_register_out(pmt.intern("out"));
 
@@ -164,9 +164,10 @@ class packet_source(gr.sync_block):
             
             frame = n_frags + frag_id + frag #construct frame
 
+            self.udp_sock.sendto(frame, ("127.0.0.1", 5005))
+
             data_pmt = pmt.make_u8vector(len(frame), ord(' '))
             # Copy all characters to the u8vector:
             for i in range(len(frame)): pmt.u8vector_set(data_pmt, i, ord(frame[i]))
-            #f32vector_set
-            self.message_port_pub(pmt.intern("out"), pmt.cons(pmt.PMT_NIL, data_pmt))
+            self.message_port_pub(pmt.intern("out"), pmt.cons(pmt.PMT_NIL, data_pmt))            
             j += max_tu
