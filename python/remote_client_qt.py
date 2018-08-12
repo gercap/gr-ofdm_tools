@@ -29,7 +29,7 @@ import zlib
 import numpy as np
 
 class remote_client_qt(plotter_base):
-    def __init__(self, tune_freq, sample_rate, show_axes, precision, label="", *args):
+    def __init__(self, tune_freq, sample_rate, show_axes, precision, hold_max, label="", *args):
         plotter_base.__init__(self, blkname="remote_client_qt", label=label, *args)
         self.message_port_register_in(pmt.intern("pdus"));
         self.set_msg_handler(pmt.intern("pdus"), self.handler);
@@ -43,6 +43,8 @@ class remote_client_qt(plotter_base):
 
         if show_axes:
             self.toggle_axes()
+
+        self.hold_max = hold_max
 
         self.strt = True
         self.reasembled_frame = ''
@@ -63,6 +65,7 @@ class remote_client_qt(plotter_base):
 
     def set_reset_max(self, reset_max):
         self.strt = True
+        self.set_hold_max(True)
 
     def set_sample_rate(self, sample_rate):
         self.sample_rate = sample_rate
@@ -89,6 +92,10 @@ class remote_client_qt(plotter_base):
         else:
             self.data_type = np.float16
             print '-->Remote: 16bit FFT in use (less bandwidth and precision)'
+
+    def set_hold_max(self, hold_max):
+        self.hold_max = hold_max
+        print '<>', self.hold_max
 
     def handler(self, msg_pmt):
         #meta = pmt.to_python(pmt.car(msg_pmt))
@@ -118,7 +125,8 @@ class remote_client_qt(plotter_base):
                 axis = self.sample_rate/2*np.linspace(-1, 1, len(fft_data)) + self.tune_freq
                 self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
                 self.curve_data[0] = (axis/1e6, fft_data);
-                self.curve_data[1] = (axis/1e6, self.max_fft_data);
+                if self.hold_max:
+                    self.curve_data[1] = (axis/1e6, self.max_fft_data);
                 # trigger update
                 self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
 
@@ -144,7 +152,8 @@ class remote_client_qt(plotter_base):
                     axis = self.sample_rate/2*np.linspace(-1, 1, len(fft_data)) + self.tune_freq
                     self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
                     self.curve_data[1] = (axis/1e6, fft_data);
-                    self.curve_data[0] = (axis/1e6, self.max_fft_data);
+                    if self.hold_max:
+                        self.curve_data[0] = (axis/1e6, self.max_fft_data);
                     # trigger update
                     self.emit(QtCore.SIGNAL("updatePlot(int)"), 0)
 

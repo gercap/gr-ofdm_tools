@@ -10,6 +10,7 @@ tune_freq=$tune_freq,
 sample_rate=$sample_rate,
 show_axes=$axes,
 precision=$precision,
+hold_max=$hold_max,
 label=$l)
 self._$(id)_win = self.$(id);
 $(gui_hint()($win))
@@ -20,6 +21,7 @@ $(gui_hint()($win))
 <callback>set_show_axes($axes)</callback>
 <callback>set_reset_max($reset_max)</callback>
 <callback>set_precision($precision)</callback>
+<callback>set_hold_max($hold_max)</callback>
   <param>
     <name>GUI Hint</name>
     <key>gui_hint</key>
@@ -61,6 +63,12 @@ $(gui_hint()($win))
     <name>32bit FFT</name>
     <key>precision</key>
     <value>True</value>
+    <type>raw</type>
+  </param>
+    <param>
+    <name>Hold Max</name>
+    <key>hold_max</key>
+    <value>False</value>
     <type>raw</type>
   </param>
   <sink>
