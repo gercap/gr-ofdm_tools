@@ -1,0 +1,116 @@
+<!DOCTYPE html5>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <title>Web SDR</title>
+
+  <!-- CSS  -->
+  <link href="static/fonts/fonts.fnt" rel="stylesheet">
+  <link href="static/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <!-- jquery  -->
+  <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
+  <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
+
+</head>
+
+<script>
+
+setInterval(timer_hour, 1000);
+
+function timer_hour() {
+    var d = new Date();
+    $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
+}
+
+
+timer_stats()
+setInterval(function(){ timer_stats() }, 100);
+function timer_stats() {
+   // post the form values via AJAX...
+  $.post('/get_fft_data', function(_data) {
+    var fft_data = _data["fft_data"]
+    var axis = _data["axis"]
+    var max = Math.max.apply(Math, fft_data) + 3
+    var dps = []; //dataPoints. 
+
+
+    var chart = new CanvasJS.Chart("chartContainer", {
+      axisX: {
+        title: "Freq"
+      },
+      axisY: {
+        title: "Amplitude",
+        maximum: max,
+      },
+      data: [{
+        type: "spline",
+        name: "{{description}}",
+        showInLegend: false,
+        dataPoints: dps
+      }]
+    });
+
+    function parseDataPoints() {
+      for (var i = 0; i < fft_data.length; i++)
+        dps.push({
+          y: fft_data[i], label: axis[i]
+        });
+    };
+
+    function addDataPoints(){
+      parseDataPoints();
+      chart.options.data[0].dataPoints = dps;
+      chart.render();
+    }
+
+    addDataPoints();
+
+
+  });
+}
+
+</script>
+
+<body>
+
+<nav class="green lighten-1" role="navigation">
+    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Software Defined Radio</a>
+      <ul class="right hide-on-med-and-down">
+     <li><a href="/">Home</a></li></ul>
+      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+</nav>
+
+<div class="container">
+   <h5 id = "head_datetime" class="header center col s12 light">{{description}} {{now}})</h5>
+</div>
+
+<div class="container">
+  <div id="chartContainer" style="height: 600px; width: 100%;">
+</div>
+
+  <footer class="page-footer light-green">
+    <div class="container">
+      <div class="row">
+        <div class="col l6 s12">
+          <p class="grey-text text-lighten-4">Bottom line</p>
+        </div>
+        <div class="col l3 s12">
+          <h5 class="white-text">Reach Us</h5>
+          <ul>
+            <li><a class="white-text" href="mailto:goncalves.capela@marinha.ot">Email</a></li>
+
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      <div class="container">
+      Feito por: Eng.G. Capela
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>
