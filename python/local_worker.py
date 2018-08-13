@@ -150,7 +150,7 @@ class packet_source(gr.sync_block):
         if not data_precision:
             fft_data = np.fromstring(data, np.float32)
             fft_data = fft_data.astype(np.float16, copy=False)
-            data = fft_data.tobytes()
+            data = fft_data.tostring()
 
         fragments = int(math.ceil(len(data)/(float(max_tu))))+1 #4 bytes per fft bin
 
