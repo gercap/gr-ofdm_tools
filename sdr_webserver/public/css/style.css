@@ -15,7 +15,7 @@
 
 
 header, main, footer {
-    padding-left: 300px;
+    padding-left: 150px;
 }
 
 @media only screen and (max-width : 992px) {
@@ -25,11 +25,14 @@ header, main, footer {
 }
 
 .container {
-    width: 90%;
+    width: 100%;
     padding-left: 0;
-
 }
 
+.container2 {
+    width: 30%;
+    padding-left: 10;
+}
 nav {
     color: #fff;
     background-color: #ee6e73;

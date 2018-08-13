@@ -6,6 +6,7 @@ import Queue
 import cherrypy, simplejson
 from jinja2 import Environment, FileSystemLoader
 import numpy as np
+import xmlrpclib
 
 log_levels = {"CRITICAL":50, "ERROR":40, "WARNING":30, "INFO":20, "DEBUG":10}
 
@@ -16,14 +17,37 @@ MAX_LO_MTU = 65535
 
 def signal_handler(signal, frame):
   global keep_running
-
+  print "you pressed ctrl-C!"
   keep_running = False
-  _data_processor.join()
+  #_data_processor.join()
   sys.exit(0)
 
 class web_site(object):
-    def __init__(self, shared_queue):
+    def __init__(self, shared_queue, data_processor, remote_server):
       self.shared_queue = shared_queue
+      self.remote_server = remote_server
+      self.data_processor = data_processor
+
+    @cherrypy.expose
+    def set_rate(self, rate):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      self.remote_server.set_rate(float(rate))
+
+    @cherrypy.expose
+    def set_average(self, average):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      self.remote_server.set_av(float(average))
+
+    @cherrypy.expose
+    def set_precision(self, precision):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      if precision == "True":
+        self.remote_server.set_precision(True)
+        self.data_processor.set_precision(True)
+      else:
+        self.remote_server.set_precision(False)
+        self.data_processor.set_precision(False)
+
 
     @cherrypy.expose
     def get_fft_data(self):
@@ -42,16 +66,18 @@ class web_site(object):
         site_title="Web SDR tests")
 
 class data_processor(Thread):
-  def __init__(self, UDP_IP, UDP_PORT, shared_queue):
+  def __init__(self, UDP_IP, UDP_PORT, shared_queue, remote_server):
     Thread.__init__(self)
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
     self.sock.bind((UDP_IP, UDP_PORT))
     self.shared_queue = shared_queue
+    self.remote_server = remote_server
 
-    self.sample_rate = 1
-    self.tune_freq = 0
+    self.sample_rate = self.remote_server.get_samp_rate()
+    self.tune_freq = self.remote_server.get_tune_freq()
+
     self.reasembled_frame = ''
-    self.precision = True
+    self.precision = self.remote_server.get_precision()
     if self.precision:
         self.data_type = np.float32
     else:
@@ -60,6 +86,12 @@ class data_processor(Thread):
     self.strt = True
 
     self.keep_running = True
+
+  def set_precision(self, precision):
+    if precision:
+        self.data_type = np.float32
+    else:
+        self.data_type = np.float16
 
   def run(self):
 
@@ -83,7 +115,7 @@ class data_processor(Thread):
               self.strt = False
 
           # pass data
-          axis = self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq
+          axis = np.around(self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
           self.shared_queue.put((axis, fft_data))
           #axis = sample_rate/2*np.linspace(-1, 1, len(fft_data)) + tune_freq
           #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
@@ -108,7 +140,7 @@ class data_processor(Thread):
                 self.strt = False
 
             # pass data
-            axis = self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq
+            axis = np.around(self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
             self.shared_queue.put((axis, fft_data))
             #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
             #curve_data[1] = (axis/1e6, fft_data);
@@ -133,13 +165,25 @@ if __name__ == '__main__':
 
   shared_queue = Queue.Queue(10)
 
-  _data_processor = data_processor(UDP_IP, UDP_PORT, shared_queue)
+  remote_server = xmlrpclib.Server('http://127.0.0.1:7658')
+  while True:
+    try:
+      dummy = remote_server.get_samp_rate()
+    except:
+      print 'server offline?', 'http://127.0.0.1:7658'
+      time.sleep(3)
+      pass
+    else:
+      print 'server okay!', 'http://127.0.0.1:7658'
+      break
+
+  _data_processor = data_processor(UDP_IP, UDP_PORT, shared_queue, remote_server)
   _data_processor.start()
 
   # RUN
   #cherrypy.quickstart(web_site(), '/',  config = 'cherrypy.conf')
   cherrypy.config.update(config = 'cherrypy.conf')
-  cherrypy.tree.mount(web_site(shared_queue), '/', config = 'cherrypy.conf')
+  cherrypy.tree.mount(web_site(shared_queue, _data_processor, remote_server), '/', config = 'cherrypy.conf')
   if hasattr(cherrypy.engine, "signal_handler"):
       cherrypy.engine.signal_handler.subscribe()
   if hasattr(cherrypy.engine, "console_control_handler"):

@@ -7,11 +7,11 @@
 
   <!-- CSS  -->
   <link href="static/fonts/fonts.fnt" rel="stylesheet">
-  <link href="static/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <link href="static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="static/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <!-- jquery  -->
-  <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
+  <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
 
 </head>
 
@@ -63,12 +63,33 @@ function timer_stats() {
       parseDataPoints();
       chart.options.data[0].dataPoints = dps;
       chart.render();
+      chart.destroy();
+      chart = null;
     }
 
     addDataPoints();
 
 
   });
+}
+
+function setprecision() {
+    var checkBox = document.getElementById("precision");
+    if (checkBox.checked == true){
+        $.post('/set_precision', {precision: "True"}, function() {});
+    } else {
+        $.post('/set_precision', {precision: "False"}, function() {});
+    }
+}
+
+function setaverage(newaverage){
+  $.post('/set_average', {average: newaverage}, function() {});
+  $("#average_val").html("Average " + newaverage)
+}
+
+function setrate(newrate){
+  $.post('/set_rate', {rate: newrate}, function() {});
+  $("#rate_val").html("Rate " + newrate + " (FFT/s)")
 }
 
 </script>
@@ -87,30 +108,34 @@ function timer_stats() {
    <h5 id = "head_datetime" class="header center col s12 light">{{description}} {{now}})</h5>
 </div>
 
+<div class="container2 display: table;">
+  <div style="display: table-row">
+    <input type="checkbox" id="precision" checked="checked" onclick="setprecision()">
+    <label for="precision">32bit (or 16b) precision</label>
+  </div>
+  <div style="display: table-row">
+    <div style="width: 600px; display: table-cell;">
+     <label id = "average_val" for="average">Average</label>
+     <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="setaverage(this.value)" onchange="setaverage(this.value)">
+    </div>
+   <div style="width: 600px; display: table-cell;">
+     <label id = "rate_val" for="rate">Rate (FFT/s)</label>
+     <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="setrate(this.value)" onchange="setrate(this.value)">
+  </div> 
+  </div>
+  </div>
+</div>
 <div class="container">
   <div id="chartContainer" style="height: 600px; width: 100%;">
 </div>
 
-  <footer class="page-footer light-green">
-    <div class="container">
-      <div class="row">
-        <div class="col l6 s12">
-          <p class="grey-text text-lighten-4">Bottom line</p>
-        </div>
-        <div class="col l3 s12">
-          <h5 class="white-text">Reach Us</h5>
-          <ul>
-            <li><a class="white-text" href="mailto:goncalves.capela@marinha.ot">Email</a></li>
+<div style="width: 100%; display: table;">
+    <div style="display: table-row">
+        <div style="width: 600px; display: table-cell;"> Left </div>
+        <div style="display: table-cell;"> Right </div>
+    </div>
+</div>
 
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="footer-copyright">
-      <div class="container">
-      Feito por: Eng.G. Capela
-      </div>
-    </div>
-  </footer>
+
   </body>
 </html>
