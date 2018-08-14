@@ -7,7 +7,7 @@ import cherrypy
 
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
-from ws4py.messaging import TextMessage
+from ws4py.messaging import TextMessage, Message, BinaryMessage
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -17,7 +17,9 @@ env=Environment(loader=FileSystemLoader(CUR_DIR), trim_blocks=True)
 
 class ChatWebSocketHandler(WebSocket):
     def received_message(self, m):
-        cherrypy.engine.publish('websocket-broadcast', m)
+        #cherrypy.engine.publish('websocket-broadcast', m)
+        cherrypy.engine.publish('websocket-broadcast', BinaryMessage([1,2,3,4,5]))
+        #cherrypy.engine.publish('websocket-broadcast', TextMessage("[1,2,3,4,5]"))
 
     def closed(self, code, reason="A client left the room without a proper explanation."):
         cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
@@ -34,8 +36,6 @@ class Root(object):
       template = env.get_template('./index_ws.html')
       return template.render(
         username="User%d" % random.randint(0, 100),
-        host=self.host,
-        port=self.port,
         scheme=self.scheme)
 
     @cherrypy.expose
@@ -74,4 +74,4 @@ if __name__ == '__main__':
               'tools.staticdir.dir': 'js'
             }
         }
-)
+    )

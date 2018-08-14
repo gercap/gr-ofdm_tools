@@ -8,6 +8,12 @@ from jinja2 import Environment, FileSystemLoader
 import numpy as np
 import xmlrpclib
 
+from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
+from ws4py.websocket import WebSocket
+from ws4py.messaging import TextMessage
+import logging
+from ws4py import configure_logger
+
 log_levels = {"CRITICAL":50, "ERROR":40, "WARNING":30, "INFO":20, "DEBUG":10}
 
 # GET CURRENT DIRECTORY
@@ -22,11 +28,19 @@ def signal_handler(signal, frame):
   #_data_processor.join()
   sys.exit(0)
 
+class ChatWebSocketHandler(WebSocket):
+    def received_message(self, m):
+        cherrypy.engine.publish('websocket-broadcast', m)
+
+    def closed(self, code, reason="A client left the room without a proper explanation."):
+        cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
+
 class web_site(object):
-    def __init__(self, shared_queue, data_processor, remote_server):
+    def __init__(self, shared_queue, data_processor, remote_server, scheme):
       self.shared_queue = shared_queue
       self.remote_server = remote_server
       self.data_processor = data_processor
+      self.scheme = 'wss' if ssl else 'ws'
 
     @cherrypy.expose
     def set_rate(self, rate):
@@ -63,7 +77,8 @@ class web_site(object):
       return template.render(
         now=time.strftime("%H:%M:%S"),
         description='Web based SDR',
-        site_title="Web SDR tests")
+        site_title="Web SDR tests"
+        schem=self.scheme)
 
 class data_processor(Thread):
   def __init__(self, UDP_IP, UDP_PORT, shared_queue, remote_server):
@@ -181,34 +196,31 @@ if __name__ == '__main__':
   _data_processor.start()
 
   # RUN
-  #cherrypy.quickstart(web_site(), '/',  config = 'cherrypy.conf')
-  cherrypy.config.update(config = 'cherrypy.conf')
-  cherrypy.tree.mount(web_site(shared_queue, _data_processor, remote_server), '/', config = 'cherrypy.conf')
-  if hasattr(cherrypy.engine, "signal_handler"):
-      cherrypy.engine.signal_handler.subscribe()
-  if hasattr(cherrypy.engine, "console_control_handler"):
-      cherrypy.engine.console_control_handler.subscribe()
+  parser = argparse.ArgumentParser(description='SDR CherryPy Server')
+  parser.add_argument('--host', default='0.0.0.0')
+  parser.add_argument('-p', '--port', default=9000, type=int)
+  parser.add_argument('--ssl', action='store_true')
+  args = parser.parse_args()
 
-  cherrypy.engine.start()
-  cherrypy.engine.block()
+  cherrypy.config.update({'server.socket_host': args.host,
+                          'server.socket_port': args.port,
+                          'tools.staticdir.root': os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))})
 
-import cherrypy
-from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
-from ws4py.websocket import EchoWebSocket
+  if args.ssl:
+      cherrypy.config.update({'server.ssl_certificate': './server.crt',
+                              'server.ssl_private_key': './server.key'})
 
-cherrypy.config.update({'server.socket_port': 9000})
-WebSocketPlugin(cherrypy.engine).subscribe()
-cherrypy.tools.websocket = WebSocketTool()
+  WebSocketPlugin(cherrypy.engine).subscribe()
+  cherrypy.tools.websocket = WebSocketTool()
 
-class Root(object):
-    @cherrypy.expose
-    def index(self):
-        return 'some HTML with a websocket javascript connection'
-
-    @cherrypy.expose
-    def ws(self):
-        # you can access the class instance through
-        handler = cherrypy.request.ws_handler
-
-cherrypy.quickstart(Root(), '/', config={'/ws': {'tools.websocket.on': True,
-                                                 'tools.websocket.handler_cls': EchoWebSocket}})
+  cherrypy.quickstart(web_site(shared_queue, _data_processor, remote_server, args.ssl), '', config={
+      '/ws': {
+          'tools.websocket.on': True,
+          'tools.websocket.handler_cls': ChatWebSocketHandler
+          },
+      '/js': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': 'js'
+          }
+      }
+  )
