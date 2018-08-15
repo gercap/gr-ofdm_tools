@@ -1,52 +1,54 @@
 <html>
-    <head>
-      <script type='application/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
+  <head>
+    <script type='application/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
 
-      <script type='application/javascript'>
-        $(document).ready(function() {
-          var host = window.location.hostname;
-          var port = window.location.port;
-          websocket = "{{scheme}}://" + host + ":" + port + "/ws";
-          if (window.WebSocket) {
-            ws = new WebSocket(websocket);
-          }
-          else if (window.MozWebSocket) {
-            ws = MozWebSocket(websocket);
-          }
-          else {
-            console.log('WebSocket Not Supported');
-            return;
-          }
-          window.onbeforeunload = function(e) {
-            $('#chat').val($('#chat').val() + 'Bye bye...\n');
-            ws.close(1000, '{{username}} left the room');
-            if(!e) e = window.event;
-            e.stopPropagation();
-            e.preventDefault();
-          };
-          ws.onmessage = function (evt) {
-             console.log("WebSocket message incoming");
-             console.log("WebSocket message received:", event);
-             $('#chat').val($('#chat').val() + evt.data + '\n');
-             $('#freetext').val(evt.data + '\n');
-          };
-          ws.onopen = function() {
-             ws.send("{{username}} entered the room");
-          };
-          ws.onclose = function(evt) {
-             $('#chat').val($('#chat').val() + 'Connection closed by server: ' + evt.code + ' \"' + evt.reason + '\n');
-          };
-          $('#send').click(function() {
-             console.log($('#message').val());
-             ws.send('{{username}}: ' + $('#message').val());
-             $('#message').val("");
-             return false;
-          });
+    <script type='application/javascript'>
+      $(document).ready(function() {
+        var host = window.location.hostname;
+        var port = window.location.port;
+        websocket = "{{scheme}}://" + host + ":" + port + "/ws";
+        if (window.WebSocket) {
+          ws = new WebSocket(websocket);
+        }
+        else if (window.MozWebSocket) {
+          ws = MozWebSocket(websocket);
+        }
+        else {
+          console.log('WebSocket Not Supported');
+          return;
+        }
+        window.onbeforeunload = function(e) {
+          $('#chat').val($('#chat').val() + 'Bye bye...\n');
+          ws.close(1000, '{{username}} left the room');
+          if(!e) e = window.event;
+          e.stopPropagation();
+          e.preventDefault();
+        };
+        ws.onmessage = function (evt) {
+           console.log("WebSocket message received:", evt);
+           rx_data = evt.data
+           $('#chat').val($('#chat').val() + rx_data + '\n');
+           $('#freetext').val(rx_data + '\n');
+           var array = JSON.parse("[" + rx_data + "]");
+           console.log(array);
+        };
+        ws.onopen = function() {
+           ws.send("{{username}} entered the room");
+        };
+        ws.onclose = function(evt) {
+           $('#chat').val($('#chat').val() + 'Connection closed by server: ' + evt.code + ' \"' + evt.reason + '\n');
+        };
+        $('#send').click(function() {
+           console.log($('#message').val());
+           ws.send('{{username}}: ' + $('#message').val());
+           $('#message').val("");
+           return false;
         });
+      });
 
 
-      </script>
-    </head>
+    </script>
+  </head>
     <body>
     <form action='#' id='chatform' method='get'>
       <textarea id='chat' cols='35' rows='10'></textarea>
@@ -57,5 +59,5 @@
       </form>
     <br />
     <textarea id='freetext' cols='35' rows='10'></textarea>
-    </body>
-    </html>
+  </body>
+</html>

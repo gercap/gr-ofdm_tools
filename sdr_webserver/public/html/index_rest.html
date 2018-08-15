@@ -26,7 +26,7 @@ function timer_hour() {
 
 
 timer_stats()
-setInterval(function(){ timer_stats() }, 100);
+setInterval(function(){ timer_stats() }, 1000);
 function timer_stats() {
    // post the form values via AJAX...
   $.post('/get_fft_data', function(_data) {

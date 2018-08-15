@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import argparse
 import random
-import os
+import os, time
+from threading import Thread
 
 import cherrypy
 
@@ -18,11 +19,15 @@ env=Environment(loader=FileSystemLoader(CUR_DIR), trim_blocks=True)
 class ChatWebSocketHandler(WebSocket):
     def received_message(self, m):
         #cherrypy.engine.publish('websocket-broadcast', m)
-        cherrypy.engine.publish('websocket-broadcast', BinaryMessage([1,2,3,4,5]))
-        #cherrypy.engine.publish('websocket-broadcast', TextMessage("[1,2,3,4,5]"))
+        cherrypy.engine.publish('websocket-broadcast', Message([1,2,3,4,5]))
+        cherrypy.engine.publish('websocket-broadcast', TextMessage("[1,2,3,4,5]"))
 
     def closed(self, code, reason="A client left the room without a proper explanation."):
         cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
+
+class ws_sender(WebSocket):
+    def send_message(self, data):
+        cherrypy.engine.publish('websocket-broadcast', TextMessage(str(data)))
 
 class Root(object):
     def __init__(self, host, port, ssl=False):
@@ -42,6 +47,18 @@ class Root(object):
     def ws(self):
         cherrypy.log("Handler created: %s" % repr(cherrypy.request.ws_handler))
 
+class data_processor(Thread):
+  def __init__(self):
+    Thread.__init__(self)
+    #self.ws_sender = ws_sender()
+    self.keep_running = True
+
+  def run(self):
+    while self.keep_running:
+        ws_sender.send_message([1,2,3,4,5,6])
+        time.sleep(1)
+      
+
 if __name__ == '__main__':
     import logging
     from ws4py import configure_logger
@@ -60,6 +77,9 @@ if __name__ == '__main__':
     if args.ssl:
         cherrypy.config.update({'server.ssl_certificate': './server.crt',
                                 'server.ssl_private_key': './server.key'})
+
+    _data_processor = data_processor()
+    _data_processor.start()
 
     WebSocketPlugin(cherrypy.engine).subscribe()
     cherrypy.tools.websocket = WebSocketTool()

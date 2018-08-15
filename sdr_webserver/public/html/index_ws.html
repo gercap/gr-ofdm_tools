@@ -1,0 +1,187 @@
+<!DOCTYPE html5>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <title>Web SDR</title>
+
+  <!-- CSS  
+  <link href="static/fonts/fonts.fnt" rel="stylesheet">
+  <link href="static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="static/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  -->
+  <!-- jquery  -->
+  <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
+  <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
+
+</head>
+
+<script language="javascript" type="text/javascript">
+
+  setInterval(timer_hour, 1000);
+
+  function timer_hour() {
+      var d = new Date();
+      $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
+  }
+
+  function init()
+  {
+  var host = window.location.hostname;
+  var port = window.location.port;
+  websocket_url = "{{scheme}}://" + host + ":9000/ws";
+  }
+  function doConnect()
+  {
+    websocket = new WebSocket(websocket_url);
+    websocket.onopen = function(evt) { onOpen(evt) };
+    websocket.onclose = function(evt) { onClose(evt) };
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+  }
+  function onOpen(evt)
+  {
+    writeToScreen("connected\n");
+  }
+  function onClose(evt)
+  {
+    writeToScreen("disconnected\n");
+  }
+  function onMessage(evt)
+  {
+    _data = JSON.parse(evt.data);
+    if ("plot_data" in _data) {
+      draw_canvas(_data["plot_data"]);
+    } else {
+      writeToScreen("response: " + evt.data + '\n');      
+    }
+  }
+
+  function draw_canvas(data)
+  {
+    var fft_data = data["fft_data"]
+    var axis = data["axis"]
+    //writeToScreen("got fft data");
+
+    var max = Math.max.apply(Math, fft_data) + 3
+    var dps = []; //dataPoints. 
+
+    var chart = new CanvasJS.Chart("chartContainer", {
+      axisX: {
+        title: "Freq"
+      },
+      axisY: {
+        title: "Amplitude",
+        maximum: max,
+      },
+      data: [{
+        type: "spline",
+        name: "{{description}}",
+        showInLegend: false,
+        dataPoints: dps
+      }]
+    });
+
+    function parseDataPoints() {
+      for (var i = 0; i < fft_data.length; i++)
+        dps.push({
+          y: fft_data[i], label: axis[i]
+        });
+    };
+
+    function addDataPoints(){
+      parseDataPoints();
+      chart.options.data[0].dataPoints = dps;
+      chart.render();
+      chart.destroy();
+      chart = null;
+    }
+
+    addDataPoints();
+
+  }
+
+  function onError(evt)
+  {
+    writeToScreen('error: ' + evt.data + '\n');
+	websocket.close();
+  }
+  function doSend(message)
+  {
+    writeToScreen("sent: " + message + '\n'); 
+    websocket.send(message);
+  }
+  function writeToScreen(message)
+  {
+    document.infoform.outputtext.value += message
+	  document.infoform.outputtext.scrollTop = document.infoform.outputtext.scrollHeight;
+  }
+  window.addEventListener("load", init, false);
+   function sendText() {
+		doSend("hi");
+   }
+  function clearText() {
+		document.infoform.outputtext.value = "";
+   }
+   function doDisconnect() {
+		websocket.close();
+   }
+
+  function setprecision() {
+      var checkBox = document.getElementById("precision");
+      if (checkBox.checked == true){
+          $.post('/set_precision', {precision: "True"}, function() {});
+      } else {
+          $.post('/set_precision', {precision: "False"}, function() {});
+      }
+  }
+
+  function setaverage(newaverage){
+    $.post('/set_average', {average: newaverage}, function() {});
+    $("#average_val").html("Average " + newaverage)
+  }
+
+  function setrate(newrate){
+    $.post('/set_rate', {rate: newrate}, function() {});
+    $("#rate_val").html("Rate " + newrate + " (FFT/s)")
+  }
+
+
+</script>
+
+<body onload="doConnect()">
+
+<div >
+   <h5 id = "head_datetime" class="header center col s12 light">{{description}} {{now}})</br>
+</div>
+
+<div class="display: table;">
+  <div style="display: table-row">
+    <input type="checkbox" id="precision" checked="checked" onclick="setprecision()">
+    <label for="precision">32bit (or 16b) precision</label>
+  </div>
+  <div style="display: table-row">
+    <div style="width: 600px; display: table-cell;">
+     <label id = "average_val" for="average">Average</label>
+     <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="setaverage(this.value)" onchange="setaverage(this.value)">
+    </div>
+   <div style="width: 600px; display: table-cell;">
+     <label id = "rate_val" for="rate">Rate (FFT/s)</label>
+     <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="setrate(this.value)" onchange="setrate(this.value)">
+  </div> 
+  </div>
+  </div>
+
+<div>
+  <div id="chartContainer" style="height: 600px; width: 100%;">
+</div>
+
+<form name="infoform">
+<p>
+<textarea name="outputtext" rows="20" cols="50"></textarea>
+</p>
+</form>
+
+</body>
+
+</html>
