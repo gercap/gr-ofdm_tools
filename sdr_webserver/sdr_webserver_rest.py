@@ -16,10 +16,8 @@ env=Environment(loader=FileSystemLoader(CUR_DIR), trim_blocks=True)
 MAX_LO_MTU = 65535
 
 def signal_handler(signal, frame):
-  global keep_running
   print "you pressed ctrl-C!"
-  keep_running = False
-  #_data_processor.join()
+  _data_processor.keep_running = False
   sys.exit(0)
 
 class web_site(object):
@@ -59,7 +57,7 @@ class web_site(object):
     @cherrypy.expose
     def index(self):
 
-      template = env.get_template('./public/html/index_rests.html')
+      template = env.get_template('./public/html/index_rest.html')
       return template.render(
         now=time.strftime("%H:%M:%S"),
         description='Web based SDR',
@@ -96,7 +94,7 @@ class data_processor(Thread):
 
   def run(self):
 
-    while keep_running:
+    while self.keep_running:
       msg_str, addr = self.sock.recvfrom(MAX_LO_MTU) # buffer size is 1024 bytes
       #print "received message:", msg_str
 
@@ -158,7 +156,6 @@ class data_processor(Thread):
 
 if __name__ == '__main__':
 
-  keep_running = True
   UDP_IP = "127.0.0.1"
   UDP_PORT = 5005
 

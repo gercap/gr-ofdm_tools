@@ -13,6 +13,8 @@
   <!-- jquery  -->
   <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
   <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
+  <script type="text/javascript" src="static/js/Chart.bundle.js"></script>
+  <script type="text/javascript" src="static/js/Chart.bundle.min.js"></script>
 
 </head>
 
@@ -24,6 +26,19 @@
       var d = new Date();
       $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
   }
+
+  function linspacer(startValue, stopValue, cardinality, multiplier, adder) {
+    var arr = [];
+    var currValue = startValue;
+    var step = (stopValue - startValue) / (cardinality - 1);
+    for (var i = 0; i < cardinality; i++) {
+      arr.push(Math.round((currValue + (step * i)) * multiplier + adder));
+    }
+    return arr;
+  }
+
+  var samp_rate = 0;
+  var tune_freq = 0;
 
   function init()
   {
@@ -42,26 +57,39 @@
   function onOpen(evt)
   {
     writeToScreen("connected\n");
+    get_samp_rate();
+    get_tune_freq();
   }
   function onClose(evt)
   {
-    writeToScreen("disconnected\n");
+    writeToScreen("disconnected.. reconnecting\n");
+    setTimeout(doConnect, 3000);
   }
   function onMessage(evt)
   {
+    //d = new Date();
+    //writeToScreen("new data " + d.toLocaleTimeString() + "\n");
+
     _data = JSON.parse(evt.data);
-    if ("plot_data" in _data) {
-      draw_canvas(_data["plot_data"]);
+    if ("tune_freq" in _data) {
+      tune_freq = _data["tune_freq"];
+      writeToScreen("tune_freq: " + tune_freq + '\n');
+    }
+    else if ("samp_rate" in _data) {
+      samp_rate = _data["samp_rate"];
+      writeToScreen("samp_rate: " + samp_rate + '\n');
+    }
+    else if ("fft_data" in _data) {
+      //draw_data(_data["fft_data"]);
+      draw_canvas(_data["fft_data"]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
   }
 
-  function draw_canvas(data)
+  function draw_canvas(fft_data)
   {
-    var fft_data = data["fft_data"]
-    var axis = data["axis"]
-    //writeToScreen("got fft data");
+    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
 
     var max = Math.max.apply(Math, fft_data) + 3
     var dps = []; //dataPoints. 
@@ -101,6 +129,35 @@
 
   }
 
+  function draw_data(fft_data)
+  {
+    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
+
+    var ctx = document.getElementById("myChart").getContext('2d');
+
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        fill: false,
+        data: {
+            labels: axis,
+            datasets: [{
+                label: 'FFT',
+                data: fft_data,
+            }]
+        },
+        options: {
+            animation: false,
+            elements: {
+                line: {
+                        fill: false
+                },
+                point: {
+                  radius: 0 }
+            }
+        }
+    });
+  }
+
   function onError(evt)
   {
     writeToScreen('error: ' + evt.data + '\n');
@@ -138,14 +195,27 @@
 
   function setaverage(newaverage){
     $.post('/set_average', {average: newaverage}, function() {});
-    $("#average_val").html("Average " + newaverage)
   }
 
   function setrate(newrate){
     $.post('/set_rate', {rate: newrate}, function() {});
-    $("#rate_val").html("Rate " + newrate + " (FFT/s)")
   }
 
+  function setfreq(newfreq){
+    $.post('/set_tune_freq', {freq: newfreq}, function() {});
+  }
+
+  function get_samp_rate(){
+    $.post('/get_samp_rate', function(rate) {
+      samp_rate = rate;
+    });
+  }
+
+  function get_tune_freq(){
+    $.post('/get_tune_freq', function(freq) {
+      tune_freq = freq;
+    });
+  }
 
 </script>
 
@@ -169,12 +239,19 @@
      <label id = "rate_val" for="rate">Rate (FFT/s)</label>
      <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="setrate(this.value)" onchange="setrate(this.value)">
   </div> 
+   <div style="width: 600px; display: table-cell;">
+     <label id = "freq_val" for="freq">Tune freq [Hz]</label>
+     <input id="freq" type="number" value="100000000" oninput="setfreq(this.value)" onchange="setfreq(this.value)">
+  </div> 
+
   </div>
   </div>
 
 <div>
   <div id="chartContainer" style="height: 600px; width: 100%;">
 </div>
+
+<canvas id="myChart" style="height: 600px; width: 100%;"></canvas>
 
 <form name="infoform">
 <p>

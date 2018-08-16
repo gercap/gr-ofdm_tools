@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-import socket, Queue, os, sys, time, struct, signal
+import socket, Queue, os, sys, time, struct, signal, datetime
 from threading import Thread
 import Queue
 import cherrypy, simplejson
@@ -9,7 +9,11 @@ import numpy as np
 import xmlrpclib
 
 import ssl
-from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
+try:
+  from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
+except:
+  print "try sudo pip install git+https://github.com/dpallot/simple-websocket-server.git"
+  sys.exit(0)
 from optparse import OptionParser
 
 log_levels = {"CRITICAL":50, "ERROR":40, "WARNING":30, "INFO":20, "DEBUG":10}
@@ -34,14 +38,36 @@ class web_site(object):
       self.scheme = 'wss' if ssl else 'ws'
 
     @cherrypy.expose
+    def get_tune_freq(self):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      print '--get_tune_freq'
+      #return self.data_processor.get_tune_freq()
+      return simplejson.dumps(self.data_processor.get_tune_freq())
+
+    @cherrypy.expose
+    def get_samp_rate(self):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      print '--get_samp_rate'
+      return simplejson.dumps(self.data_processor.get_samp_rate())
+      #return self.data_processor.get_samp_rate()
+
+    @cherrypy.expose
+    def set_tune_freq(self, freq):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      self.xmlrpc_server.set_tune_freq(float(freq))
+      self.data_processor.set_tune_freq(float(freq))
+
+    @cherrypy.expose
     def set_rate(self, rate):
       cherrypy.response.headers['Content-Type'] = 'application/json'
       self.xmlrpc_server.set_rate(float(rate))
+      self.data_processor.set_rate(float(rate))
 
     @cherrypy.expose
     def set_average(self, average):
       cherrypy.response.headers['Content-Type'] = 'application/json'
       self.xmlrpc_server.set_av(float(average))
+      self.data_processor.set_average(float(average))
 
     @cherrypy.expose
     def set_precision(self, precision):
@@ -71,8 +97,12 @@ class data_processor(Thread):
     self.shared_queue = shared_queue
     self.xmlrpc_server = xmlrpc_server
 
-    self.sample_rate = self.xmlrpc_server.get_samp_rate()
+    self.samp_rate = self.xmlrpc_server.get_samp_rate()
     self.tune_freq = self.xmlrpc_server.get_tune_freq()
+    self.rate = self.xmlrpc_server.get_rate()
+    self.average = self.xmlrpc_server.get_av()
+
+    print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
 
     self.reasembled_frame = ''
     self.precision = self.xmlrpc_server.get_precision()
@@ -90,6 +120,29 @@ class data_processor(Thread):
         self.data_type = np.float32
     else:
         self.data_type = np.float16
+
+  def set_tune_freq(self, tune_freq):
+    self.tune_freq = tune_freq
+    self.shared_queue.put({"tune_freq":self.tune_freq})
+    self.shared_queue.put({"samp_rate":self.samp_rate})
+
+  def get_tune_freq(self):
+    return self.tune_freq
+
+  def get_samp_rate(self):
+    return self.samp_rate
+
+  def set_rate(self, rate):
+    self.rate = rate
+
+  def get_rate(self):
+    return self.rate
+
+  def set_average(self, average):
+    self.average = average
+
+  def get_average(self):
+    return self.average
 
   def run(self):
 
@@ -113,10 +166,10 @@ class data_processor(Thread):
               self.strt = False
 
           # pass data
-          axis = np.around(self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
-          self.shared_queue.put((axis, fft_data))
+          #axis = np.around(self.samp_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
+          self.shared_queue.put({"fft_data":fft_data.tolist()})
 
-          #axis = sample_rate/2*np.linspace(-1, 1, len(fft_data)) + tune_freq
+          #axis = samp_rate/2*np.linspace(-1, 1, len(fft_data)) + tune_freq
           #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
           #curve_data[0] = (axis/1e6, fft_data);
           #if hold_max: curve_data[1] = (axis/1e6, self.max_fft_data);
@@ -139,8 +192,8 @@ class data_processor(Thread):
                 self.strt = False
 
             # pass data
-            axis = np.around(self.sample_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
-            self.shared_queue.put((axis, fft_data))
+            #axis = np.around(self.samp_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
+            self.shared_queue.put({"fft_data":fft_data.tolist()})
             
             #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
             #curve_data[1] = (axis/1e6, fft_data);
@@ -184,7 +237,6 @@ class ws_server_runner(Thread):
     print "starting ws server"
     while self.keep_running:
       self.ws_server.serveonce()
-      time.sleep(1)
 
 class ws_dispatcher(Thread):
   def __init__(self, shared_queue):
@@ -196,18 +248,18 @@ class ws_dispatcher(Thread):
     print "starting ws ws dispatcher"
     while self.keep_running:
       while not self.shared_queue.empty():
-        (axis, fft_data) = self.shared_queue.get()
-        u = unicode(simplejson.dumps({"plot_data":{"axis": axis.tolist(), "fft_data":fft_data.tolist()}}), "utf-8")
+        data = self.shared_queue.get()
+        u = unicode(simplejson.dumps(data), "utf-8")
+        #u = unicode(simplejson.dumps({"plot_data":{"axis": [], "fft_data":[]}}), "utf-8")
         for client in ws_clients:
           if client != self:
             client.sendMessage(u)
+
       time.sleep(1e-3)
 
 
 
 if __name__ == '__main__':
-
-  keep_running = True
 
   parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
   parser.add_option("--host", default='', type='string', action="store", dest="host", help="ws hostname (localhost)")
