@@ -37,9 +37,9 @@ class remote_client_qt(plotter_base):
         self.tune_freq = tune_freq
         self.show_axes = show_axes
         if precision:
-            self.data_type = np.float32
-        else:
             self.data_type = np.float16
+        else:
+            self.data_type = np.float8
 
         if show_axes:
             self.toggle_axes()
@@ -88,10 +88,10 @@ class remote_client_qt(plotter_base):
     def set_precision(self, precision):
         if precision:
             self.data_type = np.float32
-            print '-->Remote: 32bit FFT in use (more bandwidth and precision)'
+            print '-->Remote: 16bit FFT in use (more bandwidth and precision)'
         else:
             self.data_type = np.float16
-            print '-->Remote: 16bit FFT in use (less bandwidth and precision)'
+            print '-->Remote: 8bit FFT in use (less bandwidth and precision)'
 
     def set_hold_max(self, hold_max):
         self.hold_max = hold_max

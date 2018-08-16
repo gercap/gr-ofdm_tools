@@ -48,9 +48,9 @@ class local_worker(gr.hier_block2):
         self.data_precision = data_precision         
 
         if data_precision:
-            print '32bit FFT in use (more bandwidth and precision)'
+            print '16bit FFT in use (more bandwidth and precision)'
         else:
-            print '16bit FFT in use (less bandwidth and precision)'
+            print '8bit FFT in use (less bandwidth and precision)'
      
         self.msgq = gr.msg_queue(2)
 
@@ -98,9 +98,9 @@ class local_worker(gr.hier_block2):
         self.data_precision = data_precision
         self._main.data_precision = data_precision
         if data_precision:
-            print '-->Local: 32bit FFT in use (more bandwidth and precision)'
+            print '-->Local: 16bit FFT in use (more bandwidth and precision)'
         else:
-            print '-->Local: 16bit FFT in use (less bandwidth and precision)'
+            print '-->Local: 8bit FFT in use (less bandwidth and precision)'
 
     def get_sample_rate(self):
         return self.sample_rate
@@ -147,10 +147,12 @@ class packet_source(gr.sync_block):
 
     def send_packet(self, data, max_tu, data_precision):
 
-        if not data_precision:
-            fft_data = np.fromstring(data, np.float32)
+        fft_data = np.fromstring(data, np.float32)
+        if data_precision:
             fft_data = fft_data.astype(np.float16, copy=False)
-            data = fft_data.tostring()
+        else:
+            fft_data = fft_data.astype(np.int8, copy=False)
+        data = fft_data.tostring()
 
         fragments = int(math.ceil(len(data)/(float(max_tu))))+1 #4 bytes per fft bin
 

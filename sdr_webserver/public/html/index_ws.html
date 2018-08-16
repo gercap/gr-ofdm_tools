@@ -56,13 +56,15 @@
   }
   function onOpen(evt)
   {
-    writeToScreen("connected\n");
+    d = new Date();
+    writeToScreen(d.toLocaleTimeString() + " connected\n");
     get_samp_rate();
     get_tune_freq();
   }
   function onClose(evt)
   {
-    writeToScreen("disconnected.. reconnecting\n");
+    d = new Date();
+    writeToScreen(d.toLocaleTimeString() + " disconnected.. reconnecting\n");
     setTimeout(doConnect, 3000);
   }
   function onMessage(evt)
@@ -80,8 +82,8 @@
       writeToScreen("samp_rate: " + samp_rate + '\n');
     }
     else if ("fft_data" in _data) {
-      //draw_data(_data["fft_data"]);
-      draw_canvas(_data["fft_data"]);
+      draw_data(_data["fft_data"]);
+      //draw_canvas(_data["fft_data"]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
@@ -143,6 +145,7 @@
             datasets: [{
                 label: 'FFT',
                 data: fft_data,
+                borderColor: 'rgba(0,0,255,0.3)',
             }]
         },
         options: {
@@ -198,7 +201,9 @@
   }
 
   function setrate(newrate){
-    $.post('/set_rate', {rate: newrate}, function() {});
+    $.post('/set_rate', {rate: newrate}, function() {
+     document.getElementById("rate_val").value = "Rate " + newrate + " (FFT/s)";
+    });
   }
 
   function setfreq(newfreq){
@@ -214,6 +219,7 @@
   function get_tune_freq(){
     $.post('/get_tune_freq', function(freq) {
       tune_freq = freq;
+      document.getElementById("freq").value = freq;
     });
   }
 
@@ -228,7 +234,7 @@
 <div class="display: table;">
   <div style="display: table-row">
     <input type="checkbox" id="precision" checked="checked" onclick="setprecision()">
-    <label for="precision">32bit (or 16b) precision</label>
+    <label for="precision">High (16bit) precision</label>
   </div>
   <div style="display: table-row">
     <div style="width: 600px; display: table-cell;">
@@ -241,17 +247,15 @@
   </div> 
    <div style="width: 600px; display: table-cell;">
      <label id = "freq_val" for="freq">Tune freq [Hz]</label>
-     <input id="freq" type="number" value="100000000" oninput="setfreq(this.value)" onchange="setfreq(this.value)">
+     <input id="freq" type="number" value="000000000" onchange="setfreq(this.value)">
   </div> 
 
   </div>
   </div>
 
-<div>
-  <div id="chartContainer" style="height: 600px; width: 100%;">
-</div>
-
 <canvas id="myChart" style="height: 600px; width: 100%;"></canvas>
+
+<div id="chartContainer" style="height: 600px; width: 100%;"></div>
 
 <form name="infoform">
 <p>

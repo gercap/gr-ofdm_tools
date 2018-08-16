@@ -40,16 +40,12 @@ class web_site(object):
     @cherrypy.expose
     def get_tune_freq(self):
       cherrypy.response.headers['Content-Type'] = 'application/json'
-      print '--get_tune_freq'
-      #return self.data_processor.get_tune_freq()
       return simplejson.dumps(self.data_processor.get_tune_freq())
 
     @cherrypy.expose
     def get_samp_rate(self):
       cherrypy.response.headers['Content-Type'] = 'application/json'
-      print '--get_samp_rate'
       return simplejson.dumps(self.data_processor.get_samp_rate())
-      #return self.data_processor.get_samp_rate()
 
     @cherrypy.expose
     def set_tune_freq(self, freq):
@@ -107,9 +103,9 @@ class data_processor(Thread):
     self.reasembled_frame = ''
     self.precision = self.xmlrpc_server.get_precision()
     if self.precision:
-        self.data_type = np.float32
-    else:
         self.data_type = np.float16
+    else:
+        self.data_type = np.int8
     self.max_fft_data = np.array([])
     self.strt = True
 
@@ -117,9 +113,9 @@ class data_processor(Thread):
 
   def set_precision(self, precision):
     if precision:
-        self.data_type = np.float32
-    else:
         self.data_type = np.float16
+    else:
+        self.data_type = np.int8
 
   def set_tune_freq(self, tune_freq):
     self.tune_freq = tune_freq
@@ -166,12 +162,9 @@ class data_processor(Thread):
               self.strt = False
 
           # pass data
-          #axis = np.around(self.samp_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
           self.shared_queue.put({"fft_data":fft_data.tolist()})
 
-          #axis = samp_rate/2*np.linspace(-1, 1, len(fft_data)) + tune_freq
           #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
-          #curve_data[0] = (axis/1e6, fft_data);
           #if hold_max: curve_data[1] = (axis/1e6, self.max_fft_data);
             
         except Exception, e:
@@ -192,11 +185,9 @@ class data_processor(Thread):
                 self.strt = False
 
             # pass data
-            #axis = np.around(self.samp_rate/2.0*np.linspace(-1, 1, len(fft_data)) + self.tune_freq, decimals=3)
             self.shared_queue.put({"fft_data":fft_data.tolist()})
             
             #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
-            #curve_data[1] = (axis/1e6, fft_data);
             #if hold_max: curve_data[0] = (axis/1e6, self.max_fft_data);
 
             self.reasembled_frame = ''
