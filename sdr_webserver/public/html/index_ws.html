@@ -41,6 +41,7 @@
   var precision = true;
   var rate = 0;
   var average = 0;
+  var rf_gain = 0;
 
   function init()
   {
@@ -98,9 +99,14 @@
       writeToScreen("average: " + average + '\n');
       document.getElementById("average").value = average;
     }
+    else if ("rf_gain" in _data) {
+      rf_gain = _data["rf_gain"];
+      writeToScreen("rf_gain: " + rf_gain + '\n');
+      document.getElementById("rf_gain").value = rf_gain;
+    }
     else if ("fft_data" in _data) {
-      draw_data(_data["fft_data"]);
-      //draw_canvas(_data["fft_data"]);
+      //draw_data(_data["fft_data"]);
+      draw_canvas(_data["fft_data"]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
@@ -109,7 +115,8 @@
   function draw_canvas(fft_data)
   {
     var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-    var max = Math.max.apply(Math, fft_data) + 3
+    var max = Math.max.apply(Math, fft_data) + 1
+    var min = Math.min.apply(Math, fft_data)
     var dps = []; //dataPoints. 
     var chart = new CanvasJS.Chart("chartContainer", {
       axisX: {
@@ -118,6 +125,7 @@
       axisY: {
         title: "Amplitude",
         maximum: max,
+        minimum: min,
       },
       data: [{
         type: "spline",
@@ -140,10 +148,10 @@
       chart.render();
       chart.destroy();
       chart = null;
+      dps = null;
     }
 
     addDataPoints();
-
   }
 
   function draw_data(fft_data)
@@ -214,13 +222,15 @@
   }
 
   function set_rate(newrate){
-    $.post('/set_rate', {rate: newrate}, function() {
-     document.getElementById("rate_val").value = "Rate " + newrate + " (FFT/s)";
-    });
+    $.post('/set_rate', {rate: newrate}, function() {});
   }
 
   function set_freq(newfreq){
     $.post('/set_tune_freq', {freq: newfreq}, function() {});
+  }
+
+  function set_rf_gain(newrf_gain){
+    $.post('/set_rf_gain', {rf_gain: newrf_gain}, function() {});
   }
 
 </script>
@@ -246,6 +256,10 @@
      <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="set_rate(this.value)" onchange="set_rate(this.value)">
   </div> 
    <div style="width: 600px; display: table-cell;">
+     <label id = "rf_gain_val" for="rf_gain">Rx Gain</label>
+     <input type="range" id="rf_gain" min="0" max="50" step="1" value="15" oninput="set_rf_gain(this.value)" onchange="set_rf_gain(this.value)">
+  </div> 
+   <div style="width: 600px; display: table-cell;">
      <label id = "freq_val" for="freq">Tune freq [Hz]</label>
      <input id="freq" type="number" value="000000000" onchange="set_freq(this.value)">
   </div> 
@@ -253,9 +267,11 @@
   </div>
   </div>
 
+<div id="chartContainer" style="height: 600px; width: 100%;"></div>
+
 <canvas id="myChart" style="height: 600px; width: 100%;"></canvas>
 
-<div id="chartContainer" style="height: 600px; width: 100%;"></div>
+
 
 <form name="infoform">
 <p>

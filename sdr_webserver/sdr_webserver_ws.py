@@ -37,6 +37,11 @@ class web_site(object):
       self.scheme = 'wss' if ssl else 'ws'
 
     @cherrypy.expose
+    def set_rf_gain(self, rf_gain):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      self.data_processor.set_rf_gain(int(rf_gain))
+
+    @cherrypy.expose
     def set_tune_freq(self, freq):
       cherrypy.response.headers['Content-Type'] = 'application/json'
       self.data_processor.set_tune_freq(float(freq))
@@ -82,6 +87,7 @@ class data_processor(Thread):
     self.tune_freq = self.xmlrpc_server.get_tune_freq()
     self.rate = self.xmlrpc_server.get_rate()
     self.average = self.xmlrpc_server.get_av()
+    self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
 
@@ -146,12 +152,22 @@ class data_processor(Thread):
     self.shared_queue.put({"average":self.average})
     return self.average
 
+  def set_rf_gain(self, rf_gain):
+    self.rf_gain = rf_gain
+    self.xmlrpc_server.set_rf_gain(rf_gain)
+    self.shared_queue.put({"rf_gain":self.rf_gain})
+
+  def get_rf_gain(self):
+    self.shared_queue.put({"rf_gain":self.rf_gain})
+    return self.rf_gain
+
   def get_all_statics(self):
     self.get_average()
     self.get_rate()
     self.get_tune_freq()
     self.get_samp_rate()
     self.get_precision()
+    self.get_rf_gain()
 
   def run(self):
 
