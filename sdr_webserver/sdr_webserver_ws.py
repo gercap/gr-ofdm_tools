@@ -32,47 +32,31 @@ def signal_handler(signal, frame):
   sys.exit(0)
 
 class web_site(object):
-    def __init__(self, data_processor, xmlrpc_server, ssl=False):
-      self.xmlrpc_server = xmlrpc_server
+    def __init__(self, data_processor, ssl=False):
       self.data_processor = data_processor
       self.scheme = 'wss' if ssl else 'ws'
 
     @cherrypy.expose
-    def get_tune_freq(self):
-      cherrypy.response.headers['Content-Type'] = 'application/json'
-      return simplejson.dumps(self.data_processor.get_tune_freq())
-
-    @cherrypy.expose
-    def get_samp_rate(self):
-      cherrypy.response.headers['Content-Type'] = 'application/json'
-      return simplejson.dumps(self.data_processor.get_samp_rate())
-
-    @cherrypy.expose
     def set_tune_freq(self, freq):
       cherrypy.response.headers['Content-Type'] = 'application/json'
-      self.xmlrpc_server.set_tune_freq(float(freq))
       self.data_processor.set_tune_freq(float(freq))
 
     @cherrypy.expose
     def set_rate(self, rate):
       cherrypy.response.headers['Content-Type'] = 'application/json'
-      self.xmlrpc_server.set_rate(float(rate))
       self.data_processor.set_rate(float(rate))
 
     @cherrypy.expose
     def set_average(self, average):
       cherrypy.response.headers['Content-Type'] = 'application/json'
-      self.xmlrpc_server.set_av(float(average))
       self.data_processor.set_average(float(average))
 
     @cherrypy.expose
     def set_precision(self, precision):
       cherrypy.response.headers['Content-Type'] = 'application/json'
       if precision == "True":
-        self.xmlrpc_server.set_precision(True)
         self.data_processor.set_precision(True)
       else:
-        self.xmlrpc_server.set_precision(False)
         self.data_processor.set_precision(False)
 
     @cherrypy.expose
@@ -94,6 +78,7 @@ class data_processor(Thread):
     self.xmlrpc_server = xmlrpc_server
 
     self.samp_rate = self.xmlrpc_server.get_samp_rate()
+    self.precision = self.xmlrpc_server.get_precision()
     self.tune_freq = self.xmlrpc_server.get_tune_freq()
     self.rate = self.xmlrpc_server.get_rate()
     self.average = self.xmlrpc_server.get_av()
@@ -101,7 +86,6 @@ class data_processor(Thread):
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
 
     self.reasembled_frame = ''
-    self.precision = self.xmlrpc_server.get_precision()
     if self.precision:
         self.data_type = np.float16
     else:
@@ -112,33 +96,62 @@ class data_processor(Thread):
     self.keep_running = True
 
   def set_precision(self, precision):
+    self.precision = precision
     if precision:
         self.data_type = np.float16
+        self.xmlrpc_server.set_precision(True)
+        self.shared_queue.put({"precision":self.precision})
     else:
         self.data_type = np.int8
+        self.xmlrpc_server.set_precision(False)
+        self.shared_queue.put({"precision":self.precision})
+
+  def get_precision(self):
+    self.shared_queue.put({"precision":self.precision})
+    return self.precision
 
   def set_tune_freq(self, tune_freq):
     self.tune_freq = tune_freq
+    self.xmlrpc_server.set_tune_freq(float(self.tune_freq))
     self.shared_queue.put({"tune_freq":self.tune_freq})
     self.shared_queue.put({"samp_rate":self.samp_rate})
 
   def get_tune_freq(self):
+    self.shared_queue.put({"tune_freq":self.tune_freq})
     return self.tune_freq
 
+  def set_samp_rate(self, samp_rate):
+    self.shared_queue.put({"samp_rate":self.samp_rate})
+    self.samp_rate = samp_rate
+
   def get_samp_rate(self):
+    self.shared_queue.put({"samp_rate":self.samp_rate})
     return self.samp_rate
 
   def set_rate(self, rate):
     self.rate = rate
+    self.xmlrpc_server.set_rate(float(rate))
+    self.shared_queue.put({"rate":self.rate})
 
   def get_rate(self):
+    self.shared_queue.put({"rate":self.rate})
     return self.rate
 
   def set_average(self, average):
     self.average = average
+    self.xmlrpc_server.set_av(float(average))
+    self.shared_queue.put({"average":self.average})
 
   def get_average(self):
+    self.shared_queue.put({"average":self.average})
     return self.average
+
+  def get_all_statics(self):
+    self.get_average()
+    self.get_rate()
+    self.get_tune_freq()
+    self.get_samp_rate()
+    self.get_precision()
 
   def run(self):
 
@@ -208,6 +221,8 @@ class simpleWShandler(WebSocket):
 
   def handleConnected(self):
     print(self.address, 'connected')
+    #send initial data - tune_freq samp_rate average rate and precision
+    _data_processor.get_all_statics()
     for client in ws_clients:
       client.sendMessage(self.address[0] + u' - connected')
     ws_clients.append(self)
@@ -298,4 +313,4 @@ if __name__ == '__main__':
   _data_processor.start()
 
   # RUN
-  cherrypy.quickstart(web_site(_data_processor, xmlrpc_server), '/',  config = 'cherrypy.conf')
+  cherrypy.quickstart(web_site(_data_processor), '/',  config = 'cherrypy.conf')

@@ -21,7 +21,6 @@
 <script language="javascript" type="text/javascript">
 
   setInterval(timer_hour, 1000);
-
   function timer_hour() {
       var d = new Date();
       $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
@@ -39,12 +38,15 @@
 
   var samp_rate = 0;
   var tune_freq = 0;
+  var precision = true;
+  var rate = 0;
+  var average = 0;
 
   function init()
   {
-  var host = window.location.hostname;
-  var port = window.location.port;
-  websocket_url = "{{scheme}}://" + host + ":9000/ws";
+    var host = window.location.hostname;
+    var port = window.location.port;
+    websocket_url = "{{scheme}}://" + host + ":9000/ws";
   }
   function doConnect()
   {
@@ -56,30 +58,45 @@
   }
   function onOpen(evt)
   {
-    d = new Date();
+    var d = new Date();
     writeToScreen(d.toLocaleTimeString() + " connected\n");
-    get_samp_rate();
-    get_tune_freq();
   }
   function onClose(evt)
   {
-    d = new Date();
+    var d = new Date();
     writeToScreen(d.toLocaleTimeString() + " disconnected.. reconnecting\n");
     setTimeout(doConnect, 3000);
   }
   function onMessage(evt)
   {
-    //d = new Date();
-    //writeToScreen("new data " + d.toLocaleTimeString() + "\n");
-
-    _data = JSON.parse(evt.data);
+    var _data = JSON.parse(evt.data);
     if ("tune_freq" in _data) {
       tune_freq = _data["tune_freq"];
       writeToScreen("tune_freq: " + tune_freq + '\n');
+      document.getElementById("freq").value = tune_freq;
     }
     else if ("samp_rate" in _data) {
       samp_rate = _data["samp_rate"];
       writeToScreen("samp_rate: " + samp_rate + '\n');
+    }
+    else if ("precision" in _data) {
+      precision = _data["precision"];
+      writeToScreen("precision: " + precision + '\n');
+      if (precision == true){
+        document.getElementById("precision").checked = true;
+      } else {
+        document.getElementById("precision").checked = false;
+      }
+    }
+    else if ("rate" in _data) {
+      rate = _data["rate"];
+      writeToScreen("rate: " + rate + '\n');
+      document.getElementById("rate").value = rate;   
+    }
+    else if ("average" in _data) {
+      average = _data["average"];
+      writeToScreen("average: " + average + '\n');
+      document.getElementById("average").value = average;
     }
     else if ("fft_data" in _data) {
       draw_data(_data["fft_data"]);
@@ -92,10 +109,8 @@
   function draw_canvas(fft_data)
   {
     var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-
     var max = Math.max.apply(Math, fft_data) + 3
     var dps = []; //dataPoints. 
-
     var chart = new CanvasJS.Chart("chartContainer", {
       axisX: {
         title: "Freq"
@@ -134,9 +149,7 @@
   function draw_data(fft_data)
   {
     var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-
     var ctx = document.getElementById("myChart").getContext('2d');
-
     var myChart = new Chart(ctx, {
         type: 'line',
         fill: false,
@@ -164,7 +177,7 @@
   function onError(evt)
   {
     writeToScreen('error: ' + evt.data + '\n');
-	websocket.close();
+    websocket.close();
   }
   function doSend(message)
   {
@@ -187,7 +200,7 @@
 		websocket.close();
    }
 
-  function setprecision() {
+  function set_precision() {
       var checkBox = document.getElementById("precision");
       if (checkBox.checked == true){
           $.post('/set_precision', {precision: "True"}, function() {});
@@ -196,31 +209,18 @@
       }
   }
 
-  function setaverage(newaverage){
+  function set_average(newaverage){
     $.post('/set_average', {average: newaverage}, function() {});
   }
 
-  function setrate(newrate){
+  function set_rate(newrate){
     $.post('/set_rate', {rate: newrate}, function() {
      document.getElementById("rate_val").value = "Rate " + newrate + " (FFT/s)";
     });
   }
 
-  function setfreq(newfreq){
+  function set_freq(newfreq){
     $.post('/set_tune_freq', {freq: newfreq}, function() {});
-  }
-
-  function get_samp_rate(){
-    $.post('/get_samp_rate', function(rate) {
-      samp_rate = rate;
-    });
-  }
-
-  function get_tune_freq(){
-    $.post('/get_tune_freq', function(freq) {
-      tune_freq = freq;
-      document.getElementById("freq").value = freq;
-    });
   }
 
 </script>
@@ -233,21 +233,21 @@
 
 <div class="display: table;">
   <div style="display: table-row">
-    <input type="checkbox" id="precision" checked="checked" onclick="setprecision()">
+    <input type="checkbox" id="precision" checked="checked" onclick="set_precision()">
     <label for="precision">High (16bit) precision</label>
   </div>
   <div style="display: table-row">
     <div style="width: 600px; display: table-cell;">
      <label id = "average_val" for="average">Average</label>
-     <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="setaverage(this.value)" onchange="setaverage(this.value)">
+     <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="set_average(this.value)" onchange="set_average(this.value)">
     </div>
    <div style="width: 600px; display: table-cell;">
      <label id = "rate_val" for="rate">Rate (FFT/s)</label>
-     <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="setrate(this.value)" onchange="setrate(this.value)">
+     <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="set_rate(this.value)" onchange="set_rate(this.value)">
   </div> 
    <div style="width: 600px; display: table-cell;">
      <label id = "freq_val" for="freq">Tune freq [Hz]</label>
-     <input id="freq" type="number" value="000000000" onchange="setfreq(this.value)">
+     <input id="freq" type="number" value="000000000" onchange="set_freq(this.value)">
   </div> 
 
   </div>
