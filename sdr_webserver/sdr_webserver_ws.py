@@ -89,6 +89,8 @@ class data_processor(Thread):
     self.average = self.xmlrpc_server.get_av()
     self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
+    self.downsample = 1
+
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
 
     self.reasembled_frame = ''
@@ -190,8 +192,10 @@ class data_processor(Thread):
               self.max_fft_data = fft_data
               self.strt = False
 
+          #fft_data = rdp(fft_data.reshape(len(fft_data)/2,2)).flatten()
+
           # pass data
-          self.shared_queue.put({"fft_data":fft_data.tolist()})
+          self.shared_queue.put({"fft_data":fft_data[::self.downsample].tolist()})
 
           #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
           #if hold_max: curve_data[1] = (axis/1e6, self.max_fft_data);
@@ -214,7 +218,7 @@ class data_processor(Thread):
                 self.strt = False
 
             # pass data
-            self.shared_queue.put({"fft_data":fft_data.tolist()})
+            self.shared_queue.put({"fft_data":fft_data[::self.downsample].tolist()})
             
             #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
             #if hold_max: curve_data[0] = (axis/1e6, self.max_fft_data);
@@ -318,15 +322,17 @@ if __name__ == '__main__':
     try:
       dummy = xmlrpc_server.get_samp_rate()
     except:
-      print 'server offline?', "http://" + options.rpchost + ":"+str(options.rpcport)
+      print 'rxmlrpc offline?', "http://" + options.rpchost + ":"+str(options.rpcport)
       time.sleep(3)
       pass
     else:
-      print 'server okay!', "http://" + options.rpchost + ":"+str(options.rpcport)
+      print 'rxmlrpc okay!', "http://" + options.rpchost + ":"+str(options.rpcport)
       break
 
   _data_processor = data_processor(UDP_IP, UDP_PORT, shared_queue, xmlrpc_server)
   _data_processor.start()
+  
+  print 'server okay!', "http://127.0.0.1:8080"
 
   # RUN
   cherrypy.quickstart(web_site(_data_processor), '/',  config = 'cherrypy.conf')

@@ -13,9 +13,7 @@
   <!-- jquery  -->
   <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
   <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
-  <script type="text/javascript" src="static/js/Chart.bundle.js"></script>
   <script type="text/javascript" src="static/js/Chart.bundle.min.js"></script>
-
 </head>
 
 <script language="javascript" type="text/javascript">
@@ -48,6 +46,8 @@
     var host = window.location.hostname;
     var port = window.location.port;
     websocket_url = "{{scheme}}://" + host + ":9000/ws";
+    //initialize_canvasJS();
+    initialize_chartJS();
   }
   function doConnect()
   {
@@ -92,80 +92,81 @@
     else if ("rate" in _data) {
       rate = _data["rate"];
       writeToScreen("rate: " + rate + '\n');
-      document.getElementById("rate").value = rate;   
+      document.getElementById("rate").value = rate;
+       document.getElementById("rate_val").innerHTML = "Rate " + rate + " (FFT/s)"; 
     }
     else if ("average" in _data) {
       average = _data["average"];
       writeToScreen("average: " + average + '\n');
       document.getElementById("average").value = average;
+       document.getElementById("average_val").innerHTML = "Average " + average;
     }
     else if ("rf_gain" in _data) {
       rf_gain = _data["rf_gain"];
       writeToScreen("rf_gain: " + rf_gain + '\n');
       document.getElementById("rf_gain").value = rf_gain;
+       document.getElementById("rf_gain_val").innerHTML = "RF Gain " + rf_gain;
+
     }
     else if ("fft_data" in _data) {
-      //draw_data(_data["fft_data"]);
-      draw_canvas(_data["fft_data"]);
+      console.log(_data["fft_data"].length)
+      //draw_canvasJS(_data["fft_data"]);
+      draw_chartJS(_data["fft_data"]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
   }
 
-  function draw_canvas(fft_data)
+  function initialize_canvasJS()
   {
-    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-    var max = Math.max.apply(Math, fft_data) + 1
-    var min = Math.min.apply(Math, fft_data)
-    var dps = []; //dataPoints. 
-    var chart = new CanvasJS.Chart("chartContainer", {
+    canvasJSchart = new CanvasJS.Chart("canvasJScanvas", {
       axisX: {
         title: "Freq"
       },
       axisY: {
-        title: "Amplitude",
-        maximum: max,
-        minimum: min,
+        title: "Amplitude"
       },
       data: [{
         type: "spline",
         name: "{{description}}",
         showInLegend: false,
-        dataPoints: dps
+        dataPoints: []
       }]
-    });
-
-    function parseDataPoints() {
-      for (var i = 0; i < fft_data.length; i++)
-        dps.push({
-          y: fft_data[i], label: axis[i]
-        });
-    };
-
-    function addDataPoints(){
-      parseDataPoints();
-      chart.options.data[0].dataPoints = dps;
-      chart.render();
-      chart.destroy();
-      chart = null;
-      dps = null;
-    }
-
-    addDataPoints();
+    });    
   }
 
-  function draw_data(fft_data)
+  function draw_canvasJS(fft_data)
   {
     var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-    var ctx = document.getElementById("myChart").getContext('2d');
-    var myChart = new Chart(ctx, {
+    var max = Math.max.apply(Math, fft_data) + 1
+    var min = Math.min.apply(Math, fft_data)
+    var dps = []; //dataPoints. 
+
+    for (var i = 0; i < fft_data.length; i++)
+      dps.push({
+        y: fft_data[i], label: axis[i]
+      });
+
+    canvasJSchart.options.data[0].dataPoints = dps;
+    canvasJSchart.options.axisY.maximum = max;
+    canvasJSchart.options.axisY.minimum = min;
+    canvasJSchart.render();
+    canvasJSchart.destroy();
+    //canvasJSchart = null;
+    //dps = null;
+  }
+
+  function initialize_chartJS()
+  {
+    var ctx = document.getElementById("chartJScanvas").getContext('2d');
+    chartJSchart = new Chart(ctx, {
         type: 'line',
         fill: false,
         data: {
-            labels: axis,
+            labels: [],
             datasets: [{
                 label: 'FFT',
-                data: fft_data,
+                data: [],
                 borderColor: 'rgba(0,0,255,0.3)',
             }]
         },
@@ -173,13 +174,27 @@
             animation: false,
             elements: {
                 line: {
-                        fill: false
+                  fill: false
                 },
                 point: {
                   radius: 0 }
             }
         }
     });
+  }
+
+  function draw_chartJS(fft_data)
+  { 
+    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
+    chartJSchart.data = {
+            labels: axis,
+            datasets: [{
+                label: 'FFT',
+                data: fft_data,
+                borderColor: 'rgba(0,0,255,0.3)',
+            }]
+        }
+    chartJSchart.update();
   }
 
   function onError(evt)
@@ -267,9 +282,13 @@
   </div>
   </div>
 
-<div id="chartContainer" style="height: 600px; width: 100%;"></div>
-
-<canvas id="myChart" style="height: 600px; width: 100%;"></canvas>
+<!--
+<canvas id="canvas"></canvas>
+ -->
+<!--
+<div id="canvasJScanvas" style="height: 600px; width: 100%;"></div>
+-->
+<canvas id="chartJScanvas" style="height: 600px; width: 100%;"></canvas>
 
 
 
