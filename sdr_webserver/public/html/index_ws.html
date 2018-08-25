@@ -47,7 +47,8 @@
     var port = window.location.port;
     websocket_url = "{{scheme}}://" + host + ":9000/ws";
     //initialize_canvasJS();
-    initialize_chartJS();
+    //initialize_chartJS();
+    init_plot();
   }
   function doConnect()
   {
@@ -109,9 +110,10 @@
 
     }
     else if ("fft_data" in _data) {
-      console.log(_data["fft_data"].length)
       //draw_canvasJS(_data["fft_data"]);
-      draw_chartJS(_data["fft_data"]);
+      //draw_chartJS(_data["fft_data"]);
+      plotData(_data["fft_data"]);
+      //plotData([-20, -10, -20, -25, -40, -5, -10, -28, -30, -43, -65, -80]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
@@ -195,6 +197,86 @@
             }]
         }
     chartJSchart.update();
+  }
+
+
+  function init_plot() {
+
+    // set these values for your data 
+    sections = 4096;
+    Val_max = -50;
+    Val_min = -90;
+    stepSize = 10;
+    columnSize = 0;
+    rowSize = 0;
+    margin = 0;
+      
+    canvas = document.getElementById("canvas");
+    context = canvas.getContext("2d");
+    context.fillStyle = "#0099ff"
+    context.font = "20 pt Verdana"
+    
+    yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
+    xScale = (canvas.width - rowSize) / sections;
+    
+    /*
+    context.strokeStyle="#009933"; // color of grid lines
+
+    context.beginPath();
+      // print Parameters on X axis, and grid lines on the graph
+    for (i=1;i<=sections;i++) {
+      var x = i * xScale;
+      //context.fillText(xAxis[i], x,columnSize - margin);
+      context.moveTo(x, columnSize);
+      context.lineTo(x, canvas.height - margin);
+    }
+      // print row header and draw horizontal grid lines
+    var count =  0;
+    for (scale=Val_max;scale>=Val_min;scale = scale - stepSize) {
+      var y = columnSize + (yScale * count * stepSize); 
+      context.fillText(scale, margin,y + margin);
+      context.moveTo(rowSize,y)
+      context.lineTo(canvas.width,y)
+      count++;
+    }
+    context.stroke();
+    */
+    context.translate(rowSize, canvas.height + Val_min * yScale);
+    context.scale(1, -1 * yScale);
+    
+    // Color of each dataplot items
+    context.strokeStyle="#000";
+  }
+
+  function plotData(dataSet) {
+
+    Val_max = Math.max.apply(Math, dataSet);
+    Val_min = Math.min.apply(Math, dataSet);
+    //console.log(Val_max + " " + Val_min);
+
+    yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
+    xScale = (canvas.width - rowSize) / sections;
+
+    context.setTransform(1, 0, 0, 1, 0, 0); //reset translation
+    context.translate(rowSize, canvas.height + Val_min * yScale);
+    context.scale(1, -1 * yScale);
+
+    context.clearRect(0, Val_max, canvas.width, Val_min-Val_max);
+    //context.clearRect(x,y,width,height);
+
+    context.beginPath();
+    //context.moveTo(0, dataSet[0]);
+    for (i=1;i<dataSet.length;i++) {
+      context.lineTo(i * xScale, dataSet[i]);
+    }
+
+    context.rect(0, Val_max, canvas.width, Val_min - Val_max);
+    //console.log(Val_min - Val_max);
+    //context.rect(x,y,width,height);
+    
+    context.stroke();
+    context.closePath();
+
   }
 
   function onError(evt)
@@ -282,13 +364,16 @@
   </div>
   </div>
 
+<canvas id="canvas" height="500" width="1000">
+</canvas>
+
 <!--
 <canvas id="canvas"></canvas>
  -->
 <!--
 <div id="canvasJScanvas" style="height: 600px; width: 100%;"></div>
--->
 <canvas id="chartJScanvas" style="height: 600px; width: 100%;"></canvas>
+-->
 
 
 
