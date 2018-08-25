@@ -203,7 +203,7 @@
   function init_plot() {
 
     // set these values for your data 
-    sections = 4096;
+    num_samples = 4096;
     Val_max = -50;
     Val_min = -90;
     stepSize = 10;
@@ -213,18 +213,18 @@
       
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
-    context.fillStyle = "#0099ff"
-    context.font = "20 pt Verdana"
+    //context.fillStyle = "#0099ff"
+    //context.font = "20 pt Verdana"
     
     yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
-    xScale = (canvas.width - rowSize) / sections;
+    xScale = (canvas.width - rowSize) / num_samples;
     
     /*
     context.strokeStyle="#009933"; // color of grid lines
 
     context.beginPath();
       // print Parameters on X axis, and grid lines on the graph
-    for (i=1;i<=sections;i++) {
+    for (i=1;i<=num_samples;i++) {
       var x = i * xScale;
       //context.fillText(xAxis[i], x,columnSize - margin);
       context.moveTo(x, columnSize);
@@ -243,37 +243,47 @@
     */
     context.translate(rowSize, canvas.height + Val_min * yScale);
     context.scale(1, -1 * yScale);
-    
-    // Color of each dataplot items
-    context.strokeStyle="#000";
+
+    //context.strokeStyle=gradient //"#001";
   }
 
   function plotData(dataSet) {
 
-    Val_max = Math.max.apply(Math, dataSet);
-    Val_min = Math.min.apply(Math, dataSet);
+    var xOffset = 10
+
+    var num_samples = dataSet.length
+    var Val_max = Math.max.apply(Math, dataSet);
+    var Val_min = Math.min.apply(Math, dataSet);
     //console.log(Val_max + " " + Val_min);
 
-    yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
-    xScale = (canvas.width - rowSize) / sections;
+    document.getElementById('canvas').width = window.innerWidth - 20;
+    document.getElementById('canvas').height = window.innerHeight - 200;
+
+    var yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
+    var xScale = (canvas.width - rowSize) / num_samples;
 
     context.setTransform(1, 0, 0, 1, 0, 0); //reset translation
     context.translate(rowSize, canvas.height + Val_min * yScale);
     context.scale(1, -1 * yScale);
 
-    context.clearRect(0, Val_max, canvas.width, Val_min-Val_max);
+    var gradient=context.createLinearGradient(0, Val_max, 0, Val_min);
+    gradient.addColorStop("0","yellow");
+    gradient.addColorStop("0.5","blue");
+    gradient.addColorStop("1.0","green");
+
+    context.clearRect(0, Val_max, canvas.width, Val_min - Val_max);
     //context.clearRect(x,y,width,height);
 
     context.beginPath();
     //context.moveTo(0, dataSet[0]);
-    for (i=1;i<dataSet.length;i++) {
-      context.lineTo(i * xScale, dataSet[i]);
+    for (i=0;i<dataSet.length;i++) {
+      context.lineTo(i * xScale + xOffset, dataSet[i]);
     }
 
     context.rect(0, Val_max, canvas.width, Val_min - Val_max);
     //console.log(Val_min - Val_max);
     //context.rect(x,y,width,height);
-    
+    context.strokeStyle=gradient
     context.stroke();
     context.closePath();
 
@@ -364,8 +374,7 @@
   </div>
   </div>
 
-<canvas id="canvas" height="500" width="1000">
-</canvas>
+<canvas id="canvas" height="500" width="1000"> </canvas>
 
 <!--
 <canvas id="canvas"></canvas>
