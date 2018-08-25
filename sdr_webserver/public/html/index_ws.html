@@ -14,6 +14,24 @@
   <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
   <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="static/js/Chart.bundle.min.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+.column {
+    float: left;
+}
+
+/* Clearfix (clear floats) */
+.row::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+</style>
+
 </head>
 
 <script language="javascript" type="text/javascript">
@@ -113,7 +131,6 @@
       //draw_canvasJS(_data["fft_data"]);
       //draw_chartJS(_data["fft_data"]);
       plotData(_data["fft_data"]);
-      //plotData([-20, -10, -20, -25, -40, -5, -10, -28, -30, -43, -65, -80]);
     } else {
       writeToScreen("response: " + evt.data + '\n');      
     }
@@ -201,93 +218,100 @@
 
 
   function init_plot() {
-
-    // set these values for your data 
-    num_samples = 4096;
-    Val_max = -50;
-    Val_min = -90;
-    stepSize = 10;
-    columnSize = 0;
-    rowSize = 0;
-    margin = 0;
       
-    canvas = document.getElementById("canvas");
-    context = canvas.getContext("2d");
-    //context.fillStyle = "#0099ff"
-    //context.font = "20 pt Verdana"
-    
-    yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
-    xScale = (canvas.width - rowSize) / num_samples;
+    canvas_plot = document.getElementById("canvas_plot");
+    context_plot = canvas_plot.getContext("2d");
+
+    canvas_yScale = document.getElementById("canvas_yScale");
+    context_yScale = canvas_yScale.getContext("2d");
+
+    gradient = context_plot.createLinearGradient(0, 0, 0, -200);
+    gradient.addColorStop("0","yellow");
+    gradient.addColorStop("0.5","blue");
+    gradient.addColorStop("1.0","green");
+
+    context_yScale.strokeStyle="#001";
     
     /*
-    context.strokeStyle="#009933"; // color of grid lines
+    context_plot.strokeStyle="#009933"; // color of grid lines
 
-    context.beginPath();
+    context_plot.beginPath();
       // print Parameters on X axis, and grid lines on the graph
     for (i=1;i<=num_samples;i++) {
       var x = i * xScale;
-      //context.fillText(xAxis[i], x,columnSize - margin);
-      context.moveTo(x, columnSize);
-      context.lineTo(x, canvas.height - margin);
+      //context_plot.fillText(xAxis[i], x,columnSize - margin);
+      context_plot.moveTo(x, columnSize);
+      context_plot.lineTo(x, canvas_plot.height - margin);
     }
       // print row header and draw horizontal grid lines
     var count =  0;
     for (scale=Val_max;scale>=Val_min;scale = scale - stepSize) {
       var y = columnSize + (yScale * count * stepSize); 
-      context.fillText(scale, margin,y + margin);
-      context.moveTo(rowSize,y)
-      context.lineTo(canvas.width,y)
+      context_plot.fillText(scale, margin,y + margin);
+      context_plot.moveTo(rowSize,y)
+      context_plot.lineTo(canvas_plot.width,y)
       count++;
     }
-    context.stroke();
+    context_plot.stroke();
     */
-    context.translate(rowSize, canvas.height + Val_min * yScale);
-    context.scale(1, -1 * yScale);
-
-    //context.strokeStyle=gradient //"#001";
   }
 
   function plotData(dataSet) {
 
-    var xOffset = 10
+    Val_max = Math.max.apply(Math, dataSet);
+    Val_min = Math.min.apply(Math, dataSet);
 
-    var num_samples = dataSet.length
-    var Val_max = Math.max.apply(Math, dataSet);
-    var Val_min = Math.min.apply(Math, dataSet);
-    //console.log(Val_max + " " + Val_min);
+    var yScale = (canvas_plot.height) / (Val_max - Val_min);
+    var xScale = (canvas_plot.width) / dataSet.length;
 
-    document.getElementById('canvas').width = window.innerWidth - 20;
-    document.getElementById('canvas').height = window.innerHeight - 200;
+    //----------------y scale-------------------------------
+    canvas_yScale.width = window.innerWidth - 30;
+    canvas_yScale.height = window.innerHeight - 200;
+    context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
 
-    var yScale = (canvas.height - columnSize - margin) / (Val_max - Val_min);
-    var xScale = (canvas.width - rowSize) / num_samples;
+    for (y=5; y<=canvas_yScale.height; y+=20) {
+      //console.log(y)
+      context_yScale.fillText(Math.round((((y - 0) * (Val_max - Val_min)) / canvas_yScale.height) + Val_min), 5, canvas_yScale.height-y);
+      context_yScale.moveTo(5, canvas_yScale.height-y);
+      context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
+    }
+    context_yScale.stroke();
 
-    context.setTransform(1, 0, 0, 1, 0, 0); //reset translation
-    context.translate(rowSize, canvas.height + Val_min * yScale);
-    context.scale(1, -1 * yScale);
+    //----------------plot-------------------------------
+    canvas_plot.width = window.innerWidth - 30;
+    canvas_plot.height = window.innerHeight - 200;    
 
-    var gradient=context.createLinearGradient(0, Val_max, 0, Val_min);
+    context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
+    context_plot.translate(0, canvas_plot.height + Val_min * yScale);
+    context_plot.scale(1, -1 * yScale);
+
+    context_plot.strokeStyle=gradient
+
+    context_plot.beginPath();
+
+    for (i=0;i<dataSet.length;i++) {
+      //line connecting values
+      //context_plot.lineTo(i * xScale, dataSet[i]);
+      //or - bars from min to value
+      context_plot.moveTo(i * xScale, Val_min);
+      context_plot.lineTo(i * xScale, dataSet[i]);
+    }
+
+    //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
+    context_plot.stroke();
+    context_plot.closePath();
+
+  }
+
+  function update_plot_stuff()
+  {
+    gradient=context_plot.createLinearGradient(0, Val_max, 0, Val_min);
     gradient.addColorStop("0","yellow");
     gradient.addColorStop("0.5","blue");
     gradient.addColorStop("1.0","green");
-
-    context.clearRect(0, Val_max, canvas.width, Val_min - Val_max);
-    //context.clearRect(x,y,width,height);
-
-    context.beginPath();
-    //context.moveTo(0, dataSet[0]);
-    for (i=0;i<dataSet.length;i++) {
-      context.lineTo(i * xScale + xOffset, dataSet[i]);
-    }
-
-    context.rect(0, Val_max, canvas.width, Val_min - Val_max);
-    //console.log(Val_min - Val_max);
-    //context.rect(x,y,width,height);
-    context.strokeStyle=gradient
-    context.stroke();
-    context.closePath();
-
   }
+
+  setInterval(update_plot_stuff, 3000);
 
   function onError(evt)
   {
@@ -350,47 +374,49 @@
 
 <div class="display: table;">
   <div style="display: table-row">
-    <input type="checkbox" id="precision" checked="checked" onclick="set_precision()">
-    <label for="precision">High (16bit) precision</label>
+    <div style="width: 600px; display: table-cell;">
+      <input type="checkbox" id="precision" checked="checked" onclick="set_precision()">
+      <label for="precision">High (16bit) precision</label>
+    </div>
+    <div style="width: 600px; display: table-cell;">
+       <label id = "average_val" for="average">Average</label>
+       <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="set_average(this.value)" onchange="set_average(this.value)">
+    </div>
+    <div style="width: 600px; display: table-cell;">
+     <label id = "freq_val" for="freq">Freq [Hz]</label>
+     <input id="freq" type="number" value="000000000" onchange="set_freq(this.value)">
+    </div>
   </div>
   <div style="display: table-row">
     <div style="width: 600px; display: table-cell;">
-     <label id = "average_val" for="average">Average</label>
-     <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="set_average(this.value)" onchange="set_average(this.value)">
-    </div>
-   <div style="width: 600px; display: table-cell;">
      <label id = "rate_val" for="rate">Rate (FFT/s)</label>
      <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="set_rate(this.value)" onchange="set_rate(this.value)">
-  </div> 
-   <div style="width: 600px; display: table-cell;">
+    </div> 
+    <div style="width: 600px; display: table-cell;">
      <label id = "rf_gain_val" for="rf_gain">Rx Gain</label>
      <input type="range" id="rf_gain" min="0" max="50" step="1" value="15" oninput="set_rf_gain(this.value)" onchange="set_rf_gain(this.value)">
-  </div> 
-   <div style="width: 600px; display: table-cell;">
-     <label id = "freq_val" for="freq">Tune freq [Hz]</label>
-     <input id="freq" type="number" value="000000000" onchange="set_freq(this.value)">
-  </div> 
+    </div>
+
+    <div style="width: 600px; display: table-cell;">
+      <form name="infoform">
+          <textarea name="outputtext" rows="2" cols="30"></textarea>
+      </form>
+    </div> 
 
   </div>
-  </div>
 
-<canvas id="canvas" height="500" width="1000"> </canvas>
+</div>
 
-<!--
-<canvas id="canvas"></canvas>
- -->
+<div style="position: relative;">
+ <canvas id="canvas_yScale" width="100" height="100" 
+   style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+ <canvas id="canvas_plot" width="100" height="100" 
+   style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+</div>
 <!--
 <div id="canvasJScanvas" style="height: 600px; width: 100%;"></div>
 <canvas id="chartJScanvas" style="height: 600px; width: 100%;"></canvas>
 -->
-
-
-
-<form name="infoform">
-<p>
-<textarea name="outputtext" rows="20" cols="50"></textarea>
-</p>
-</form>
 
 </body>
 
