@@ -80,7 +80,7 @@ class local_worker(gr.hier_block2):
         self.msg_connect(self._packet_source, "out", self, "pdus")
 
         ####THREADS####
-        self._main = main_thread(self.msgq, self._packet_source, self.max_tu, self.data_precision)
+        self._main = main_thread(self.msgq, self._packet_source, self.max_tu, self.fft_len, self.data_precision)
 
     def set_rate(self, rate):
         self.rate = rate
@@ -110,12 +110,13 @@ class local_worker(gr.hier_block2):
 
 #main thread
 class main_thread(_threading.Thread):
-    def __init__(self, rcvd_data, packet_source, max_tu, data_precision):
+    def __init__(self, rcvd_data, packet_source, max_tu, fft_len, data_precision):
         _threading.Thread.__init__(self)
         self.setDaemon(1)
         self.rcvd_data = rcvd_data
         self.packet_source = packet_source
         self.max_tu = max_tu
+        self.fft_len = fft_len
         self.data_precision = data_precision
 
         self.state = None
@@ -135,26 +136,24 @@ class main_thread(_threading.Thread):
                 start = itemsize * (nitems - 1)
                 data = data[start:start+itemsize]
 
-            self.packet_source.send_packet(data, self.max_tu, self.data_precision)
+            self.packet_source.send_packet(data, self.max_tu, self.fft_len, self.data_precision)
 
 class packet_source(gr.sync_block):
     def __init__(self):
         gr.sync_block.__init__(self,"packet_source",[],[])
-        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-        print "reporting fft data on localhost UDP 5005 port"
         # set up message ports
         self.message_port_register_out(pmt.intern("out"));
 
-    def send_packet(self, data, max_tu, data_precision):
+    def send_packet(self, data, max_tu, fft_len, data_precision):
 
         fft_data = np.fromstring(data, np.float32)
         if data_precision:
             fft_data = fft_data.astype(np.float16, copy=False)
+            fragments = int(math.ceil(fft_len*2/(float(max_tu))))
         else:
             fft_data = fft_data.astype(np.int8, copy=False)
+            fragments = int(math.ceil(fft_len/(float(max_tu))))
         data = fft_data.tostring()
-
-        fragments = int(math.ceil(len(data)/(float(max_tu))))+1 #4 bytes per fft bin
 
         j = 0
         for i in range(fragments):
@@ -165,8 +164,6 @@ class packet_source(gr.sync_block):
             if i == fragments-1: frag = data[j:]
             
             frame = n_frags + frag_id + frag #construct frame
-
-            self.udp_sock.sendto(frame, ("127.0.0.1", 5005))
 
             data_pmt = pmt.make_u8vector(len(frame), ord(' '))
             # Copy all characters to the u8vector:
