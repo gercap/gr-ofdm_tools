@@ -110,7 +110,7 @@ class remote_client_qt(plotter_base):
 
         if n_frags == 1: #single fragment
             try:
-                fft_data = np.fromstring(self.reasembled_frame, self.data_type)
+                fft_data = np.fromstring(msg_str, self.data_type)
                 #fmt = "<%df" % (len(msg_str) // 4)
                 #fft_data = struct.unpack(fmt, msg_str)
 
