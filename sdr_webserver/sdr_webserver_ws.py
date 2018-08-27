@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-import socket, Queue, os, sys, time, struct, signal, datetime
+import zmq, Queue, os, sys, time, struct, signal, datetime
 from threading import Thread
 import Queue
 import cherrypy, simplejson
@@ -75,10 +75,12 @@ class web_site(object):
         scheme=self.scheme)
 
 class data_processor(Thread):
-  def __init__(self, UDP_IP, UDP_PORT, shared_queue, xmlrpc_server):
+  def __init__(self, ZMQ_IP, ZMQ_PORT, shared_queue, xmlrpc_server):
     Thread.__init__(self)
-    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-    self.sock.bind((UDP_IP, UDP_PORT))
+    self.zmq_context = zmq.Context()
+    self.zmq_sub = self.zmq_context.socket(zmq.SUB)
+    self.zmq_sub.connect("tcp://%s:%s" % (ZMQ_IP, ZMQ_PORT))
+    self.zmq_sub.setsockopt(zmq.SUBSCRIBE, "")
     self.shared_queue = shared_queue
     self.xmlrpc_server = xmlrpc_server
 
@@ -174,16 +176,18 @@ class data_processor(Thread):
   def run(self):
 
     while self.keep_running:
-      msg_str, addr = self.sock.recvfrom(MAX_LO_MTU) # buffer size is 1024 bytes
-      #print "received message:", msg_str
+      msg_str = self.zmq_sub.recv()
+      msg_str = msg_str[10:]
+      #print "received message:", len(msg_str)
 
       n_frags = struct.unpack('!B', msg_str[0])[0] #obtain number of fragments
       frag_id = struct.unpack('!B', msg_str[1])[0] #obtain fragment number
       msg_str = msg_str[2:] #grab fft data
+      #print 'n_frags', n_frags, 'frag_id', frag_id
 
       if n_frags == 1: #single fragment
         try:
-          fft_data = np.fromstring(self.reasembled_frame, self.data_type)
+          fft_data = np.fromstring(msg_str, self.data_type)
 
           if len(self.max_fft_data) != len(fft_data):
               self.max_fft_data = fft_data
@@ -271,7 +275,7 @@ class ws_dispatcher(Thread):
     self.keep_running = True
 
   def run(self):
-    print "starting ws ws dispatcher"
+    print "starting ws dispatcher"
     while self.keep_running:
       while not self.shared_queue.empty():
         data = self.shared_queue.get()
@@ -296,11 +300,10 @@ if __name__ == '__main__':
   parser.add_option("--cert", default='./cert.pem', type='string', action="store", dest="cert", help="cert (./cert.pem)")
   parser.add_option("--key", default='./key.pem', type='string', action="store", dest="key", help="key (./key.pem)")
   parser.add_option("--ver", default=ssl.PROTOCOL_TLSv1, type=int, action="store", dest="ver", help="ssl version")
+  parser.add_option("--zmqip", default='127.0.0.1', type='string', action="store", dest="zmqip", help="IP of ZMQ publisher")
+  parser.add_option("--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
 
   (options, args) = parser.parse_args()
-
-  UDP_IP = "0.0.0.0"
-  UDP_PORT = 5005
 
   shared_queue = Queue.Queue(10)
 
@@ -329,7 +332,7 @@ if __name__ == '__main__':
       print 'rxmlrpc okay!', "http://" + options.rpchost + ":"+str(options.rpcport)
       break
 
-  _data_processor = data_processor(UDP_IP, UDP_PORT, shared_queue, xmlrpc_server)
+  _data_processor = data_processor(options.zmqip, options.zmqport, shared_queue, xmlrpc_server)
   _data_processor.start()
   
   print 'server okay!', "http://127.0.0.1:8080"
