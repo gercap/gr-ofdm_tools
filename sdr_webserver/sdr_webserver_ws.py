@@ -25,10 +25,16 @@ MAX_LO_MTU = 65535
 
 def signal_handler(signal, frame):
   print "you pressed ctrl-C!"
-  _ws_server_runner.keep_running = False
-  _ws_dispatcher.keep_running = False
+  _ws_server_control_runner.keep_running = False
+  _ws_server_data_runner.keep_running = False
+
+  _ws_dispatcher_control.keep_running = False
+  _ws_dispatcher_data.keep_running = False
+
   _data_processor.keep_running = False
-  ws_server.close()
+
+  ws_server_control.close()
+  ws_server_data.close()
   sys.exit(0)
 
 class web_site(object):
@@ -75,13 +81,14 @@ class web_site(object):
         scheme=self.scheme)
 
 class data_processor(Thread):
-  def __init__(self, ZMQ_IP, ZMQ_PORT, shared_queue, xmlrpc_server):
+  def __init__(self, ZMQ_IP, ZMQ_PORT, shared_queue_control, shared_queue_data, xmlrpc_server):
     Thread.__init__(self)
     self.zmq_context = zmq.Context()
     self.zmq_sub = self.zmq_context.socket(zmq.SUB)
     self.zmq_sub.connect("tcp://%s:%s" % (ZMQ_IP, ZMQ_PORT))
     self.zmq_sub.setsockopt(zmq.SUBSCRIBE, "")
-    self.shared_queue = shared_queue
+    self.shared_queue_control = shared_queue_control
+    self.shared_queue_data = shared_queue_data
     self.xmlrpc_server = xmlrpc_server
 
     self.samp_rate = self.xmlrpc_server.get_samp_rate()
@@ -91,13 +98,11 @@ class data_processor(Thread):
     self.average = self.xmlrpc_server.get_av()
     self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
-    self.downsample = 1
-
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
 
     self.reasembled_frame = ''
     if self.precision:
-        self.data_type = np.float16
+        self.data_type = np.float32
     else:
         self.data_type = np.int8
     self.max_fft_data = np.array([])
@@ -108,61 +113,61 @@ class data_processor(Thread):
   def set_precision(self, precision):
     self.precision = precision
     if precision:
-        self.data_type = np.float16
+        self.data_type = np.float32
         self.xmlrpc_server.set_precision(True)
-        self.shared_queue.put({"precision":self.precision})
+        self.shared_queue_control.put({"precision":self.precision})
     else:
         self.data_type = np.int8
         self.xmlrpc_server.set_precision(False)
-        self.shared_queue.put({"precision":self.precision})
+        self.shared_queue_control.put({"precision":self.precision})
 
   def get_precision(self):
-    self.shared_queue.put({"precision":self.precision})
+    self.shared_queue_control.put({"precision":self.precision})
     return self.precision
 
   def set_tune_freq(self, tune_freq):
     self.tune_freq = tune_freq
     self.xmlrpc_server.set_tune_freq(float(self.tune_freq))
-    self.shared_queue.put({"tune_freq":self.tune_freq})
-    self.shared_queue.put({"samp_rate":self.samp_rate})
+    self.shared_queue_control.put({"tune_freq":self.tune_freq})
+    self.shared_queue_control.put({"samp_rate":self.samp_rate})
 
   def get_tune_freq(self):
-    self.shared_queue.put({"tune_freq":self.tune_freq})
+    self.shared_queue_control.put({"tune_freq":self.tune_freq})
     return self.tune_freq
 
   def set_samp_rate(self, samp_rate):
-    self.shared_queue.put({"samp_rate":self.samp_rate})
+    self.shared_queue_control.put({"samp_rate":self.samp_rate})
     self.samp_rate = samp_rate
 
   def get_samp_rate(self):
-    self.shared_queue.put({"samp_rate":self.samp_rate})
+    self.shared_queue_control.put({"samp_rate":self.samp_rate})
     return self.samp_rate
 
   def set_rate(self, rate):
     self.rate = rate
     self.xmlrpc_server.set_rate(float(rate))
-    self.shared_queue.put({"rate":self.rate})
+    self.shared_queue_control.put({"rate":self.rate})
 
   def get_rate(self):
-    self.shared_queue.put({"rate":self.rate})
+    self.shared_queue_control.put({"rate":self.rate})
     return self.rate
 
   def set_average(self, average):
     self.average = average
     self.xmlrpc_server.set_av(float(average))
-    self.shared_queue.put({"average":self.average})
+    self.shared_queue_control.put({"average":self.average})
 
   def get_average(self):
-    self.shared_queue.put({"average":self.average})
+    self.shared_queue_control.put({"average":self.average})
     return self.average
 
   def set_rf_gain(self, rf_gain):
     self.rf_gain = rf_gain
     self.xmlrpc_server.set_rf_gain(rf_gain)
-    self.shared_queue.put({"rf_gain":self.rf_gain})
+    self.shared_queue_control.put({"rf_gain":self.rf_gain})
 
   def get_rf_gain(self):
-    self.shared_queue.put({"rf_gain":self.rf_gain})
+    self.shared_queue_control.put({"rf_gain":self.rf_gain})
     return self.rf_gain
 
   def get_all_statics(self):
@@ -199,7 +204,8 @@ class data_processor(Thread):
           #fft_data = rdp(fft_data.reshape(len(fft_data)/2,2)).flatten()
 
           # pass data
-          self.shared_queue.put({"fft_data":fft_data[::self.downsample].tolist()})
+          #self.shared_queue_control.put({"fft_data":fft_data.tolist()})
+          self.shared_queue_data.put(msg_str)
 
           #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
           #if hold_max: curve_data[1] = (axis/1e6, self.max_fft_data);
@@ -222,7 +228,9 @@ class data_processor(Thread):
                 self.strt = False
 
             # pass data
-            self.shared_queue.put({"fft_data":fft_data[::self.downsample].tolist()})
+            #self.shared_queue_control.put({"fft_data":fft_data.tolist()})
+            self.shared_queue_data.put(self.reasembled_frame)
+
             
             #self.max_fft_data = np.maximum(self.max_fft_data, fft_data)
             #if hold_max: curve_data[0] = (axis/1e6, self.max_fft_data);
@@ -235,27 +243,51 @@ class data_processor(Thread):
         else:
             pass
 
-ws_clients = []
-class simpleWShandler(WebSocket):
+    print "stopping data processor"
+
+
+ws_clients_control = []
+class controlWShandler(WebSocket):
 
   def handleMessage(self):
-    for client in ws_clients:
+    for client in ws_clients_control:
       if client != self:
         client.sendMessage(self.address[0] + u' - ' + self.data)
 
   def handleConnected(self):
-    print(self.address, 'connected')
+    print(self.address, 'control connected')
     #send initial data - tune_freq samp_rate average rate and precision
     _data_processor.get_all_statics()
-    for client in ws_clients:
-      client.sendMessage(self.address[0] + u' - connected')
-    ws_clients.append(self)
+    for client in ws_clients_control:
+      client.sendMessage(self.address[0] + u' - control connected')
+    ws_clients_control.append(self)
 
   def handleClose(self):
-    ws_clients.remove(self)
-    print(self.address, 'closed')
-    for client in ws_clients:
-      client.sendMessage(self.address[0] + u' - disconnected')
+    ws_clients_control.remove(self)
+    print(self.address, 'control closed')
+    for client in ws_clients_control:
+      client.sendMessage(self.address[0] + u' - control disconnected')
+
+ws_clients_data = []
+class datalWShandler(WebSocket):
+
+  def handleMessage(self):
+    for client in ws_clients_data:
+      if client != self:
+        client.sendMessage(self.address[0] + u' - ' + self.data)
+
+  def handleConnected(self):
+    print(self.address, 'data connected')
+    #send initial data - tune_freq samp_rate average rate and precision
+    for client in ws_clients_data:
+      client.sendMessage(self.address[0] + u' - data connected')
+    ws_clients_data.append(self)
+
+  def handleClose(self):
+    ws_clients_data.remove(self)
+    print(self.address, 'data closed')
+    for client in ws_clients_data:
+      client.sendMessage(self.address[0] + u' - data disconnected')
 
 class ws_server_runner(Thread):
   def __init__(self, ws_server):
@@ -267,32 +299,48 @@ class ws_server_runner(Thread):
     print "starting ws server"
     while self.keep_running:
       self.ws_server.serveonce()
+    print "stopping ws server"
 
-class ws_dispatcher(Thread):
-  def __init__(self, shared_queue):
+class ws_dispatcher_control(Thread):
+  def __init__(self, shared_queue_control):
     Thread.__init__(self)
-    self.shared_queue = shared_queue
+    self.shared_queue_control = shared_queue_control
     self.keep_running = True
 
   def run(self):
-    print "starting ws dispatcher"
+    print "starting ws control dispatcher"
     while self.keep_running:
-      while not self.shared_queue.empty():
-        data = self.shared_queue.get()
+      while not self.shared_queue_control.empty():
+        data = self.shared_queue_control.get()
         u = unicode(simplejson.dumps(data), "utf-8")
         #u = unicode(simplejson.dumps({"plot_data":{"axis": [], "fft_data":[]}}), "utf-8")
-        for client in ws_clients:
+        for client in ws_clients_control:
           if client != self:
             client.sendMessage(u)
-
       time.sleep(1e-3)
+    print "stopping ws control dispatcher"
 
+class ws_dispatcher_data(Thread):
+  def __init__(self, shared_queue_data):
+    Thread.__init__(self)
+    self.shared_queue_data = shared_queue_data
+    self.keep_running = True
 
+  def run(self):
+    print "starting ws data dispatcher"
+    while self.keep_running:
+      while not self.shared_queue_data.empty():
+        data = self.shared_queue_data.get()
+        for client in ws_clients_data:
+          if client != self:
+            client.sendMessage(data)
+      time.sleep(1e-3)
+    print "stopping ws data dispatcher"
 
 if __name__ == '__main__':
 
   parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
-  parser.add_option("--host", default='', type='string', action="store", dest="host", help="ws hostname (localhost)")
+  parser.add_option("--bind", default='', type='string', action="store", dest="bind", help="ws bind address")
   parser.add_option("--port", default=9000, type='int', action="store", dest="port", help="ws port (9000)")
   parser.add_option("--rpchost", default='127.0.0.1', type='string', action="store", dest="rpchost", help="rpc server hostname (localhost)")
   parser.add_option("--rpcport", default=7658, type='int', action="store", dest="rpcport", help="xml rpc server (127.0.0.1)")
@@ -305,20 +353,29 @@ if __name__ == '__main__':
 
   (options, args) = parser.parse_args()
 
-  shared_queue = Queue.Queue(10)
+  shared_queue_control = Queue.Queue(5)
+  shared_queue_data = Queue.Queue(10)
 
   signal.signal(signal.SIGINT, signal_handler)
 
   if options.ssl == 1:
-    ws_server = SimpleSSLWebSocketServer(options.host, options.port, simpleWShandler, options.cert, options.key, version=options.ver)
+    ws_server_control = SimpleSSLWebSocketServer("", 9000, controlWShandler, options.cert, options.key, version=options.ver)
+    ws_server_data = SimpleSSLWebSocketServer("", 8000, dataWShandler, options.cert, options.key, version=options.ver)
   else:
-    ws_server = SimpleWebSocketServer(options.host, options.port, simpleWShandler)
+    ws_server_control = SimpleWebSocketServer("", 9000, controlWShandler)
+    ws_server_data = SimpleWebSocketServer("", 8000, datalWShandler)
 
-  _ws_server_runner = ws_server_runner(ws_server)
-  _ws_server_runner.start()
+  _ws_server_control_runner = ws_server_runner(ws_server_control)
+  _ws_server_control_runner.start()
 
-  _ws_dispatcher = ws_dispatcher(shared_queue)
-  _ws_dispatcher.start()
+  _ws_server_data_runner = ws_server_runner(ws_server_data)
+  _ws_server_data_runner.start()
+
+  _ws_dispatcher_control = ws_dispatcher_control(shared_queue_control)
+  _ws_dispatcher_control.start()
+
+  _ws_dispatcher_data = ws_dispatcher_data(shared_queue_data)
+  _ws_dispatcher_data.start()
 
   xmlrpc_server = xmlrpclib.Server("http://" + options.rpchost + ":"+str(options.rpcport))
   while True:
@@ -332,7 +389,7 @@ if __name__ == '__main__':
       print 'rxmlrpc okay!', "http://" + options.rpchost + ":"+str(options.rpcport)
       break
 
-  _data_processor = data_processor(options.zmqip, options.zmqport, shared_queue, xmlrpc_server)
+  _data_processor = data_processor(options.zmqip, options.zmqport, shared_queue_control, shared_queue_data, xmlrpc_server)
   _data_processor.start()
   
   print 'server okay!', "http://127.0.0.1:8080"
