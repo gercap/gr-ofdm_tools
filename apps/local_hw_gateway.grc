@@ -109,7 +109,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(416, 872)</value>
+      <value>(448, 904)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -172,7 +172,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(528, 872)</value>
+      <value>(568, 896)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -378,7 +378,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>int(math.ceil((nfft*2.0+2.0)/max_tu))</value>
+      <value>int(math.ceil((nfft*4.0+2.0)/max_tu))</value>
     </param>
   </block>
   <block>
@@ -432,7 +432,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>1472*10</value>
+      <value>1472*20</value>
     </param>
   </block>
   <block>
@@ -614,7 +614,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>nfft*2</value>
+      <value>nfft*4</value>
     </param>
   </block>
   <block>
@@ -679,33 +679,6 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(520, 1220)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>sub_tune</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>tune_freq</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
       <value>1</value>
     </param>
     <param>
@@ -729,7 +702,7 @@
     <key>analog_fastnoise_source_x</key>
     <param>
       <key>amp</key>
-      <value>10</value>
+      <value>1</value>
     </param>
     <param>
       <key>alias</key>
@@ -745,11 +718,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(72, 672)</value>
+      <value>(56, 684)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -788,7 +761,7 @@
     <key>analog_sig_source_x</key>
     <param>
       <key>amp</key>
-      <value>5</value>
+      <value>a1</value>
     </param>
     <param>
       <key>alias</key>
@@ -804,7 +777,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>freq</key>
@@ -851,7 +824,7 @@
     <key>analog_sig_source_x</key>
     <param>
       <key>amp</key>
-      <value>3</value>
+      <value>a1</value>
     </param>
     <param>
       <key>alias</key>
@@ -867,7 +840,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>freq</key>
@@ -875,7 +848,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(32, 840)</value>
+      <value>(32, 820)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -955,65 +928,6 @@
     <param>
       <key>quad_rate</key>
       <value>samp_rate/decim_1</value>
-    </param>
-  </block>
-  <block>
-    <key>analog_wfm_tx</key>
-    <param>
-      <key>audio_rate</key>
-      <value>samp_rate/8</value>
-    </param>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 1096)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>analog_wfm_tx_0</value>
-    </param>
-    <param>
-      <key>max_dev</key>
-      <value>75e3</value>
-    </param>
-    <param>
-      <key>maxoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>minoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>fh</key>
-      <value>-1.0</value>
-    </param>
-    <param>
-      <key>quad_rate</key>
-      <value>samp_rate</value>
-    </param>
-    <param>
-      <key>tau</key>
-      <value>75e-6</value>
     </param>
   </block>
   <block>
@@ -1126,11 +1040,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(312, 784)</value>
+      <value>(328, 776)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1181,7 +1095,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1040, 1372)</value>
+      <value>(1048, 1484)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1436,7 +1350,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(800, 432)</value>
+      <value>(824, 364)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1523,7 +1437,7 @@
     </param>
     <param>
       <key>port</key>
-      <value>str(9999)</value>
+      <value>str(udp_port)</value>
     </param>
     <param>
       <key>tcp_no_delay</key>
@@ -1652,11 +1566,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(672, 812)</value>
+      <value>(640, 812)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1833,6 +1747,65 @@
     </param>
     <param>
       <key>decim</key>
+      <value>decim_1</value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(392, 1116)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>fft_filter_xxx_0_1_0</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>nthreads</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>samp_delay</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>taps</key>
+      <value>firdes.low_pass_2(1,samp_rate,80e3,20e3,50)</value>
+    </param>
+    <param>
+      <key>type</key>
+      <value>ccc</value>
+    </param>
+  </block>
+  <block>
+    <key>fft_filter_xxx</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>decim</key>
       <value>1</value>
     </param>
     <param>
@@ -1931,7 +1904,7 @@
     </param>
     <param>
       <key>center_freq</key>
-      <value>-100e3</value>
+      <value>100e6-tune_freq</value>
     </param>
     <param>
       <key>comment</key>
@@ -1984,69 +1957,6 @@
     <param>
       <key>taps</key>
       <value>1</value>
-    </param>
-  </block>
-  <block>
-    <key>freq_xlating_fft_filter_ccc</key>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>center_freq</key>
-      <value>tune_freq-sub_tune</value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>decim</key>
-      <value>decim_1</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(376, 1104)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>freq_xlating_fft_filter_ccc_0_0</value>
-    </param>
-    <param>
-      <key>maxoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>minoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>nthreads</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>samp_delay</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>samp_rate</key>
-      <value>samp_rate</value>
-    </param>
-    <param>
-      <key>taps</key>
-      <value>firdes.low_pass_2(1,samp_rate,80e3,20e3,50)</value>
     </param>
   </block>
   <block>
@@ -2144,81 +2054,6 @@
     </param>
   </block>
   <block>
-    <key>low_pass_filter</key>
-    <param>
-      <key>beta</key>
-      <value>6.76</value>
-    </param>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>cutoff_freq</key>
-      <value>samp_rate/16</value>
-    </param>
-    <param>
-      <key>decim</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>fir_filter_ccf</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(168, 880)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>gain</key>
-      <value>10</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>low_pass_filter_0</value>
-    </param>
-    <param>
-      <key>interp</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>maxoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>minoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>samp_rate</key>
-      <value>samp_rate</value>
-    </param>
-    <param>
-      <key>width</key>
-      <value>60e3</value>
-    </param>
-    <param>
-      <key>win</key>
-      <value>firdes.WIN_HAMMING</value>
-    </param>
-  </block>
-  <block>
     <key>parameter</key>
     <param>
       <key>alias</key>
@@ -2297,7 +2132,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(616, 304)</value>
+      <value>(584, 320)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2352,7 +2187,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1112, 488)</value>
+      <value>(1120, 428)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3838,7 +3673,7 @@
     </param>
     <param>
       <key>iq_balance_mode0</key>
-      <value>2</value>
+      <value>0</value>
     </param>
     <param>
       <key>gain0</key>
@@ -5098,11 +4933,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 492)</value>
+      <value>(104, 444)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -7309,7 +7144,7 @@
     </param>
     <param>
       <key>gui_hint</key>
-      <value></value>
+      <value>tabs@0</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -7961,7 +7796,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -8150,7 +7985,7 @@
     <key>zeromq_pub_msg_sink</key>
     <param>
       <key>address</key>
-      <value>tcp://0.0.0.0:5005</value>
+      <value>tcp://127.0.0.1:5005</value>
     </param>
     <param>
       <key>alias</key>
@@ -8166,11 +8001,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(800, 412)</value>
+      <value>(760, 468)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -8187,19 +8022,7 @@
   </block>
   <connection>
     <source_block_id>analog_fastnoise_source_x_0</source_block_id>
-    <sink_block_id>analog_wfm_tx_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>analog_fastnoise_source_x_0</source_block_id>
     <sink_block_id>blocks_add_xx_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>analog_fastnoise_source_x_0</source_block_id>
-    <sink_block_id>low_pass_filter_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -8216,12 +8039,6 @@
     <sink_key>2</sink_key>
   </connection>
   <connection>
-    <source_block_id>analog_sig_source_x_0_0</source_block_id>
-    <sink_block_id>low_pass_filter_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
     <source_block_id>analog_wfm_rcv_0</source_block_id>
     <sink_block_id>fft_filter_xxx_0_1_0_0</sink_block_id>
     <source_key>0</source_key>
@@ -8229,19 +8046,7 @@
   </connection>
   <connection>
     <source_block_id>blocks_add_xx_0</source_block_id>
-    <sink_block_id>blocks_throttle_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>blocks_add_xx_0</source_block_id>
     <sink_block_id>freq_xlating_fft_filter_ccc_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>blocks_add_xx_0</source_block_id>
-    <sink_block_id>freq_xlating_fft_filter_ccc_0_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -8306,12 +8111,6 @@
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>blocks_throttle_0</source_block_id>
-    <sink_block_id>qtgui_freq_sink_x_0_0_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
     <source_block_id>decim_filter1</source_block_id>
     <sink_block_id>qtgui_freq_sink_x_0</sink_block_id>
     <source_key>0</source_key>
@@ -8320,6 +8119,12 @@
   <connection>
     <source_block_id>decim_filter1_0</source_block_id>
     <sink_block_id>qtgui_freq_sink_x_0_1</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>fft_filter_xxx_0_1_0</source_block_id>
+    <sink_block_id>analog_wfm_rcv_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -8340,24 +8145,6 @@
     <sink_block_id>blocks_throttle_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>freq_xlating_fft_filter_ccc_0_0</source_block_id>
-    <sink_block_id>analog_wfm_rcv_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>freq_xlating_fft_filter_ccc_1</source_block_id>
-    <sink_block_id>qtgui_freq_sink_x_0_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>low_pass_filter_0</source_block_id>
-    <sink_block_id>blocks_add_xx_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>2</sink_key>
   </connection>
   <connection>
     <source_block_id>ofdm_tools_local_worker_0</source_block_id>
@@ -8391,7 +8178,19 @@
   </connection>
   <connection>
     <source_block_id>osmosdr_source_0</source_block_id>
+    <sink_block_id>ofdm_tools_local_worker_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>osmosdr_source_0</source_block_id>
     <sink_block_id>qtgui_freq_sink_x_0_0_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>osmosdr_source_0_0</source_block_id>
+    <sink_block_id>fft_filter_xxx_0_1_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -8404,6 +8203,12 @@
   <connection>
     <source_block_id>osmosdr_source_0_0</source_block_id>
     <sink_block_id>qtgui_freq_sink_x_0_0_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>osmosdr_source_0_1</source_block_id>
+    <sink_block_id>ofdm_tools_local_worker_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

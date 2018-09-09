@@ -6,7 +6,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Local Hw Gateway
-# Generated: Tue Aug 28 00:36:39 2018
+# Generated: Sun Sep  9 16:25:17 2018
 # GNU Radio version: 3.7.12.0
 ##################################################
 
@@ -21,8 +21,6 @@ if __name__ == '__main__':
             print "Warning: failed to XInitThreads()"
 
 from PyQt4 import Qt
-from gnuradio import analog
-from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import gr
 from gnuradio import zeromq
@@ -32,8 +30,10 @@ from optparse import OptionParser
 import SimpleXMLRPCServer
 import math
 import ofdm_tools
+import osmosdr
 import sys
 import threading
+import time
 from gnuradio import qtgui
 
 
@@ -77,29 +77,59 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.max_tu = max_tu = 1472*10
+        self.max_tu = max_tu = 1472*20
         self.tune_freq = tune_freq = 103e6
         self.samp_rate = samp_rate = sr
         self.rf_gain = rf_gain = 45
-        self.req_mtu = req_mtu = nfft*2
+        self.req_mtu = req_mtu = nfft*4
         self.rate = rate = 1
         self.precision = precision = True
         self.ppm_corr = ppm_corr = ppm
         self.offset = offset = freq_offset
         self.if_gain = if_gain = 20
-        self.fragments_per_fft = fragments_per_fft = int(math.ceil((nfft*2.0+2.0)/max_tu))
+        self.fragments_per_fft = fragments_per_fft = int(math.ceil((nfft*4.0+2.0)/max_tu))
         self.bb_gain = bb_gain = 20
         self.av = av = 0.8
 
         ##################################################
         # Blocks
         ##################################################
-        self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink('tcp://0.0.0.0:5005', 100)
+        self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink('tcp://127.0.0.1:5005', 100)
         self.xmlrpc_server = SimpleXMLRPCServer.SimpleXMLRPCServer((server_address, 7658), allow_none=True)
         self.xmlrpc_server.register_instance(self)
         self.xmlrpc_server_thread = threading.Thread(target=self.xmlrpc_server.serve_forever)
         self.xmlrpc_server_thread.daemon = True
         self.xmlrpc_server_thread.start()
+        self.tabs = Qt.QTabWidget()
+        self.tabs_widget_0 = Qt.QWidget()
+        self.tabs_layout_0 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tabs_widget_0)
+        self.tabs_grid_layout_0 = Qt.QGridLayout()
+        self.tabs_layout_0.addLayout(self.tabs_grid_layout_0)
+        self.tabs.addTab(self.tabs_widget_0, 'Main')
+        self.tabs_widget_1 = Qt.QWidget()
+        self.tabs_layout_1 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tabs_widget_1)
+        self.tabs_grid_layout_1 = Qt.QGridLayout()
+        self.tabs_layout_1.addLayout(self.tabs_grid_layout_1)
+        self.tabs.addTab(self.tabs_widget_1, 'L')
+        self.tabs_widget_2 = Qt.QWidget()
+        self.tabs_layout_2 = Qt.QBoxLayout(Qt.QBoxLayout.TopToBottom, self.tabs_widget_2)
+        self.tabs_grid_layout_2 = Qt.QGridLayout()
+        self.tabs_layout_2.addLayout(self.tabs_grid_layout_2)
+        self.tabs.addTab(self.tabs_widget_2, 'R')
+        self.top_grid_layout.addWidget(self.tabs)
+        self.osmosdr_source_0_0 = osmosdr.source( args="numchan=" + str(1) + " " + '' )
+        self.osmosdr_source_0_0.set_sample_rate(samp_rate)
+        self.osmosdr_source_0_0.set_center_freq(tune_freq+offset, 0)
+        self.osmosdr_source_0_0.set_freq_corr(ppm_corr, 0)
+        self.osmosdr_source_0_0.set_dc_offset_mode(0, 0)
+        self.osmosdr_source_0_0.set_iq_balance_mode(0, 0)
+        self.osmosdr_source_0_0.set_gain_mode(False, 0)
+        self.osmosdr_source_0_0.set_gain(rf_gain, 0)
+        self.osmosdr_source_0_0.set_if_gain(if_gain, 0)
+        self.osmosdr_source_0_0.set_bb_gain(bb_gain, 0)
+        self.osmosdr_source_0_0.set_antenna('', 0)
+        self.osmosdr_source_0_0.set_bandwidth(0, 0)
+
         self.ofdm_tools_local_worker_0 = ofdm_tools.local_worker(
           fft_len=nfft,
           sample_rate=samp_rate,
@@ -108,11 +138,6 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
           max_tu=max_tu,
           data_precision=precision,
           )
-        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
-        self.blocks_add_xx_0 = blocks.add_vcc(1)
-        self.analog_sig_source_x_0_0 = analog.sig_source_c(samp_rate, analog.GR_TRI_WAVE, 300000, 3, 0)
-        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, -250000, 5, 0)
-        self.analog_fastnoise_source_x_0 = analog.fastnoise_source_c(analog.GR_GAUSSIAN, 10, 0, 8192)
 
 
 
@@ -120,11 +145,7 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.msg_connect((self.ofdm_tools_local_worker_0, 'pdus'), (self.zeromq_pub_msg_sink_0, 'in'))
-        self.connect((self.analog_fastnoise_source_x_0, 0), (self.blocks_add_xx_0, 0))
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_add_xx_0, 1))
-        self.connect((self.analog_sig_source_x_0_0, 0), (self.blocks_add_xx_0, 2))
-        self.connect((self.blocks_add_xx_0, 0), (self.blocks_throttle_0, 0))
-        self.connect((self.blocks_throttle_0, 0), (self.ofdm_tools_local_worker_0, 0))
+        self.connect((self.osmosdr_source_0_0, 0), (self.ofdm_tools_local_worker_0, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "local_hw_gateway")
@@ -143,8 +164,8 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
 
     def set_nfft(self, nfft):
         self.nfft = nfft
-        self.set_req_mtu(self.nfft*2)
-        self.set_fragments_per_fft(int(math.ceil((self.nfft*2.0+2.0)/self.max_tu)))
+        self.set_req_mtu(self.nfft*4)
+        self.set_fragments_per_fft(int(math.ceil((self.nfft*4.0+2.0)/self.max_tu)))
 
     def get_ppm(self):
         return self.ppm
@@ -177,29 +198,29 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
 
     def set_max_tu(self, max_tu):
         self.max_tu = max_tu
-        self.set_fragments_per_fft(int(math.ceil((self.nfft*2.0+2.0)/self.max_tu)))
+        self.set_fragments_per_fft(int(math.ceil((self.nfft*4.0+2.0)/self.max_tu)))
 
     def get_tune_freq(self):
         return self.tune_freq
 
     def set_tune_freq(self, tune_freq):
         self.tune_freq = tune_freq
+        self.osmosdr_source_0_0.set_center_freq(self.tune_freq+self.offset, 0)
 
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
+        self.osmosdr_source_0_0.set_sample_rate(self.samp_rate)
         self.ofdm_tools_local_worker_0.set_sample_rate(self.samp_rate)
-        self.blocks_throttle_0.set_sample_rate(self.samp_rate)
-        self.analog_sig_source_x_0_0.set_sampling_freq(self.samp_rate)
-        self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
 
     def get_rf_gain(self):
         return self.rf_gain
 
     def set_rf_gain(self, rf_gain):
         self.rf_gain = rf_gain
+        self.osmosdr_source_0_0.set_gain(self.rf_gain, 0)
 
     def get_req_mtu(self):
         return self.req_mtu
@@ -226,18 +247,21 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
 
     def set_ppm_corr(self, ppm_corr):
         self.ppm_corr = ppm_corr
+        self.osmosdr_source_0_0.set_freq_corr(self.ppm_corr, 0)
 
     def get_offset(self):
         return self.offset
 
     def set_offset(self, offset):
         self.offset = offset
+        self.osmosdr_source_0_0.set_center_freq(self.tune_freq+self.offset, 0)
 
     def get_if_gain(self):
         return self.if_gain
 
     def set_if_gain(self, if_gain):
         self.if_gain = if_gain
+        self.osmosdr_source_0_0.set_if_gain(self.if_gain, 0)
 
     def get_fragments_per_fft(self):
         return self.fragments_per_fft
@@ -250,6 +274,7 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
 
     def set_bb_gain(self, bb_gain):
         self.bb_gain = bb_gain
+        self.osmosdr_source_0_0.set_bb_gain(self.bb_gain, 0)
 
     def get_av(self):
         return self.av

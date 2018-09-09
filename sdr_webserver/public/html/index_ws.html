@@ -52,12 +52,45 @@
     return arr;
   }
 
+  function map (num, in_min, in_max, out_min, out_max) {
+    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  }
+
+  // Returns a single rgb color interpolation between given rgb color
+  // based on the factor given; via https://codepen.io/njmcode/pen/axoyD?editors=0010
+  function interpolateColor(color1, color2, factor) {
+      if (arguments.length < 3) { 
+          factor = 0.5; 
+      }
+      var result = color1.slice();
+      for (var i = 0; i < 3; i++) {
+          result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+      }
+      return "rgb("+result[0].toString() + "," + result[1].toString() + "," + result[2].toString() + ")";
+  };
+  // My function to interpolate between two colors completely, returning an array
+  function interpolateColors(color1, color2, steps) {
+      var stepFactor = 1 / (steps - 1),
+          interpolatedColorArray = [];
+
+      color1 = color1.match(/\d+/g).map(Number);
+      color2 = color2.match(/\d+/g).map(Number);
+
+      for(var i = 0; i < steps; i++) {
+          interpolatedColorArray.push(interpolateColor(color1, color2, stepFactor * i));
+      }
+      return interpolatedColorArray;
+  }
+
+  var colorArray = interpolateColors("rgb(0, 0, 0)", "rgb(255, 255, 255)", 256);
+
   var samp_rate = 0;
   var tune_freq = 0;
   var precision = true;
   var rate = 0;
   var average = 0;
   var rf_gain = 0;
+  var sel_freq = 0;
 
   var arrayBuffer;
   var fileReader = new FileReader();
@@ -73,7 +106,8 @@
     websocket_url_data = "{{scheme}}://" + host + ":8000/ws";
     //initialize_canvasJS();
     //initialize_chartJS();
-    init_plot();
+    init_fft_plot();
+    init_water_plot()
   }
   function doConnect_control()
   {
@@ -155,12 +189,7 @@
        document.getElementById("rf_gain_val").innerHTML = "RF Gain " + rf_gain;
 
     }
-    else if ("fft_data" in _data) {
-      //draw_canvasJS(_data["fft_data"]);
-      //draw_chartJS(_data["fft_data"]);
-      //plotData(_data["fft_data"]);
-      //console.log(_data["fft_data"]);
-    } else {
+    else {
       writeToScreen("response: " + evt.data + '\n');      
     }
   }
@@ -170,10 +199,12 @@
     
     if (precision) {
       var floatbyteArray = new Float32Array(arrayBuffer);
-      plotData(floatbyteArray);
+      plot_fft_data(floatbyteArray);
+      plot_water_data(floatbyteArray);
     } else {
       var intbyteArray = new Int8Array(arrayBuffer);
-      plotData(intbyteArray);
+      plot_fft_data(intbyteArray);
+      plot_water_data(intbyteArray);
     }
     
   }
@@ -253,7 +284,7 @@
         }
     chartJSchart.update();
   }
-  function init_plot()
+  function init_fft_plot()
   {    
     canvas_plot = document.getElementById("canvas_plot");
     context_plot = canvas_plot.getContext("2d");
@@ -261,37 +292,34 @@
     canvas_yScale = document.getElementById("canvas_yScale");
     context_yScale = canvas_yScale.getContext("2d");
 
+    canvas_selection = document.getElementById("canvas_selection");
+    context_selection = canvas_selection.getContext("2d");
+
+    elemLeft = canvas_selection.offsetLeft;
+    elemTop = canvas_selection.offsetTop;
+
+    sel_line = 0;
+
+    // Add event listener for `click` events.
+    canvas_selection.addEventListener('click', function(event) {
+      sel_line = event.pageX - elemLeft;
+      var y = event.pageY - elemTop;
+
+      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0, tune_freq);
+      sel_freq = axis[sel_line];
+      writeToScreen("center/select: " + tune_freq + "/" + sel_freq +"\n");
+
+    }, false);
+
     gradient = context_plot.createLinearGradient(0, 0, 0, -200);
     gradient.addColorStop("0","yellow");
     gradient.addColorStop("0.5","blue");
     gradient.addColorStop("1.0","green");
 
     context_yScale.strokeStyle="#001";
-    
-    /*
-    context_plot.strokeStyle="#009933"; // color of grid lines
-
-    context_plot.beginPath();
-      // print Parameters on X axis, and grid lines on the graph
-    for (i=1;i<=num_samples;i++) {
-      var x = i * xScale;
-      //context_plot.fillText(xAxis[i], x,columnSize - margin);
-      context_plot.moveTo(x, columnSize);
-      context_plot.lineTo(x, canvas_plot.height - margin);
-    }
-      // print row header and draw horizontal grid lines
-    var count =  0;
-    for (scale=Val_max;scale>=Val_min;scale = scale - stepSize) {
-      var y = columnSize + (yScale * count * stepSize); 
-      context_plot.fillText(scale, margin,y + margin);
-      context_plot.moveTo(rowSize,y)
-      context_plot.lineTo(canvas_plot.width,y)
-      count++;
-    }
-    context_plot.stroke();
-    */
   }
-  function plotData(dataSet) {
+
+  function plot_fft_data(dataSet) {
 
     Val_max = Math.max.apply(Math, dataSet);
     Val_min = Math.min.apply(Math, dataSet);
@@ -299,7 +327,10 @@
     var yScale = (canvas_plot.height) / (Val_max - Val_min);
     var xScale = (canvas_plot.width) / dataSet.length;
 
-    //----------------y scale-------------------------------
+    //----------------y scale and selection-----------------------------
+    canvas_selection.width = window.innerWidth - 30;
+    canvas_selection.height = window.innerHeight - 400;
+
     canvas_yScale.width = window.innerWidth - 30;
     canvas_yScale.height = window.innerHeight - 400;
     context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
@@ -310,11 +341,24 @@
       context_yScale.moveTo(5, canvas_yScale.height-y);
       context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
     }
+
+    context_yScale.moveTo(canvas_yScale.width/2, 0);
+    context_yScale.lineTo(canvas_yScale.width/2, canvas_yScale.height);
+
+    context_yScale.moveTo(sel_line, 0);
+    if (sel_line<canvas_yScale.width/2) {
+      context_yScale.fillText(sel_freq, sel_line, 15);
+    } else {
+      context_yScale.fillText(sel_freq, sel_line-50, 15);
+    }
+    context_yScale.lineTo(sel_line, canvas_yScale.height);
+
     context_yScale.stroke();
 
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
-    canvas_plot.height = window.innerHeight - 400;    
+    canvas_plot.height = window.innerHeight - 400;
+    water_div.style.top = canvas_plot.height + 10
 
     context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
     context_plot.translate(0, canvas_plot.height + Val_min * yScale);
@@ -339,11 +383,48 @@
   function update_plot_stuff()
   {
     gradient=context_plot.createLinearGradient(0, Val_max, 0, Val_min);
-    gradient.addColorStop("0","yellow");
-    gradient.addColorStop("0.5","blue");
+    gradient.addColorStop("0","red");
+    gradient.addColorStop("0.4","yellow");
+    gradient.addColorStop("0.8","blue");
     gradient.addColorStop("1.0","green");
   }
-  setInterval(update_plot_stuff, 3000);
+  setInterval(update_plot_stuff, 1000);
+
+  function init_water_plot()
+  {    
+    water_div = document.getElementById("water_div");
+
+    canvas_water = document.getElementById("canvas_water");
+    context_water = canvas_water.getContext("2d");
+
+  }
+  function plot_water_data(dataSet) {
+
+    var xScale = (canvas_plot.width) / dataSet.length;
+
+    //----------------plot-------------------------------
+    water_div.style.top = window.innerHeight - 400 + 10
+    canvas_water.width = canvas_plot.width
+
+    context_water.setTransform(1, 0, 0, 1, 0, 0); //reset translation
+    //context_water.translate(0, canvas_plot.height + Val_min * yScale);
+    //context_water.scale(1, -1 * yScale);
+
+    context_water.beginPath();
+
+    console.log(colorArray[128])
+
+    for (i=0;i<dataSet.length;i++) {
+      amp = Math.round(map(dataSet[i], Val_min, Val_max, 0, 255))
+      context_water.strokeStyle=colorArray[amp]
+      context_water.moveTo(i * xScale, 50);
+      context_water.lineTo(i * xScale, 150);
+    }
+
+    //context_water.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
+    context_water.stroke();
+    context_water.closePath();
+  }
 
   function onError_control(evt, data)
   {
@@ -444,7 +525,14 @@
    style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
  <canvas id="canvas_plot" width="100" height="100" 
    style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+ <canvas id="canvas_selection" width="100" height="100" 
+   style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
 </div>
+
+<div id="water_div" style="position: relative; left: 0; top: 400; z-index: 0;">
+ <canvas id="canvas_water" style="height: 200px; width: 100%;"></canvas>
+</div> 
+
 <!--
 <div id="canvasJScanvas" style="height: 600px; width: 100%;"></div>
 <canvas id="chartJScanvas" style="height: 600px; width: 100%;"></canvas>

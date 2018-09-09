@@ -6,7 +6,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Remote Monitor
-# Generated: Tue Aug 28 00:31:20 2018
+# Generated: Sun Sep  9 16:25:12 2018
 # GNU Radio version: 3.7.12.0
 ##################################################
 
@@ -36,7 +36,7 @@ from gnuradio import qtgui
 
 class remote_monitor(gr.top_block, Qt.QWidget):
 
-    def __init__(self, server_address="127.0.0.1", tcp_port=9999, udp_port=8888):
+    def __init__(self, server_address="127.0.0.1", udp_port=8888):
         gr.top_block.__init__(self, "Remote Monitor")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Remote Monitor")
@@ -65,21 +65,18 @@ class remote_monitor(gr.top_block, Qt.QWidget):
         # Parameters
         ##################################################
         self.server_address = server_address
-        self.tcp_port = tcp_port
         self.udp_port = udp_port
 
         ##################################################
         # Variables
         ##################################################
         self.tune_freq = tune_freq = 100e6
-        self.sub_tune = sub_tune = tune_freq
         self.samp_rate = samp_rate = 1800000
         self.rf_gain = rf_gain = 5
         self.reset_max = reset_max = False
         self.rate = rate = 1
         self.precision = precision = True
         self.max_mtu = max_mtu = 10000
-        self.hold_max = hold_max = False
         self.av = av = 0.8
 
         ##################################################
@@ -114,17 +111,6 @@ class remote_monitor(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(3, 4):
             self.top_grid_layout.setColumnStretch(c, 1)
-        _hold_max_check_box = Qt.QCheckBox('Hold Reset')
-        self._hold_max_choices = {True: True, False: False}
-        self._hold_max_choices_inv = dict((v,k) for k,v in self._hold_max_choices.iteritems())
-        self._hold_max_callback = lambda i: Qt.QMetaObject.invokeMethod(_hold_max_check_box, "setChecked", Qt.Q_ARG("bool", self._hold_max_choices_inv[i]))
-        self._hold_max_callback(self.hold_max)
-        _hold_max_check_box.stateChanged.connect(lambda i: self.set_hold_max(self._hold_max_choices[bool(i)]))
-        self.top_grid_layout.addWidget(_hold_max_check_box, 1, 4, 1, 1)
-        for r in range(1, 2):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(4, 5):
-            self.top_grid_layout.setColumnStretch(c, 1)
         self.zeromq_sub_msg_source_0 = zeromq.sub_msg_source('tcp://127.0.0.1:5005', 100)
         self.xmlrpc_client5 = xmlrpclib.Server('http://127.0.0.1:7658')
         self.xmlrpc_client4_0_1 = xmlrpclib.Server('http://127.0.0.1:7658')
@@ -132,17 +118,6 @@ class remote_monitor(gr.top_block, Qt.QWidget):
         self.xmlrpc_client3 = xmlrpclib.Server('http://127.0.0.1:7658')
         self.xmlrpc_client2 = xmlrpclib.Server('http://127.0.0.1:7658')
         self.xmlrpc_client0_0 = xmlrpclib.Server('http://127.0.0.1:7658')
-        self._sub_tune_tool_bar = Qt.QToolBar(self)
-        self._sub_tune_tool_bar.addWidget(Qt.QLabel("sub_tune"+": "))
-        self._sub_tune_line_edit = Qt.QLineEdit(str(self.sub_tune))
-        self._sub_tune_tool_bar.addWidget(self._sub_tune_line_edit)
-        self._sub_tune_line_edit.returnPressed.connect(
-        	lambda: self.set_sub_tune(eng_notation.str_to_num(str(self._sub_tune_line_edit.text().toAscii()))))
-        self.top_grid_layout.addWidget(self._sub_tune_tool_bar, 2, 2, 1, 1)
-        for r in range(2, 3):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(2, 3):
-            self.top_grid_layout.setColumnStretch(c, 1)
         self._rf_gain_range = Range(0, 50, 1, 5, 200)
         self._rf_gain_win = RangeWidget(self._rf_gain_range, self.set_rf_gain, "rf_gain", "counter_slider", float)
         self.top_grid_layout.addWidget(self._rf_gain_win, 2, 0, 1, 2)
@@ -173,13 +148,13 @@ class remote_monitor(gr.top_block, Qt.QWidget):
         sample_rate=samp_rate,
         show_axes='str(axes)',
         precision=precision,
-        hold_max=hold_max,
+        hold_max=False,
         label='Complex PSD Plot')
         self._ofdm_tools_remote_client_qt_0_0_win = self.ofdm_tools_remote_client_qt_0_0;
-        self.top_grid_layout.addWidget(self._ofdm_tools_remote_client_qt_0_0_win, 3, 0, 1, 5)
+        self.top_grid_layout.addWidget(self._ofdm_tools_remote_client_qt_0_0_win, 3, 0, 1, 4)
         for r in range(3, 4):
             self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(0, 5):
+        for c in range(0, 4):
             self.top_grid_layout.setColumnStretch(c, 1)
 
 
@@ -209,12 +184,6 @@ class remote_monitor(gr.top_block, Qt.QWidget):
     def set_server_address(self, server_address):
         self.server_address = server_address
 
-    def get_tcp_port(self):
-        return self.tcp_port
-
-    def set_tcp_port(self, tcp_port):
-        self.tcp_port = tcp_port
-
     def get_udp_port(self):
         return self.udp_port
 
@@ -227,15 +196,7 @@ class remote_monitor(gr.top_block, Qt.QWidget):
     def set_tune_freq(self, tune_freq):
         self.tune_freq = tune_freq
         self.xmlrpc_client3.set_tune_freq(self.tune_freq)
-        self.set_sub_tune(self.tune_freq)
         self.ofdm_tools_remote_client_qt_0_0.set_tune_freq(self.tune_freq)
-
-    def get_sub_tune(self):
-        return self.sub_tune
-
-    def set_sub_tune(self, sub_tune):
-        self.sub_tune = sub_tune
-        Qt.QMetaObject.invokeMethod(self._sub_tune_line_edit, "setText", Qt.Q_ARG("QString", eng_notation.num_to_str(self.sub_tune)))
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -283,14 +244,6 @@ class remote_monitor(gr.top_block, Qt.QWidget):
     def set_max_mtu(self, max_mtu):
         self.max_mtu = max_mtu
 
-    def get_hold_max(self):
-        return self.hold_max
-
-    def set_hold_max(self, hold_max):
-        self.hold_max = hold_max
-        self._hold_max_callback(self.hold_max)
-        self.ofdm_tools_remote_client_qt_0_0.set_hold_max(self.hold_max)
-
     def get_av(self):
         return self.av
 
@@ -304,9 +257,6 @@ def argument_parser():
     parser.add_option(
         "-a", "--server-address", dest="server_address", type="string", default="127.0.0.1",
         help="Set server_address [default=%default]")
-    parser.add_option(
-        "-t", "--tcp-port", dest="tcp_port", type="intx", default=9999,
-        help="Set tcp_port [default=%default]")
     parser.add_option(
         "-u", "--udp-port", dest="udp_port", type="intx", default=8888,
         help="Set udp_port [default=%default]")
@@ -325,7 +275,7 @@ def main(top_block_cls=remote_monitor, options=None):
         Qt.QApplication.setGraphicsSystem(style)
     qapp = Qt.QApplication(sys.argv)
 
-    tb = top_block_cls(server_address=options.server_address, tcp_port=options.tcp_port, udp_port=options.udp_port)
+    tb = top_block_cls(server_address=options.server_address, udp_port=options.udp_port)
     tb.start()
     tb.show()
 
