@@ -257,10 +257,10 @@ class controlWShandler(WebSocket):
   def handleConnected(self):
     print(self.address, 'control connected')
     #send initial data - tune_freq samp_rate average rate and precision
-    _data_processor.get_all_statics()
     for client in ws_clients_control:
       client.sendMessage(self.address[0] + u' - control connected')
     ws_clients_control.append(self)
+    _data_processor.get_all_statics()
 
   def handleClose(self):
     ws_clients_control.remove(self)

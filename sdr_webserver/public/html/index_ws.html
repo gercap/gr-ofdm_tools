@@ -397,32 +397,42 @@
     canvas_water = document.getElementById("canvas_water");
     context_water = canvas_water.getContext("2d");
 
+    dataSet_array = []
+    y_offset = [];
+    step = 5
+    for (var i=0; i<canvas_water.height; i += step) {
+      y_offset.push(i);
+    }
+    steps = Math.ceil(canvas_water.height/step);
   }
   function plot_water_data(dataSet) {
 
     var xScale = (canvas_plot.width) / dataSet.length;
 
+    dataSet_array.push(dataSet);
+    //console.log(dataSet_array.length, steps)
+
     //----------------plot-------------------------------
     water_div.style.top = window.innerHeight - 400 + 10
     canvas_water.width = canvas_plot.width
 
-    context_water.setTransform(1, 0, 0, 1, 0, 0); //reset translation
-    //context_water.translate(0, canvas_plot.height + Val_min * yScale);
-    //context_water.scale(1, -1 * yScale);
+    /*
+    */
+    for (var j=0;j<dataSet_array.length;j++) {
 
-    context_water.beginPath();
-
-    console.log(colorArray[128])
-
-    for (i=0;i<dataSet.length;i++) {
-      amp = Math.round(map(dataSet[i], Val_min, Val_max, 0, 255))
-      context_water.strokeStyle=colorArray[amp]
-      context_water.moveTo(i * xScale, 50);
-      context_water.lineTo(i * xScale, 150);
+      for (var i=0;i<dataSet_array[j].length;i++) {
+        amp = Math.round(map(dataSet_array[j][i], Val_min, Val_max, 0, 255))
+        context_water.strokeStyle=colorArray[amp]
+        context_water.beginPath();
+        context_water.moveTo(i * xScale, y_offset[j]);
+        context_water.lineTo(i * xScale, y_offset[j] + step);
+        context_water.stroke();
+      }
     }
 
-    //context_water.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
-    context_water.stroke();
+    if (dataSet_array.length > steps) {
+      dataSet_array.shift();
+    }
     context_water.closePath();
   }
 
