@@ -14,6 +14,7 @@
   <script type="text/javascript" src="static/js/canvasjs.min.js"></script>
   <script type="text/javascript" src="static/jquery/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="static/js/Chart.bundle.min.js"></script>
+  <script type="text/javascript" src="static/js/aux_code.js"></script>
 
 <style>
 * {
@@ -37,50 +38,6 @@
 <script language="javascript" type="text/javascript">
 
   setInterval(timer_hour, 1000);
-  function timer_hour() {
-      var d = new Date();
-      $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
-  }
-
-  function linspacer(startValue, stopValue, cardinality, multiplier, adder) {
-    var arr = [];
-    var currValue = startValue;
-    var step = (stopValue - startValue) / (cardinality - 1);
-    for (var i = 0; i < cardinality; i++) {
-      arr.push(Math.round((currValue + (step * i)) * multiplier + adder));
-    }
-    return arr;
-  }
-
-  function map (num, in_min, in_max, out_min, out_max) {
-    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-  }
-
-  // Returns a single rgb color interpolation between given rgb color
-  // based on the factor given; via https://codepen.io/njmcode/pen/axoyD?editors=0010
-  function interpolateColor(color1, color2, factor) {
-      if (arguments.length < 3) { 
-          factor = 0.5; 
-      }
-      var result = color1.slice();
-      for (var i = 0; i < 3; i++) {
-          result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
-      }
-      return "rgb("+result[0].toString() + "," + result[1].toString() + "," + result[2].toString() + ")";
-  };
-  // My function to interpolate between two colors completely, returning an array
-  function interpolateColors(color1, color2, steps) {
-      var stepFactor = 1 / (steps - 1),
-          interpolatedColorArray = [];
-
-      color1 = color1.match(/\d+/g).map(Number);
-      color2 = color2.match(/\d+/g).map(Number);
-
-      for(var i = 0; i < steps; i++) {
-          interpolatedColorArray.push(interpolateColor(color1, color2, stepFactor * i));
-      }
-      return interpolatedColorArray;
-  }
 
   var colorArray = interpolateColors("rgb(0, 0, 0)", "rgb(255, 255, 255)", 256);
 
@@ -208,82 +165,7 @@
     }
     
   }
-  function initialize_canvasJS()
-  {
-    canvasJSchart = new CanvasJS.Chart("canvasJScanvas", {
-      axisX: {
-        title: "Freq"
-      },
-      axisY: {
-        title: "Amplitude"
-      },
-      data: [{
-        type: "spline",
-        name: "{{description}}",
-        showInLegend: false,
-        dataPoints: []
-      }]
-    });    
-  }
-  function draw_canvasJS(fft_data)
-  {
-    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-    var max = Math.max.apply(Math, fft_data) + 1
-    var min = Math.min.apply(Math, fft_data)
-    var dps = []; //dataPoints. 
 
-    for (var i = 0; i < fft_data.length; i++)
-      dps.push({
-        y: fft_data[i], label: axis[i]
-      });
-
-    canvasJSchart.options.data[0].dataPoints = dps;
-    canvasJSchart.options.axisY.maximum = max;
-    canvasJSchart.options.axisY.minimum = min;
-    canvasJSchart.render();
-    canvasJSchart.destroy();
-    //canvasJSchart = null;
-    //dps = null;
-  }
-  function initialize_chartJS()
-  {
-    var ctx = document.getElementById("chartJScanvas").getContext('2d');
-    chartJSchart = new Chart(ctx, {
-        type: 'line',
-        fill: false,
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'FFT',
-                data: [],
-                borderColor: 'rgba(0,0,255,0.3)',
-            }]
-        },
-        options: {
-            animation: false,
-            elements: {
-                line: {
-                  fill: false
-                },
-                point: {
-                  radius: 0 }
-            }
-        }
-    });
-  }
-  function draw_chartJS(fft_data)
-  { 
-    var axis = linspacer(-1, 1, fft_data.length, samp_rate/2.0, tune_freq)
-    chartJSchart.data = {
-            labels: axis,
-            datasets: [{
-                label: 'FFT',
-                data: fft_data,
-                borderColor: 'rgba(0,0,255,0.3)',
-            }]
-        }
-    chartJSchart.update();
-  }
   function init_fft_plot()
   {    
     canvas_plot = document.getElementById("canvas_plot");
@@ -327,34 +209,6 @@
     var yScale = (canvas_plot.height) / (Val_max - Val_min);
     var xScale = (canvas_plot.width) / dataSet.length;
 
-    //----------------y scale and selection-----------------------------
-    canvas_selection.width = window.innerWidth - 30;
-    canvas_selection.height = window.innerHeight - 400;
-
-    canvas_yScale.width = window.innerWidth - 30;
-    canvas_yScale.height = window.innerHeight - 400;
-    context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
-
-    for (y=5; y<=canvas_yScale.height; y+=20) {
-      //console.log(y)
-      context_yScale.fillText(Math.round((((y - 0) * (Val_max - Val_min)) / canvas_yScale.height) + Val_min), 5, canvas_yScale.height-y);
-      context_yScale.moveTo(5, canvas_yScale.height-y);
-      context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
-    }
-
-    context_yScale.moveTo(canvas_yScale.width/2, 0);
-    context_yScale.lineTo(canvas_yScale.width/2, canvas_yScale.height);
-
-    context_yScale.moveTo(sel_line, 0);
-    if (sel_line<canvas_yScale.width/2) {
-      context_yScale.fillText(sel_freq, sel_line, 15);
-    } else {
-      context_yScale.fillText(sel_freq, sel_line-50, 15);
-    }
-    context_yScale.lineTo(sel_line, canvas_yScale.height);
-
-    context_yScale.stroke();
-
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
     canvas_plot.height = window.innerHeight - 400;
@@ -387,6 +241,33 @@
     gradient.addColorStop("0.4","yellow");
     gradient.addColorStop("0.8","blue");
     gradient.addColorStop("1.0","green");
+
+    //----------------y scale and selection-----------------------------
+    canvas_selection.width = window.innerWidth - 30;
+    canvas_selection.height = window.innerHeight - 400;
+
+    canvas_yScale.width = window.innerWidth - 30;
+    canvas_yScale.height = window.innerHeight - 400;
+    context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
+
+    for (y=5; y<=canvas_yScale.height; y+=20) {
+      context_yScale.fillText(Math.round((((y - 0) * (Val_max - Val_min)) / canvas_yScale.height) + Val_min), 5, canvas_yScale.height-y);
+      context_yScale.moveTo(5, canvas_yScale.height-y);
+      context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
+    }
+
+    context_yScale.moveTo(canvas_yScale.width/2, 0);
+    context_yScale.lineTo(canvas_yScale.width/2, canvas_yScale.height);
+
+    context_yScale.moveTo(sel_line, 0);
+    if (sel_line<canvas_yScale.width/2) {
+      context_yScale.fillText(sel_freq, sel_line, 15);
+    } else {
+      context_yScale.fillText(sel_freq, sel_line-50, 15);
+    }
+    context_yScale.lineTo(sel_line, canvas_yScale.height);
+
+    context_yScale.stroke();
   }
   setInterval(update_plot_stuff, 1000);
 
@@ -412,7 +293,7 @@
     dataSet_array.push(dataSet);
     //console.log(dataSet_array.length, steps)
 
-    //----------------plot-------------------------------
+    //----------------waterfall plot-------------------------------
     water_div.style.top = window.innerHeight - 400 + 10
     canvas_water.width = canvas_plot.width
 
@@ -421,7 +302,7 @@
     for (var j=0;j<dataSet_array.length;j++) {
 
       for (var i=0;i<dataSet_array[j].length;i++) {
-        amp = Math.round(map(dataSet_array[j][i], Val_min, Val_max, 0, 255))
+        var amp = Math.round(map(dataSet_array[j][i], Val_min, Val_max, 0, 255))
         context_water.strokeStyle=colorArray[amp]
         context_water.beginPath();
         context_water.moveTo(i * xScale, y_offset[j]);
