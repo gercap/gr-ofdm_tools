@@ -49,11 +49,16 @@
   var rf_gain = 0;
   var sel_freq = 0;
 
+  var Val_min;
+  var Val_max;
+  var retune = false;
+
   var arrayBuffer;
   var fileReader = new FileReader();
   fileReader.onload = function(event) {
       arrayBuffer = event.target.result;
   };
+  var byteArray;
 
   function init()
   {
@@ -64,7 +69,8 @@
     //initialize_canvasJS();
     //initialize_chartJS();
     init_fft_plot();
-    init_water_plot()
+    init_water_plot();
+    //plot_request();
   }
   function doConnect_control()
   {
@@ -155,13 +161,15 @@
     fileReader.readAsArrayBuffer(evt.data);
     
     if (precision) {
-      var floatbyteArray = new Float32Array(arrayBuffer);
-      plot_fft_data(floatbyteArray);
-      plot_water_data(floatbyteArray);
+      //var floatbyteArray = new Float32Array(arrayBuffer);
+      byteArray = new Float32Array(arrayBuffer);
+      plot_fft_data(byteArray);
+      //plot_water_data(byteArray);
     } else {
-      var intbyteArray = new Int8Array(arrayBuffer);
-      plot_fft_data(intbyteArray);
-      plot_water_data(intbyteArray);
+      //var intbyteArray = new Int8Array(arrayBuffer);
+      byteArray = new Int8Array(arrayBuffer);
+      plot_fft_data(byteArray);
+      //plot_water_data(byteArray);
     }
     
   }
@@ -190,6 +198,11 @@
       var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0, tune_freq);
       sel_freq = axis[sel_line];
       writeToScreen("center/select: " + tune_freq + "/" + sel_freq +"\n");
+      if (retune) {
+        set_freq(sel_freq);
+      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0, sel_freq);
+      sel_freq = axis[sel_line];
+      }
 
     }, false);
 
@@ -201,7 +214,15 @@
     context_yScale.strokeStyle="#001";
   }
 
+  function plot_request() {
+    plot_fft_data(byteArray);
+    //plot_water_data(byteArray);
+    requestAnimationFrame(plot_request);
+  }
+
   function plot_fft_data(dataSet) {
+
+    if (dataSet) {
 
     Val_max = Math.max.apply(Math, dataSet);
     Val_min = Math.min.apply(Math, dataSet);
@@ -233,9 +254,13 @@
     //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
     context_plot.stroke();
     context_plot.closePath();
+
+    }
   }
   function update_plot_stuff()
   {
+    if (Val_max && Val_min) {
+
     gradient=context_plot.createLinearGradient(0, Val_max, 0, Val_min);
     gradient.addColorStop("0","red");
     gradient.addColorStop("0.4","yellow");
@@ -256,9 +281,9 @@
       context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
     }
 
+    //vertical line with frequency
     context_yScale.moveTo(canvas_yScale.width/2, 0);
     context_yScale.lineTo(canvas_yScale.width/2, canvas_yScale.height);
-
     context_yScale.moveTo(sel_line, 0);
     if (sel_line<canvas_yScale.width/2) {
       context_yScale.fillText(sel_freq, sel_line, 15);
@@ -268,6 +293,7 @@
     context_yScale.lineTo(sel_line, canvas_yScale.height);
 
     context_yScale.stroke();
+    }
   }
   setInterval(update_plot_stuff, 1000);
 
@@ -287,6 +313,8 @@
     steps = Math.ceil(canvas_water.height/step);
   }
   function plot_water_data(dataSet) {
+
+    if (dataSet) {
 
     var xScale = (canvas_plot.width) / dataSet.length;
 
@@ -315,6 +343,7 @@
       dataSet_array.shift();
     }
     context_water.closePath();
+    }
   }
 
   function onError_control(evt, data)
@@ -368,6 +397,14 @@
   function set_rf_gain(newrf_gain){
     $.post('/set_rf_gain', {rf_gain: newrf_gain}, function() {});
   }
+  function set_retuneOnClick(){
+    var checkBox = document.getElementById("retune");
+    if (checkBox.checked == true){
+        retune = true;
+    } else {
+        retune = false;
+    }
+  }
 </script>
 
 <body onload="doConnect_control(); doConnect_data()">
@@ -378,30 +415,36 @@
 
 <div class="display: table;">
   <div style="display: table-row">
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
       <input type="checkbox" id="precision" checked="checked" onclick="set_precision()">
       <label for="precision">High (32bit) precision</label>
     </div>
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
        <label id = "average_val" for="average">Average</label>
        <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="set_average(this.value)" onchange="set_average(this.value)">
     </div>
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
      <label id = "freq_val" for="freq">Freq [Hz]</label>
      <input id="freq" type="number" value="000000000" onchange="set_freq(this.value)">
     </div>
+
+    <div style="display: table-cell;">
+      <input type="checkbox" id="retune" onclick="set_retuneOnClick()">
+      <label for="retune">Tune on Click</label>
+    </div>
+
   </div>
   <div style="display: table-row">
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
      <label id = "rate_val" for="rate">Rate (FFT/s)</label>
      <input type="range" id="rate" min="1" max="25" step="1" value="2" oninput="set_rate(this.value)" onchange="set_rate(this.value)">
     </div> 
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
      <label id = "rf_gain_val" for="rf_gain">Rx Gain</label>
      <input type="range" id="rf_gain" min="0" max="50" step="1" value="15" oninput="set_rf_gain(this.value)" onchange="set_rf_gain(this.value)">
     </div>
 
-    <div style="width: 600px; display: table-cell;">
+    <div style="display: table-cell;">
       <form name="infoform">
           <textarea name="outputtext" rows="2" cols="30"></textarea>
       </form>

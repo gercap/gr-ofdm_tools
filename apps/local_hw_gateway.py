@@ -1,13 +1,9 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-#
-# SPDX-License-Identifier: GPL-3.0
-#
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Local Hw Gateway
-# Generated: Sun Sep  9 16:25:17 2018
-# GNU Radio version: 3.7.12.0
+# Generated: Fri Sep 14 17:19:57 2018
 ##################################################
 
 if __name__ == '__main__':
@@ -39,7 +35,7 @@ from gnuradio import qtgui
 
 class local_hw_gateway(gr.top_block, Qt.QWidget):
 
-    def __init__(self, freq_offset=0, nfft=int(2048*2), ppm=35, server_address="0.0.0.0", sr=int(1.2e6), udp_port=8888):
+    def __init__(self, freq_offset=0, nfft=int(2048/2), ppm=35, server_address="0.0.0.0", sr=int(2.4e6), udp_port=8888):
         gr.top_block.__init__(self, "Local Hw Gateway")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Local Hw Gateway")
@@ -62,7 +58,6 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
 
         self.settings = Qt.QSettings("GNU Radio", "local_hw_gateway")
         self.restoreGeometry(self.settings.value("geometry").toByteArray())
-
 
         ##################################################
         # Parameters
@@ -116,7 +111,7 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
         self.tabs_grid_layout_2 = Qt.QGridLayout()
         self.tabs_layout_2.addLayout(self.tabs_grid_layout_2)
         self.tabs.addTab(self.tabs_widget_2, 'R')
-        self.top_grid_layout.addWidget(self.tabs)
+        self.top_layout.addWidget(self.tabs)
         self.osmosdr_source_0_0 = osmosdr.source( args="numchan=" + str(1) + " " + '' )
         self.osmosdr_source_0_0.set_sample_rate(samp_rate)
         self.osmosdr_source_0_0.set_center_freq(tune_freq+offset, 0)
@@ -138,8 +133,6 @@ class local_hw_gateway(gr.top_block, Qt.QWidget):
           max_tu=max_tu,
           data_precision=precision,
           )
-
-
 
         ##################################################
         # Connections
@@ -290,7 +283,7 @@ def argument_parser():
         "-o", "--freq-offset", dest="freq_offset", type="eng_float", default=eng_notation.num_to_str(0),
         help="Set freq_offset [default=%default]")
     parser.add_option(
-        "-f", "--nfft", dest="nfft", type="intx", default=int(2048*2),
+        "-f", "--nfft", dest="nfft", type="intx", default=int(2048/2),
         help="Set nfft [default=%default]")
     parser.add_option(
         "-p", "--ppm", dest="ppm", type="eng_float", default=eng_notation.num_to_str(35),
@@ -299,7 +292,7 @@ def argument_parser():
         "-a", "--server-address", dest="server_address", type="string", default="0.0.0.0",
         help="Set server_address [default=%default]")
     parser.add_option(
-        "-s", "--sr", dest="sr", type="intx", default=int(1.2e6),
+        "-s", "--sr", dest="sr", type="intx", default=int(2.4e6),
         help="Set sr [default=%default]")
     parser.add_option(
         "-u", "--udp-port", dest="udp_port", type="intx", default=8888,
