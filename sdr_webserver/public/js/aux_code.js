@@ -1,6 +1,6 @@
-  function timer_hour() {
+  function timer_hour(desc) {
       var d = new Date();
-      $("#head_datetime").html("{{description}} " + d.toLocaleTimeString()) ;
+      $("#head_datetime").html(desc + d.toLocaleTimeString()) ;
   }
 
   function linspacer(startValue, stopValue, cardinality, multiplier, adder) {

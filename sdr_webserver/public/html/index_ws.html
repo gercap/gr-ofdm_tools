@@ -37,7 +37,7 @@
 
 <script language="javascript" type="text/javascript">
 
-  setInterval(timer_hour, 1000);
+  setInterval(timer_hour("{{description}}"), 1000);
 
   var colorArray = interpolateColors("rgb(0, 0, 0)", "rgb(255, 255, 255)", 256);
 
@@ -52,6 +52,7 @@
   var Val_min;
   var Val_max;
   var retune = false;
+  var  prevWaterfall;
 
   var arrayBuffer;
   var fileReader = new FileReader();
@@ -66,10 +67,7 @@
     var port = window.location.port;
     websocket_url_control = "{{scheme}}://" + host + ":9000/ws";
     websocket_url_data = "{{scheme}}://" + host + ":8000/ws";
-    //initialize_canvasJS();
-    //initialize_chartJS();
-    init_fft_plot();
-    init_water_plot();
+    init_plots();
     //plot_request();
   }
   function doConnect_control()
@@ -161,20 +159,15 @@
     fileReader.readAsArrayBuffer(evt.data);
     
     if (precision) {
-      //var floatbyteArray = new Float32Array(arrayBuffer);
       byteArray = new Float32Array(arrayBuffer);
       plot_fft_data(byteArray);
-      //plot_water_data(byteArray);
     } else {
-      //var intbyteArray = new Int8Array(arrayBuffer);
       byteArray = new Int8Array(arrayBuffer);
       plot_fft_data(byteArray);
-      //plot_water_data(byteArray);
     }
-    
   }
 
-  function init_fft_plot()
+  function init_plots()
   {    
     canvas_plot = document.getElementById("canvas_plot");
     context_plot = canvas_plot.getContext("2d");
@@ -185,7 +178,7 @@
     canvas_selection = document.getElementById("canvas_selection");
     context_selection = canvas_selection.getContext("2d");
 
-    elemLeft = canvas_selection.offsetLeft;
+    elemLeft = 8; //canvas_selection.offsetLeft;
     elemTop = canvas_selection.offsetTop;
 
     sel_line = 0;
@@ -212,11 +205,18 @@
     gradient.addColorStop("1.0","green");
 
     context_yScale.strokeStyle="#001";
+
+
+    //--------------waterfall stuff--------------------------
+    water_div = document.getElementById("water_div");
+
+    canvas_water = document.getElementById("canvas_water");
+    context_water = canvas_water.getContext("2d");
+    water_step = 2
   }
 
   function plot_request() {
     plot_fft_data(byteArray);
-    //plot_water_data(byteArray);
     requestAnimationFrame(plot_request);
   }
 
@@ -230,10 +230,12 @@
     var yScale = (canvas_plot.height) / (Val_max - Val_min);
     var xScale = (canvas_plot.width) / dataSet.length;
 
+    var water_xScale = (canvas_water.width) / dataSet.length;
+
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
     canvas_plot.height = window.innerHeight - 400;
-    water_div.style.top = canvas_plot.height + 10
+    water_div.style.top = canvas_plot.height + 10;
 
     context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
     context_plot.translate(0, canvas_plot.height + Val_min * yScale);
@@ -249,7 +251,20 @@
       //or - bars from min to value
       context_plot.moveTo(i * xScale, Val_min);
       context_plot.lineTo(i * xScale, dataSet[i]);
+
+      //----------waterfall plot-------------------
+      var amp = Math.round(map(dataSet[i], Val_min, Val_max, 0, 250))
+      context_water.strokeStyle=colorArray[amp]
+      context_water.beginPath();
+      context_water.moveTo(i*water_xScale, canvas_water.height-water_step);
+      context_water.lineTo(i*water_xScale, canvas_water.height);
+      context_water.stroke();
     }
+    context_water.closePath();
+
+    //save previously designed waterfall chunks
+    var imgData = context_water.getImageData(0, 0, canvas_water.width, canvas_water.height);
+    context_water.putImageData(imgData, 0, -water_step);
 
     //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
     context_plot.stroke();
@@ -295,56 +310,7 @@
     context_yScale.stroke();
     }
   }
-  setInterval(update_plot_stuff, 1000);
-
-  function init_water_plot()
-  {    
-    water_div = document.getElementById("water_div");
-
-    canvas_water = document.getElementById("canvas_water");
-    context_water = canvas_water.getContext("2d");
-
-    dataSet_array = []
-    y_offset = [];
-    step = 5
-    for (var i=0; i<canvas_water.height; i += step) {
-      y_offset.push(i);
-    }
-    steps = Math.ceil(canvas_water.height/step);
-  }
-  function plot_water_data(dataSet) {
-
-    if (dataSet) {
-
-    var xScale = (canvas_plot.width) / dataSet.length;
-
-    dataSet_array.push(dataSet);
-    //console.log(dataSet_array.length, steps)
-
-    //----------------waterfall plot-------------------------------
-    water_div.style.top = window.innerHeight - 400 + 10
-    canvas_water.width = canvas_plot.width
-
-    /*
-    */
-    for (var j=0;j<dataSet_array.length;j++) {
-
-      for (var i=0;i<dataSet_array[j].length;i++) {
-        var amp = Math.round(map(dataSet_array[j][i], Val_min, Val_max, 0, 255))
-        context_water.strokeStyle=colorArray[amp]
-        context_water.beginPath();
-        context_water.moveTo(i * xScale, y_offset[j]);
-        context_water.lineTo(i * xScale, y_offset[j] + step);
-        context_water.stroke();
-      }
-    }
-
-    if (dataSet_array.length > steps) {
-      dataSet_array.shift();
-    }
-    context_water.closePath();
-    }
-  }
+  setInterval(update_plot_stuff, 500);
 
   function onError_control(evt, data)
   {
@@ -455,12 +421,12 @@
 </div>
 
 <div style="position: relative;">
- <canvas id="canvas_yScale" width="100" height="100" 
-   style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
- <canvas id="canvas_plot" width="100" height="100" 
-   style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
- <canvas id="canvas_selection" width="100" height="100" 
-   style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
+ <canvas id="canvas_yScale" height="100" 
+   style="position: absolute; width:100%; left: 0; top: 0; z-index: 1;"></canvas>
+ <canvas id="canvas_plot" height="100" 
+   style="position: absolute; width:100%; left: 0; top: 0; z-index: 0;"></canvas>
+ <canvas id="canvas_selection" height="100" 
+   style="position: absolute; width:100%; left: 0; top: 0; z-index: 2;"></canvas>
 </div>
 
 <div id="water_div" style="position: relative; left: 0; top: 400; z-index: 0;">
