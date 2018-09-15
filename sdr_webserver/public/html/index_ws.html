@@ -234,7 +234,7 @@
 
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
-    canvas_plot.height = window.innerHeight - 400;
+    canvas_plot.height = window.innerHeight - 600;
     water_div.style.top = canvas_plot.height + 10;
 
     context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
@@ -256,15 +256,18 @@
       var amp = Math.round(map(dataSet[i], Val_min, Val_max, 0, 250))
       context_water.strokeStyle=colorArray[amp]
       context_water.beginPath();
-      context_water.moveTo(i*water_xScale, canvas_water.height-water_step);
-      context_water.lineTo(i*water_xScale, canvas_water.height);
+      //context_water.moveTo(i*water_xScale, canvas_water.height-water_step);
+      context_water.moveTo(i*water_xScale, 0);
+      //context_water.lineTo(i*water_xScale, canvas_water.height);
+      context_water.lineTo(i*water_xScale, water_step);
       context_water.stroke();
     }
     context_water.closePath();
 
     //save previously designed waterfall chunks
     var imgData = context_water.getImageData(0, 0, canvas_water.width, canvas_water.height);
-    context_water.putImageData(imgData, 0, -water_step);
+    //context_water.putImageData(imgData, 0, -water_step);
+    context_water.putImageData(imgData, 0, water_step);
 
     //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
     context_plot.stroke();
@@ -284,10 +287,10 @@
 
     //----------------y scale and selection-----------------------------
     canvas_selection.width = window.innerWidth - 30;
-    canvas_selection.height = window.innerHeight - 400;
+    canvas_selection.height = window.innerHeight - 600;
 
     canvas_yScale.width = window.innerWidth - 30;
-    canvas_yScale.height = window.innerHeight - 400;
+    canvas_yScale.height = window.innerHeight - 600;
     context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
 
     for (y=5; y<=canvas_yScale.height; y+=20) {
@@ -430,7 +433,7 @@
 </div>
 
 <div id="water_div" style="position: relative; left: 0; top: 400; z-index: 0;">
- <canvas id="canvas_water" style="height: 200px; width: 100%;"></canvas>
+ <canvas id="canvas_water" style="height: 400px; width: 100%;"></canvas>
 </div> 
 
 <!--
