@@ -212,7 +212,7 @@
 
     canvas_water = document.getElementById("canvas_water");
     context_water = canvas_water.getContext("2d");
-    water_step = 2
+    water_step = 1
   }
 
   function plot_request() {
@@ -234,7 +234,8 @@
 
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
-    canvas_plot.height = window.innerHeight - 600;
+    canvas_plot.height = window.innerHeight - 400;
+    if (canvas_plot.height > 300) {canvas_plot.height = 300}
     water_div.style.top = canvas_plot.height + 10;
 
     context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
@@ -272,9 +273,9 @@
     //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
     context_plot.stroke();
     context_plot.closePath();
-
     }
   }
+
   function update_plot_stuff()
   {
     if (Val_max && Val_min) {
@@ -286,11 +287,11 @@
     gradient.addColorStop("1.0","green");
 
     //----------------y scale and selection-----------------------------
-    canvas_selection.width = window.innerWidth - 30;
-    canvas_selection.height = window.innerHeight - 600;
+    canvas_selection.width = canvas_plot.width;
+    canvas_selection.height = canvas_plot.height;
 
-    canvas_yScale.width = window.innerWidth - 30;
-    canvas_yScale.height = window.innerHeight - 600;
+    canvas_yScale.width = canvas_plot.width;
+    canvas_yScale.height = canvas_plot.height;
     context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
 
     for (y=5; y<=canvas_yScale.height; y+=20) {
