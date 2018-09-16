@@ -98,7 +98,7 @@ class data_processor(Thread):
     self.average = self.xmlrpc_server.get_av()
     self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
-    print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average()
+    print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average(), self.get_precision()
 
     self.reasembled_frame = ''
     if self.precision:
