@@ -132,6 +132,7 @@ class data_processor(Thread):
         self.shared_queue_control.put({"precision":self.precision})
 
   def get_precision(self):
+    self.precision = self.xmlrpc_server.get_precision()
     self.shared_queue_control.put({"precision":self.precision})
     return self.precision
 
@@ -142,6 +143,7 @@ class data_processor(Thread):
     self.shared_queue_control.put({"samp_rate":self.samp_rate})
 
   def get_tune_freq(self):
+    self.tune_freq = self.xmlrpc_server.get_tune_freq()
     self.shared_queue_control.put({"tune_freq":self.tune_freq})
     return self.tune_freq
 
@@ -151,6 +153,7 @@ class data_processor(Thread):
     self.xmlrpc_server.set_samp_rate(float(self.samp_rate))
 
   def get_samp_rate(self):
+    self.samp_rate = self.xmlrpc_server.get_samp_rate()
     self.shared_queue_control.put({"samp_rate":self.samp_rate})
     return self.samp_rate
 
@@ -160,6 +163,7 @@ class data_processor(Thread):
     self.shared_queue_control.put({"rate":self.rate})
 
   def get_rate(self):
+    self.rate = self.xmlrpc_server.get_rate()
     self.shared_queue_control.put({"rate":self.rate})
     return self.rate
 
@@ -169,6 +173,7 @@ class data_processor(Thread):
     self.shared_queue_control.put({"average":self.average})
 
   def get_average(self):
+    self.average = self.xmlrpc_server.get_av()
     self.shared_queue_control.put({"average":self.average})
     return self.average
 
@@ -179,10 +184,12 @@ class data_processor(Thread):
     self.get_gain_range()
 
   def get_rf_gain(self):
+    self.rf_gain = self.xmlrpc_server.get_rf_gain()
     self.shared_queue_control.put({"rf_gain":self.rf_gain})
     return self.rf_gain
 
   def get_gain_range(self):
+    self.gain_range = [self.xmlrpc_server.get_rf_gain_start(), self.xmlrpc_server.get_rf_gain_step(), self.xmlrpc_server.get_rf_gain_stop()]
     self.shared_queue_control.put({"gain_range":self.gain_range})
     return self.gain_range    
 
