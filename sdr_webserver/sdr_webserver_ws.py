@@ -1,5 +1,8 @@
-# encoding: utf-8
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# 
+# Copyright 2017 Germano Capela at gmail.com
+# 
 import zmq, Queue, os, sys, time, struct, signal, datetime
 from threading import Thread
 import Queue
@@ -71,6 +74,11 @@ class web_site(object):
         self.data_processor.set_precision(False)
 
     @cherrypy.expose
+    def set_samp_rate(self, samp_rate):
+      cherrypy.response.headers['Content-Type'] = 'application/json'
+      self.data_processor.set_samp_rate(float(samp_rate))
+
+    @cherrypy.expose
     def index(self):
 
       template = env.get_template('./public/html/index_ws.html')
@@ -98,6 +106,8 @@ class data_processor(Thread):
     self.average = self.xmlrpc_server.get_av()
     self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
+    self.gain_range = [self.xmlrpc_server.get_rf_gain_start(), self.xmlrpc_server.get_rf_gain_step(), self.xmlrpc_server.get_rf_gain_stop()]
+    print 'gain range', self.gain_range
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average(), self.get_precision()
 
     self.reasembled_frame = ''
@@ -136,8 +146,9 @@ class data_processor(Thread):
     return self.tune_freq
 
   def set_samp_rate(self, samp_rate):
-    self.shared_queue_control.put({"samp_rate":self.samp_rate})
     self.samp_rate = samp_rate
+    self.shared_queue_control.put({"samp_rate":self.samp_rate})
+    self.xmlrpc_server.set_samp_rate(float(self.samp_rate))
 
   def get_samp_rate(self):
     self.shared_queue_control.put({"samp_rate":self.samp_rate})
@@ -165,10 +176,15 @@ class data_processor(Thread):
     self.rf_gain = rf_gain
     self.xmlrpc_server.set_rf_gain(rf_gain)
     self.shared_queue_control.put({"rf_gain":self.rf_gain})
+    self.get_gain_range()
 
   def get_rf_gain(self):
     self.shared_queue_control.put({"rf_gain":self.rf_gain})
     return self.rf_gain
+
+  def get_gain_range(self):
+    self.shared_queue_control.put({"gain_range":self.gain_range})
+    return self.gain_range    
 
   def get_all_statics(self):
     self.get_average()
@@ -177,6 +193,7 @@ class data_processor(Thread):
     self.get_samp_rate()
     self.get_precision()
     self.get_rf_gain()
+    self.get_gain_range()
 
   def run(self):
 

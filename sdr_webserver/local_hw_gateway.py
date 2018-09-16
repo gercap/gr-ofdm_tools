@@ -6,7 +6,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Local Hw Gateway
-# Generated: Sun Sep 16 11:54:41 2018
+# Generated: Sun Sep 16 17:11:21 2018
 # GNU Radio version: 3.7.12.0
 ##################################################
 
@@ -26,7 +26,7 @@ import time
 
 class local_hw_gateway(gr.top_block):
 
-    def __init__(self, arg="", freq_offset=0, nfft=int(2048), ppm=35, sr=int(2.4e6), zmq_port=5005):
+    def __init__(self, arg="", freq_offset=0, nfft=int(2048), ppm=0, sr=int(2.4e6), zmq_port=5005):
         gr.top_block.__init__(self, "Local Hw Gateway")
 
         ##################################################
@@ -45,6 +45,9 @@ class local_hw_gateway(gr.top_block):
         self.max_tu = max_tu = 1472*20
         self.tune_freq = tune_freq = 103e6
         self.samp_rate = samp_rate = sr
+        self.rf_gain_stop = rf_gain_stop = 0
+        self.rf_gain_step = rf_gain_step = 0
+        self.rf_gain_start = rf_gain_start = 0
         self.rf_gain = rf_gain = 45
         self.req_mtu = req_mtu = nfft*4
         self.rate = rate = 1
@@ -59,24 +62,63 @@ class local_hw_gateway(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
+        self.rf_source = osmosdr.source( args="numchan=" + str(1) + " " + arg )
+        self.rf_source.set_sample_rate(samp_rate)
+        self.rf_source.set_center_freq(tune_freq+offset, 0)
+        self.rf_source.set_freq_corr(ppm_corr, 0)
+        self.rf_source.set_dc_offset_mode(0, 0)
+        self.rf_source.set_iq_balance_mode(0, 0)
+        self.rf_source.set_gain_mode(False, 0)
+        self.rf_source.set_gain(rf_gain, 0)
+        self.rf_source.set_if_gain(if_gain, 0)
+        self.rf_source.set_bb_gain(bb_gain, 0)
+        self.rf_source.set_antenna('', 0)
+        self.rf_source.set_bandwidth(samp_rate, 0)
+
         self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink("tcp://0.0.0.0:"+str(zmq_port), 100)
         self.xmlrpc_server = SimpleXMLRPCServer.SimpleXMLRPCServer(("0.0.0.0", 7658), allow_none=True)
         self.xmlrpc_server.register_instance(self)
         self.xmlrpc_server_thread = threading.Thread(target=self.xmlrpc_server.serve_forever)
         self.xmlrpc_server_thread.daemon = True
         self.xmlrpc_server_thread.start()
-        self.osmosdr_source_0_0 = osmosdr.source( args="numchan=" + str(1) + " " + arg )
-        self.osmosdr_source_0_0.set_sample_rate(samp_rate)
-        self.osmosdr_source_0_0.set_center_freq(tune_freq+offset, 0)
-        self.osmosdr_source_0_0.set_freq_corr(ppm_corr, 0)
-        self.osmosdr_source_0_0.set_dc_offset_mode(0, 0)
-        self.osmosdr_source_0_0.set_iq_balance_mode(0, 0)
-        self.osmosdr_source_0_0.set_gain_mode(False, 0)
-        self.osmosdr_source_0_0.set_gain(rf_gain, 0)
-        self.osmosdr_source_0_0.set_if_gain(if_gain, 0)
-        self.osmosdr_source_0_0.set_bb_gain(bb_gain, 0)
-        self.osmosdr_source_0_0.set_antenna('', 0)
-        self.osmosdr_source_0_0.set_bandwidth(0, 0)
+
+        def _rf_gain_stop_probe():
+            while True:
+                val = self.rf_source.get_gain_range().stop()
+                try:
+                    self.set_rf_gain_stop(val)
+                except AttributeError:
+                    pass
+                time.sleep(1.0 / (0.001))
+        _rf_gain_stop_thread = threading.Thread(target=_rf_gain_stop_probe)
+        _rf_gain_stop_thread.daemon = True
+        _rf_gain_stop_thread.start()
+
+
+        def _rf_gain_step_probe():
+            while True:
+                val = self.rf_source.get_gain_range().step()
+                try:
+                    self.set_rf_gain_step(val)
+                except AttributeError:
+                    pass
+                time.sleep(1.0 / (0.001))
+        _rf_gain_step_thread = threading.Thread(target=_rf_gain_step_probe)
+        _rf_gain_step_thread.daemon = True
+        _rf_gain_step_thread.start()
+
+
+        def _rf_gain_start_probe():
+            while True:
+                val = self.rf_source.get_gain_range().start()
+                try:
+                    self.set_rf_gain_start(val)
+                except AttributeError:
+                    pass
+                time.sleep(1.0 / (0.001))
+        _rf_gain_start_thread = threading.Thread(target=_rf_gain_start_probe)
+        _rf_gain_start_thread.daemon = True
+        _rf_gain_start_thread.start()
 
         self.ofdm_tools_local_worker_0 = ofdm_tools.local_worker(
           fft_len=nfft,
@@ -93,7 +135,7 @@ class local_hw_gateway(gr.top_block):
         # Connections
         ##################################################
         self.msg_connect((self.ofdm_tools_local_worker_0, 'pdus'), (self.zeromq_pub_msg_sink_0, 'in'))
-        self.connect((self.osmosdr_source_0_0, 0), (self.ofdm_tools_local_worker_0, 0))
+        self.connect((self.rf_source, 0), (self.ofdm_tools_local_worker_0, 0))
 
     def get_arg(self):
         return self.arg
@@ -148,22 +190,41 @@ class local_hw_gateway(gr.top_block):
 
     def set_tune_freq(self, tune_freq):
         self.tune_freq = tune_freq
-        self.osmosdr_source_0_0.set_center_freq(self.tune_freq+self.offset, 0)
+        self.rf_source.set_center_freq(self.tune_freq+self.offset, 0)
 
     def get_samp_rate(self):
         return self.samp_rate
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.osmosdr_source_0_0.set_sample_rate(self.samp_rate)
+        self.rf_source.set_sample_rate(self.samp_rate)
+        self.rf_source.set_bandwidth(self.samp_rate, 0)
         self.ofdm_tools_local_worker_0.set_sample_rate(self.samp_rate)
+
+    def get_rf_gain_stop(self):
+        return self.rf_gain_stop
+
+    def set_rf_gain_stop(self, rf_gain_stop):
+        self.rf_gain_stop = rf_gain_stop
+
+    def get_rf_gain_step(self):
+        return self.rf_gain_step
+
+    def set_rf_gain_step(self, rf_gain_step):
+        self.rf_gain_step = rf_gain_step
+
+    def get_rf_gain_start(self):
+        return self.rf_gain_start
+
+    def set_rf_gain_start(self, rf_gain_start):
+        self.rf_gain_start = rf_gain_start
 
     def get_rf_gain(self):
         return self.rf_gain
 
     def set_rf_gain(self, rf_gain):
         self.rf_gain = rf_gain
-        self.osmosdr_source_0_0.set_gain(self.rf_gain, 0)
+        self.rf_source.set_gain(self.rf_gain, 0)
 
     def get_req_mtu(self):
         return self.req_mtu
@@ -190,21 +251,21 @@ class local_hw_gateway(gr.top_block):
 
     def set_ppm_corr(self, ppm_corr):
         self.ppm_corr = ppm_corr
-        self.osmosdr_source_0_0.set_freq_corr(self.ppm_corr, 0)
+        self.rf_source.set_freq_corr(self.ppm_corr, 0)
 
     def get_offset(self):
         return self.offset
 
     def set_offset(self, offset):
         self.offset = offset
-        self.osmosdr_source_0_0.set_center_freq(self.tune_freq+self.offset, 0)
+        self.rf_source.set_center_freq(self.tune_freq+self.offset, 0)
 
     def get_if_gain(self):
         return self.if_gain
 
     def set_if_gain(self, if_gain):
         self.if_gain = if_gain
-        self.osmosdr_source_0_0.set_if_gain(self.if_gain, 0)
+        self.rf_source.set_if_gain(self.if_gain, 0)
 
     def get_fragments_per_fft(self):
         return self.fragments_per_fft
@@ -217,7 +278,7 @@ class local_hw_gateway(gr.top_block):
 
     def set_bb_gain(self, bb_gain):
         self.bb_gain = bb_gain
-        self.osmosdr_source_0_0.set_bb_gain(self.bb_gain, 0)
+        self.rf_source.set_bb_gain(self.bb_gain, 0)
 
     def get_av(self):
         return self.av
@@ -239,7 +300,7 @@ def argument_parser():
         "-f", "--nfft", dest="nfft", type="intx", default=int(2048),
         help="Set nfft [default=%default]")
     parser.add_option(
-        "-p", "--ppm", dest="ppm", type="eng_float", default=eng_notation.num_to_str(35),
+        "-p", "--ppm", dest="ppm", type="eng_float", default=eng_notation.num_to_str(0),
         help="Set ppm [default=%default]")
     parser.add_option(
         "-s", "--sr", dest="sr", type="intx", default=int(2.4e6),
