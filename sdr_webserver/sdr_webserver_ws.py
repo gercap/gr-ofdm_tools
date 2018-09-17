@@ -366,14 +366,13 @@ if __name__ == '__main__':
   parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
   parser.add_option("--bind", default='', type='string', action="store", dest="bind", help="ws bind address")
   parser.add_option("--port", default=9000, type='int', action="store", dest="port", help="ws port (9000)")
-  parser.add_option("--rpchost", default='127.0.0.1', type='string', action="store", dest="rpchost", help="rpc server hostname (localhost)")
+  parser.add_option("--serverIP", default='127.0.0.1', type='string', action="store", dest="serverIP", help="rpc server hostname (localhost)")
   parser.add_option("--rpcport", default=7658, type='int', action="store", dest="rpcport", help="xml rpc server (127.0.0.1)")
+  parser.add_option("--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
   parser.add_option("--ssl", default=0, type='int', action="store", dest="ssl", help="ssl (1: on, 0: off (default))")
   parser.add_option("--cert", default='./cert.pem', type='string', action="store", dest="cert", help="cert (./cert.pem)")
   parser.add_option("--key", default='./key.pem', type='string', action="store", dest="key", help="key (./key.pem)")
   parser.add_option("--ver", default=ssl.PROTOCOL_TLSv1, type=int, action="store", dest="ver", help="ssl version")
-  parser.add_option("--zmqip", default='127.0.0.1', type='string', action="store", dest="zmqip", help="IP of ZMQ publisher")
-  parser.add_option("--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
 
   (options, args) = parser.parse_args()
 
@@ -401,19 +400,19 @@ if __name__ == '__main__':
   _ws_dispatcher_data = ws_dispatcher_data(shared_queue_data)
   _ws_dispatcher_data.start()
 
-  xmlrpc_server = xmlrpclib.Server("http://" + options.rpchost + ":"+str(options.rpcport))
+  xmlrpc_server = xmlrpclib.Server("http://" + options.serverIP + ":"+str(options.rpcport))
   while True:
     try:
       dummy = xmlrpc_server.get_samp_rate()
     except:
-      print 'rxmlrpc offline?', "http://" + options.rpchost + ":"+str(options.rpcport)
+      print 'rxmlrpc offline?', "http://" + options.serverIP + ":"+str(options.rpcport)
       time.sleep(3)
       pass
     else:
-      print 'rxmlrpc okay!', "http://" + options.rpchost + ":"+str(options.rpcport)
+      print 'rxmlrpc okay!', "http://" + options.serverIP + ":"+str(options.rpcport)
       break
 
-  _data_processor = data_processor(options.zmqip, options.zmqport, shared_queue_control, shared_queue_data, xmlrpc_server)
+  _data_processor = data_processor(options.serverIP, options.zmqport, shared_queue_control, shared_queue_data, xmlrpc_server)
   _data_processor.start()
   
   print 'server okay!', "http://127.0.0.1:8080"
