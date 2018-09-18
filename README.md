@@ -13,7 +13,10 @@ Miscellaneous SDR tools amd GNU Radio blocks that fulfill some of my interests:
 Requires:
 - numpy and scipy;
 - matplotlib;
-- pycrypto.
+- pycrypto;
+- python zmq;
+- cherrypy3;
+- SimpleWebSocketServer https://github.com/dpallot/simple-websocket-server.git
 
 Install:
 - regular OOT module procedure w/ cmake
