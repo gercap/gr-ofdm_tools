@@ -106,8 +106,12 @@ class data_processor(Thread):
     self.average = self.xmlrpc_server.get_av()
     self.rf_gain = self.xmlrpc_server.get_rf_gain()
 
-    self.gain_range = [self.xmlrpc_server.get_rf_gain_start(), self.xmlrpc_server.get_rf_gain_step(), self.xmlrpc_server.get_rf_gain_stop()]
-    print 'gain range', self.gain_range
+    self.device = self.xmlrpc_server.get_arg()
+    if "airspyhf" not in self.device:
+      self.gain_range = [self.xmlrpc_server.get_rf_gain_start(), self.xmlrpc_server.get_rf_gain_step(), self.xmlrpc_server.get_rf_gain_stop()]
+      print 'gain range', self.gain_range
+    else:
+      self.gain_range = [0, 0, 0]
     print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average(), self.get_precision()
 
     self.reasembled_frame = ''

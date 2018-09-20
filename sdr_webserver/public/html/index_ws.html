@@ -50,10 +50,10 @@
   var sel_freq = 0;
   var gain_range = 0;
 
-  var Val_min;
-  var Val_max;
+  var FFT_min;
+  var FFT_max;
   var retune = false;
-  var  prevWaterfall;
+  var use_FFT_min_man = false;
 
   var arrayBuffer;
   var fileReader = new FileReader();
@@ -208,6 +208,25 @@
 
     }, false);
 
+    canvas_selection.addEventListener('wheel', function(event) {
+        event.preventDefault();
+        // Get mouse offset.
+        var mousex = event.clientX - canvas_selection.offsetLeft;
+        var mousey = event.clientY - canvas_selection.offsetTop;
+        // Normalize wheel to +1 or -1.
+        var wheel = event.deltaY;
+
+        use_FFT_min_man = true;
+        document.getElementById("use_FFT_min_man").checked = true;
+
+        if (wheel > 0) {
+          document.getElementById("fft_min_val").value ++;
+        } else {
+          document.getElementById("fft_min_val").value --;
+        }
+        FFT_min = document.getElementById("fft_min_val").value;
+    }, false);
+
     gradient = context_plot.createLinearGradient(0, 0, 0, -200);
     gradient.addColorStop("0","yellow");
     gradient.addColorStop("0.5","blue");
@@ -233,10 +252,12 @@
 
     if (dataSet) {
 
-    Val_max = Math.max.apply(Math, dataSet);
-    Val_min = Math.min.apply(Math, dataSet);
+    FFT_max = Math.max.apply(Math, dataSet);
+    if (!use_FFT_min_man) {
+      FFT_min = Math.min.apply(Math, dataSet);
+    };
 
-    var yScale = (canvas_plot.height) / (Val_max - Val_min);
+    var yScale = (canvas_plot.height) / (FFT_max - FFT_min);
     var xScale = (canvas_plot.width) / dataSet.length;
 
     var water_xScale = (canvas_water.width) / dataSet.length;
@@ -248,7 +269,7 @@
     water_div.style.top = canvas_plot.height + 10;
 
     context_plot.setTransform(1, 0, 0, 1, 0, 0); //reset translation
-    context_plot.translate(0, canvas_plot.height + Val_min * yScale);
+    context_plot.translate(0, canvas_plot.height + FFT_min * yScale);
     context_plot.scale(1, -1 * yScale);
 
     context_plot.strokeStyle=gradient
@@ -259,11 +280,11 @@
       //line connecting values
       //context_plot.lineTo(i * xScale, dataSet[i]);
       //or - bars from min to value
-      context_plot.moveTo(i * xScale, Val_min);
+      context_plot.moveTo(i * xScale, FFT_min);
       context_plot.lineTo(i * xScale, dataSet[i]);
 
       //----------waterfall plot-------------------
-      var amp = Math.round(map(dataSet[i], Val_min, Val_max, 0, 250))
+      var amp = Math.round(map(dataSet[i], FFT_min, FFT_max, 0, 250))
       context_water.strokeStyle=colorArray[amp]
       context_water.beginPath();
       //context_water.moveTo(i*water_xScale, canvas_water.height-water_step);
@@ -279,7 +300,7 @@
     //context_water.putImageData(imgData, 0, -water_step);
     context_water.putImageData(imgData, 0, water_step);
 
-    //context_plot.rect(0, Val_max, canvas_plot.width, Val_min - Val_max);
+    //context_plot.rect(0, FFT_max, canvas_plot.width, FFT_min - FFT_max);
     context_plot.stroke();
     context_plot.closePath();
     }
@@ -287,9 +308,9 @@
 
   function update_plot_stuff()
   {
-    if (Val_max && Val_min) {
+    if (FFT_max && FFT_min) {
 
-    gradient=context_plot.createLinearGradient(0, Val_max, 0, Val_min);
+    gradient=context_plot.createLinearGradient(0, FFT_max, 0, FFT_min);
     gradient.addColorStop("0","red");
     gradient.addColorStop("0.4","yellow");
     gradient.addColorStop("0.8","blue");
@@ -304,7 +325,7 @@
     context_yScale.rect(0, 0, canvas_yScale.width, canvas_yScale.height);
 
     for (y=5; y<=canvas_yScale.height; y+=20) {
-      context_yScale.fillText(Math.round((((y - 0) * (Val_max - Val_min)) / canvas_yScale.height) + Val_min), 5, canvas_yScale.height-y);
+      context_yScale.fillText(Math.round((((y - 0) * (FFT_max - FFT_min)) / canvas_yScale.height) + FFT_min), 5, canvas_yScale.height-y);
       context_yScale.moveTo(5, canvas_yScale.height-y);
       context_yScale.lineTo(canvas_yScale.width, canvas_yScale.height-y);
     }
@@ -325,12 +346,12 @@
   }
   setInterval(update_plot_stuff, 500);
 
-  function onError_control(evt, data)
+  function onError_control(evt, link)
   {
     writeToScreen('error control: ' + link + " " + evt.data + '\n');
     websocket_control.close();
   }
-  function onError_data(evt, data)
+  function onError_data(evt, link)
   {
     writeToScreen('error data: ' + link + " " + evt.data + '\n');
     websocket_data.close();
@@ -378,16 +399,27 @@
   }
   function set_retuneOnClick(){
     var checkBox = document.getElementById("retune");
-    if (checkBox.checked == true){
-        retune = true;
-    } else {
-        retune = false;
-    }
+    retune = checkBox.checked;
   }
 
   function set_samp_rate(newsamprate){
     $.post('/set_samp_rate', {samp_rate: newsamprate}, function() {});
   }
+
+  function set_use_FFT_min_man() {
+      var checkBox = document.getElementById("use_FFT_min_man");
+      use_FFT_min_man = checkBox.checked;
+      if (use_FFT_min_man) {
+        FFT_min = document.getElementById("fft_min_val").value
+      }
+  }
+
+  function set_fft_min_man(newfftminman){
+    FFT_min = Math.round(newfftminman);
+    use_FFT_min_man = true;
+    checkBox = document.getElementById("use_FFT_min_man").checked = true;
+  
+  FFT_min = document.getElementById("fft_min_val").value}
 
 </script>
 
@@ -405,7 +437,7 @@
     </div>
     <div style="display: table-cell;">
        <label id = "average_val" for="average">Avg</label>
-       <input type="range" id="average" min="0.01" max="0.99" step=".01" oninput="set_average(this.value)" onchange="set_average(this.value)">
+       <input type="range" id="average" min="0.001" max="0.999" step=".001" oninput="set_average(this.value)" onchange="set_average(this.value)">
     </div>
     <div style="display: table-cell;">
      <label id = "freq_val" for="freq">Freq [Hz]</label>
@@ -415,6 +447,15 @@
     <div style="display: table-cell;">
       <input type="checkbox" id="retune" onclick="set_retuneOnClick()">
       <label for="retune">Tune on Click</label>
+    </div>
+
+    <div style="display: table-cell;">
+      <input type="checkbox" id="use_FFT_min_man" onclick="set_use_FFT_min_man()">
+    </div>
+
+    <div style="display: table-cell;">
+     <label id ="FFT_min_man" for="fft_min_val">Man Min</label>
+     <input id="fft_min_val" type="number" value="0" onchange="set_fft_min_man(this.value)" oninput="set_fft_min_man(this.value)">
     </div>
 
   </div>

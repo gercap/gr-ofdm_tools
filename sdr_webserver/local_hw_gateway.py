@@ -6,7 +6,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Local Hw Gateway
-# Generated: Sun Sep 16 17:11:21 2018
+# Generated: Thu Sep 20 21:53:04 2018
 # GNU Radio version: 3.7.12.0
 ##################################################
 
@@ -26,7 +26,7 @@ import time
 
 class local_hw_gateway(gr.top_block):
 
-    def __init__(self, arg="", freq_offset=0, nfft=int(2048), ppm=0, sr=int(2.4e6), zmq_port=5005):
+    def __init__(self, arg="", freq_offset=0, nfft=int(2048), ppm_corr=0, samp_rate=2.4e6, zmq_port=5005):
         gr.top_block.__init__(self, "Local Hw Gateway")
 
         ##################################################
@@ -35,8 +35,8 @@ class local_hw_gateway(gr.top_block):
         self.arg = arg
         self.freq_offset = freq_offset
         self.nfft = nfft
-        self.ppm = ppm
-        self.sr = sr
+        self.ppm_corr = ppm_corr
+        self.samp_rate = samp_rate
         self.zmq_port = zmq_port
 
         ##################################################
@@ -44,7 +44,6 @@ class local_hw_gateway(gr.top_block):
         ##################################################
         self.max_tu = max_tu = 1472*20
         self.tune_freq = tune_freq = 103e6
-        self.samp_rate = samp_rate = sr
         self.rf_gain_stop = rf_gain_stop = 0
         self.rf_gain_step = rf_gain_step = 0
         self.rf_gain_start = rf_gain_start = 0
@@ -52,7 +51,6 @@ class local_hw_gateway(gr.top_block):
         self.req_mtu = req_mtu = nfft*4
         self.rate = rate = 1
         self.precision = precision = True
-        self.ppm_corr = ppm_corr = ppm
         self.offset = offset = freq_offset
         self.if_gain = if_gain = 20
         self.fragments_per_fft = fragments_per_fft = int(math.ceil((nfft*4.0+2.0)/max_tu))
@@ -122,7 +120,7 @@ class local_hw_gateway(gr.top_block):
 
         self.ofdm_tools_local_worker_0 = ofdm_tools.local_worker(
           fft_len=nfft,
-          sample_rate=samp_rate,
+          sample_rate=int(samp_rate),
           average=av,
           rate=rate,
           max_tu=max_tu,
@@ -158,19 +156,21 @@ class local_hw_gateway(gr.top_block):
         self.set_req_mtu(self.nfft*4)
         self.set_fragments_per_fft(int(math.ceil((self.nfft*4.0+2.0)/self.max_tu)))
 
-    def get_ppm(self):
-        return self.ppm
+    def get_ppm_corr(self):
+        return self.ppm_corr
 
-    def set_ppm(self, ppm):
-        self.ppm = ppm
-        self.set_ppm_corr(self.ppm)
+    def set_ppm_corr(self, ppm_corr):
+        self.ppm_corr = ppm_corr
+        self.rf_source.set_freq_corr(self.ppm_corr, 0)
 
-    def get_sr(self):
-        return self.sr
+    def get_samp_rate(self):
+        return self.samp_rate
 
-    def set_sr(self, sr):
-        self.sr = sr
-        self.set_samp_rate(self.sr)
+    def set_samp_rate(self, samp_rate):
+        self.samp_rate = samp_rate
+        self.rf_source.set_sample_rate(self.samp_rate)
+        self.rf_source.set_bandwidth(self.samp_rate, 0)
+        self.ofdm_tools_local_worker_0.set_sample_rate(int(self.samp_rate))
 
     def get_zmq_port(self):
         return self.zmq_port
@@ -191,15 +191,6 @@ class local_hw_gateway(gr.top_block):
     def set_tune_freq(self, tune_freq):
         self.tune_freq = tune_freq
         self.rf_source.set_center_freq(self.tune_freq+self.offset, 0)
-
-    def get_samp_rate(self):
-        return self.samp_rate
-
-    def set_samp_rate(self, samp_rate):
-        self.samp_rate = samp_rate
-        self.rf_source.set_sample_rate(self.samp_rate)
-        self.rf_source.set_bandwidth(self.samp_rate, 0)
-        self.ofdm_tools_local_worker_0.set_sample_rate(self.samp_rate)
 
     def get_rf_gain_stop(self):
         return self.rf_gain_stop
@@ -245,13 +236,6 @@ class local_hw_gateway(gr.top_block):
     def set_precision(self, precision):
         self.precision = precision
         self.ofdm_tools_local_worker_0.set_data_precision(self.precision)
-
-    def get_ppm_corr(self):
-        return self.ppm_corr
-
-    def set_ppm_corr(self, ppm_corr):
-        self.ppm_corr = ppm_corr
-        self.rf_source.set_freq_corr(self.ppm_corr, 0)
 
     def get_offset(self):
         return self.offset
@@ -300,11 +284,11 @@ def argument_parser():
         "-f", "--nfft", dest="nfft", type="intx", default=int(2048),
         help="Set nfft [default=%default]")
     parser.add_option(
-        "-p", "--ppm", dest="ppm", type="eng_float", default=eng_notation.num_to_str(0),
-        help="Set ppm [default=%default]")
+        "-p", "--ppm-corr", dest="ppm_corr", type="eng_float", default=eng_notation.num_to_str(0),
+        help="Set ppm_corr [default=%default]")
     parser.add_option(
-        "-s", "--sr", dest="sr", type="intx", default=int(2.4e6),
-        help="Set sr [default=%default]")
+        "-s", "--samp-rate", dest="samp_rate", type="eng_float", default=eng_notation.num_to_str(2.4e6),
+        help="Set samp_rate [default=%default]")
     parser.add_option(
         "-u", "--zmq-port", dest="zmq_port", type="intx", default=5005,
         help="Set zmq_port [default=%default]")
@@ -317,7 +301,7 @@ def main(top_block_cls=local_hw_gateway, options=None):
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print "Error: failed to enable real-time scheduling."
 
-    tb = top_block_cls(arg=options.arg, freq_offset=options.freq_offset, nfft=options.nfft, ppm=options.ppm, sr=options.sr, zmq_port=options.zmq_port)
+    tb = top_block_cls(arg=options.arg, freq_offset=options.freq_offset, nfft=options.nfft, ppm_corr=options.ppm_corr, samp_rate=options.samp_rate, zmq_port=options.zmq_port)
     tb.start()
     try:
         raw_input('Press Enter to quit: ')
