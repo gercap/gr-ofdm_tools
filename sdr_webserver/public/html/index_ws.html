@@ -55,6 +55,10 @@
   var retune = false;
   var use_FFT_min_man = false;
 
+  var dataSet_len = 0;
+  var fft_slice = 0;
+  var pct_width = 1;
+
   var arrayBuffer;
   var fileReader = new FileReader();
   fileReader.onload = function(event) {
@@ -169,10 +173,29 @@
     
     if (precision) {
       byteArray = new Float32Array(arrayBuffer);
-      plot_fft_data(byteArray);
+      if (fft_slice > 0) {
+        _byteArray = byteArray.slice(fft_slice, -fft_slice) //slice for zooming
+        dataSet_len = _byteArray.length; //size of data to be plotted
+        pct_width = dataSet_len/byteArray.length //percentage of reduction in BW
+        plot_fft_data(_byteArray); // do plot
+      } else {
+        dataSet_len = byteArray.length;
+        pct_width = dataSet_len/byteArray.length
+        plot_fft_data(byteArray);        
+      }
     } else {
       byteArray = new Int8Array(arrayBuffer);
-      plot_fft_data(byteArray);
+      if (fft_slice > 0) {
+        _byteArray = byteArray.slice(fft_slice, -fft_slice) //slice for zooming
+        dataSet_len = _byteArray.length; //size of data to be plotted
+        pct_width = dataSet_len/byteArray.length //percentage of reduction in BW
+        plot_fft_data(_byteArray); // do plot
+      } else {
+        dataSet_len = byteArray.length;
+        pct_width = dataSet_len/byteArray.length
+        plot_fft_data(byteArray);        
+      }
+
     }
   }
 
@@ -187,7 +210,7 @@
     canvas_selection = document.getElementById("canvas_selection");
     context_selection = canvas_selection.getContext("2d");
 
-    elemLeft = 8; //canvas_selection.offsetLeft;
+    elemLeft = 10; //canvas_selection.offsetLeft;
     elemTop = canvas_selection.offsetTop;
 
     sel_line = 0;
@@ -197,12 +220,12 @@
       sel_line = event.pageX - elemLeft;
       var y = event.pageY - elemTop;
 
-      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0, tune_freq);
+      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0*pct_width, tune_freq);
       sel_freq = axis[sel_line];
       writeToScreen("center/select: " + tune_freq + "/" + sel_freq +"\n");
       if (retune) {
         set_freq(sel_freq);
-      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0, sel_freq);
+      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0*pct_width, sel_freq);
       sel_freq = axis[sel_line];
       }
 
@@ -213,18 +236,21 @@
         // Get mouse offset.
         var mousex = event.clientX - canvas_selection.offsetLeft;
         var mousey = event.clientY - canvas_selection.offsetTop;
-        // Normalize wheel to +1 or -1.
         var wheel = event.deltaY;
 
-        use_FFT_min_man = true;
-        document.getElementById("use_FFT_min_man").checked = true;
-
-        if (wheel > 0) {
-          document.getElementById("fft_min_val").value ++;
+        if (wheel < 0) {
+            fft_slice +=10;
         } else {
-          document.getElementById("fft_min_val").value --;
+          if (fft_slice > 0) {
+            fft_slice -=10;
+          }
         }
-        FFT_min = document.getElementById("fft_min_val").value;
+
+      //update vertical line label
+      var axis = linspacer(-1, 1, canvas_selection.width, samp_rate/2.0*pct_width, tune_freq);
+      sel_freq = axis[sel_line];
+      writeToScreen("center/select: " + tune_freq + "/" + sel_freq +"\n");
+
     }, false);
 
     gradient = context_plot.createLinearGradient(0, 0, 0, -200);
@@ -255,12 +281,13 @@
     FFT_max = Math.max.apply(Math, dataSet);
     if (!use_FFT_min_man) {
       FFT_min = Math.min.apply(Math, dataSet);
+
     };
 
     var yScale = (canvas_plot.height) / (FFT_max - FFT_min);
-    var xScale = (canvas_plot.width) / dataSet.length;
+    var xScale = (canvas_plot.width) / dataSet_len;
 
-    var water_xScale = (canvas_water.width) / dataSet.length;
+    var water_xScale = (canvas_water.width) / dataSet_len;
 
     //----------------plot-------------------------------
     canvas_plot.width = window.innerWidth - 30;
@@ -276,7 +303,7 @@
 
     context_plot.beginPath();
 
-    for (i=0;i<dataSet.length;i++) {
+    for (i=0;i<dataSet_len;i++) {
       //line connecting values
       //context_plot.lineTo(i * xScale, dataSet[i]);
       //or - bars from min to value
@@ -309,6 +336,8 @@
   function update_plot_stuff()
   {
     if (FFT_max && FFT_min) {
+
+    document.getElementById("fft_min_val").value = Math.round(FFT_min)
 
     gradient=context_plot.createLinearGradient(0, FFT_max, 0, FFT_min);
     gradient.addColorStop("0","red");
@@ -418,8 +447,7 @@
     FFT_min = Math.round(newfftminman);
     use_FFT_min_man = true;
     checkBox = document.getElementById("use_FFT_min_man").checked = true;
-  
-  FFT_min = document.getElementById("fft_min_val").value}
+  }
 
 </script>
 

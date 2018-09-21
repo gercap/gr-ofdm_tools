@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<?grc format='1' created='3.7.12'?>
+<?grc format='1' created='3.7.11'?>
 <flow_graph>
   <timestamp>Mon Jul 10 21:35:08 2017</timestamp>
   <block>
@@ -18,10 +18,6 @@
     </param>
     <param>
       <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>copyright</key>
       <value></value>
     </param>
     <param>
@@ -77,20 +73,12 @@
       <value>True</value>
     </param>
     <param>
-      <key>sizing_mode</key>
-      <value>fixed</value>
-    </param>
-    <param>
       <key>thread_safe_setters</key>
       <value></value>
     </param>
     <param>
       <key>title</key>
       <value></value>
-    </param>
-    <param>
-      <key>placement</key>
-      <value>(0,0)</value>
     </param>
   </block>
   <block>
@@ -524,6 +512,33 @@
     </param>
     <param>
       <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(376, 204)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>ppm_corr</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>ppm</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
       <value>True</value>
     </param>
     <param>
@@ -636,7 +651,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>function_args</key>
@@ -679,7 +694,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>function_args</key>
@@ -722,7 +737,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>function_args</key>
@@ -751,6 +766,33 @@
     <param>
       <key>poll_rate</key>
       <value>0.001</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(328, 132)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>samp_rate</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>sr</value>
     </param>
   </block>
   <block>
@@ -1045,10 +1087,6 @@
     <param>
       <key>short_id</key>
       <value>a</value>
-    </param>
-    <param>
-      <key>hide</key>
-      <value>none</value>
     </param>
     <param>
       <key>type</key>
@@ -1659,10 +1697,6 @@
       <value>o</value>
     </param>
     <param>
-      <key>hide</key>
-      <value>none</value>
-    </param>
-    <param>
       <key>type</key>
       <value>eng_float</value>
     </param>
@@ -1863,10 +1897,6 @@
       <value>f</value>
     </param>
     <param>
-      <key>hide</key>
-      <value>none</value>
-    </param>
-    <param>
       <key>type</key>
       <value>intx</value>
     </param>
@@ -2025,7 +2055,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>ppm_corr</value>
+      <value>ppm</value>
     </param>
     <param>
       <key>label</key>
@@ -2034,10 +2064,6 @@
     <param>
       <key>short_id</key>
       <value>p</value>
-    </param>
-    <param>
-      <key>hide</key>
-      <value>none</value>
     </param>
     <param>
       <key>type</key>
@@ -3353,7 +3379,7 @@ plutosdr=0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(216, 276)</value>
+      <value>(216, 284)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -3480,7 +3506,7 @@ plutosdr=0</value>
     </param>
     <param>
       <key>id</key>
-      <value>samp_rate</value>
+      <value>sr</value>
     </param>
     <param>
       <key>label</key>
@@ -3491,16 +3517,12 @@ plutosdr=0</value>
       <value>s</value>
     </param>
     <param>
-      <key>hide</key>
-      <value>none</value>
-    </param>
-    <param>
       <key>type</key>
       <value>eng_float</value>
     </param>
     <param>
       <key>value</key>
-      <value>2.4e6</value>
+      <value>int(2.4e6)</value>
     </param>
   </block>
   <block>
@@ -3821,10 +3843,6 @@ plutosdr=0</value>
     <param>
       <key>short_id</key>
       <value>u</value>
-    </param>
-    <param>
-      <key>hide</key>
-      <value>none</value>
     </param>
     <param>
       <key>type</key>
