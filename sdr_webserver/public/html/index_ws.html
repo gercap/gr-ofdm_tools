@@ -69,9 +69,8 @@
   function init()
   {
     var host = window.location.hostname;
-    var port = window.location.port;
-    websocket_url_control = "{{scheme}}://" + host + ":9000/ws";
-    websocket_url_data = "{{scheme}}://" + host + ":8000/ws";
+    websocket_url_control = "{{scheme}}://" + host + ":{{control_port}}/ws";
+    websocket_url_data = "{{scheme}}://" + host + ":{{data_port}}/ws";
     init_plots();
     //plot_request();
   }
