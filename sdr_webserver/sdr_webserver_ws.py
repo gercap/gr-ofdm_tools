@@ -3,21 +3,39 @@
 # 
 # Copyright 2017 Germano Capela at gmail.com
 # 
-import zmq, Queue, os, sys, time, struct, signal, datetime
-import threading
-import Queue
+import zmq, Queue, os, sys, time, struct, signal, datetime, platform
+import threading, Queue
 import cherrypy, simplejson
 from jinja2 import Environment, FileSystemLoader
 import numpy as np
 import xmlrpclib
-
+import logging
+from logging import handlers
 import ssl
+from optparse import OptionParser
+
+plat = platform.system()
+if plat == "Windows":
+  clear = lambda: os.system('cls')
+  def getThreadId():
+    return "unavailable"
+elif plat == "Linux" or plat == "Darwin":
+  clear = lambda: os.system('clear')
+
+  import ctypes
+  libc = ctypes.cdll.LoadLibrary('libc.so.6')
+  # System dependent, see e.g. /usr/include/x86_64-linux-gnu/asm/unistd_64.h
+  SYS_gettid = 186
+
+  def getThreadId():
+     """Returns OS thread id - Specific to Linux"""
+     return libc.syscall(SYS_gettid)
+
 try:
   from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
 except:
   print "try sudo pip install git+https://github.com/dpallot/simple-websocket-server.git"
   sys.exit(0)
-from optparse import OptionParser
 
 log_levels = {"CRITICAL":50, "ERROR":40, "WARNING":30, "INFO":20, "DEBUG":10}
 
@@ -27,7 +45,7 @@ env=Environment(loader=FileSystemLoader(CUR_DIR), trim_blocks=True)
 MAX_LO_MTU = 65535
 
 def signal_handler(signal, frame):
-  print "you pressed ctrl-C!"
+  rootLogger.info("you pressed ctrl-C!")
   _ws_server_control_runner.keep_running = False
   _ws_server_data_runner.keep_running = False
 
@@ -98,7 +116,10 @@ class web_site(object):
 
 class data_processor(threading.Thread):
   def __init__(self, ZMQ_IP, ZMQ_PORT, shared_queue_control, shared_queue_data, xmlrpc_server):
-    threading.Thread.__init__(self)
+    threading.Thread.__init__(self, name = "data_processor")
+
+    self.logger = logging.getLogger("data_processor")
+
     self.zmq_context = zmq.Context()
     self.zmq_sub = self.zmq_context.socket(zmq.SUB)
     self.zmq_sub.connect("tcp://%s:%s" % (ZMQ_IP, ZMQ_PORT))
@@ -117,11 +138,9 @@ class data_processor(threading.Thread):
     self.device = self.xmlrpc_server.get_arg()
     if "airspyhf" not in self.device:
       self.gain_range = [self.xmlrpc_server.get_rf_gain_start(), self.xmlrpc_server.get_rf_gain_step(), self.xmlrpc_server.get_rf_gain_stop()]
-      print 'gain range', self.gain_range
     else:
       self.gain_range = [0, 0, 0]
-    print 'from server', self.get_samp_rate(), self.get_tune_freq(), self.get_rate(), self.get_average(), self.get_precision()
-
+    
     self.reasembled_frame = ''
     if self.precision:
         self.data_type = np.float32
@@ -214,16 +233,16 @@ class data_processor(threading.Thread):
     self.get_gain_range()
 
   def run(self):
-    print "running data processor"
+    self.logger.info('running data processor' + " PID:" + str(getThreadId()))
+    self.logger.info("device in use " + self.device)
+
     while self.keep_running:
       msg_str = self.zmq_sub.recv()
       msg_str = msg_str[10:]
-      #print "received message:", len(msg_str)
 
       n_frags = struct.unpack('!B', msg_str[0])[0] #obtain number of fragments
       frag_id = struct.unpack('!B', msg_str[1])[0] #obtain fragment number
       msg_str = msg_str[2:] #grab fft data
-      #print 'n_frags', n_frags, 'frag_id', frag_id
 
       if n_frags == 1: #single fragment
         try:
@@ -241,7 +260,7 @@ class data_processor(threading.Thread):
             
         except Exception, e:
           exc_type, exc_obj, exc_tb = sys.exc_info()
-          print ("singleframe error (%s) %s line %s" % (str(e), exc_type, exc_tb.tb_lineno))
+          self.logger.info("singleframe error (%s) %s line %s" % (str(e), exc_type, exc_tb.tb_lineno))
 
       else: #multiple fragments situation
         self.reasembled_frame += msg_str
@@ -262,13 +281,12 @@ class data_processor(threading.Thread):
             self.reasembled_frame = ''
           except Exception, e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            print ("multiframe error (%s) %s line %s" % (str(e), exc_type, exc_tb.tb_lineno))
+            self.logger.info("multiframe error (%s) %s line %s" % (str(e), exc_type, exc_tb.tb_lineno))
             self.reasembled_frame = ''
         else:
             pass
 
-    print "stopping data processor"
-
+    self.logger.info("stopping data processor")
 
 ws_clients_control = []
 class controlWShandler(WebSocket):
@@ -313,30 +331,34 @@ class datalWShandler(WebSocket):
     for client in ws_clients_data:
       client.sendMessage(self.address[0] + u' - data disconnected')
 
-class ws_server_runner(threading.Thread):
+class ws_runner(threading.Thread):
   def __init__(self, ws_server, ws_server_id):
-    threading.Thread.__init__(self)
+    threading.Thread.__init__(self, name="ws_runner")
     self.ws_server = ws_server
     self.ws_server_id = ws_server_id
+    self.logger = logging.getLogger("ws_runner")
+
     self.keep_running = True
 
   def run(self):
-    print "starting ws server", self.ws_server_id
+    self.logger.info("starting ws server " + self.ws_server_id + " PID:" + str(getThreadId()))
     while self.keep_running:
       self.ws_server.serveonce()
-    print "stopping ws server", self.ws_server_id
+    self.logger.info("stopping ws server " + self.ws_server_id)
 
 
 class ws_dispatcher(threading.Thread):
   def __init__(self, shared_queue, ws_clients, ws_server_id):
-    threading.Thread.__init__(self)
+    threading.Thread.__init__(self, name="ws_dispatcher")
     self.shared_queue = shared_queue
     self.ws_clients = ws_clients
     self.ws_server_id = ws_server_id
+    self.logger = logging.getLogger("ws_dispatcher")
+
     self.keep_running = True
 
   def run(self):
-    print "starting ws dispatcher ", self.ws_server_id
+    self.logger.info("starting ws dispatcher " + self.ws_server_id + " PID:" + str(getThreadId()))
     while self.keep_running:
       while not self.shared_queue.empty():
         data = self.shared_queue.get()
@@ -344,11 +366,12 @@ class ws_dispatcher(threading.Thread):
           if client != self:
             client.sendMessage(data)
       time.sleep(1e-3)
-    print "stopping ws dispatcher ", self.ws_server_id
+    self.logger.info("stopping ws dispatcher " + self.ws_server_id)
 
 if __name__ == '__main__':
 
   parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
+  parser.add_option("--wwwPort", default='8080', type='int', action="store", dest="wwwPort", help="webserver port")
   parser.add_option("--serverIP", default='127.0.0.1', type='string', action="store", dest="serverIP", help="rpc and zmq server address")
   parser.add_option("--rpcport", default=7658, type='int', action="store", dest="rpcport", help="xmlrpc port")
   parser.add_option("--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
@@ -359,8 +382,27 @@ if __name__ == '__main__':
 
   (options, args) = parser.parse_args()
 
-  shared_queue_control = Queue.Queue(5)
-  shared_queue_data = Queue.Queue(10)
+  main_app_log_level = 'DEBUG'
+  rootLogger = logging.getLogger()
+  rootLogger.setLevel(log_levels[main_app_log_level])
+  logFormatter = logging.Formatter("[%(asctime)s] [%(module)-10.10s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+
+  # create a file handler
+  """
+  fileHandler = logging.FileHandler("chat_tokenring_" + options.settingsFile + "_" + date_time + ".log")
+  fileHandler.setLevel(log_levels[main_app_log_level])
+  fileHandler.setFormatter(logFormatter)
+  rootLogger.addHandler(fileHandler)
+  """
+
+  # create a stream console handler
+  consoleHandler = logging.StreamHandler()
+  consoleHandler.setLevel(log_levels[main_app_log_level])
+  consoleHandler.setFormatter(logFormatter)
+  rootLogger.addHandler(consoleHandler)
+
+  shared_queue_control = Queue.Queue(50)
+  shared_queue_data = Queue.Queue(1000)
 
   signal.signal(signal.SIGINT, signal_handler)
 
@@ -369,11 +411,11 @@ if __name__ == '__main__':
     try:
       dummy = xmlrpc_server.get_samp_rate()
     except:
-      print 'rxmlrpc offline?', "http://" + options.serverIP + ":"+str(options.rpcport)
+      rootLogger.info("rxmlrpc offline? http://" + options.serverIP + ":"+str(options.rpcport)) 
       time.sleep(3)
       pass
     else:
-      print 'rxmlrpc okay!', "http://" + options.serverIP + ":"+str(options.rpcport)
+      rootLogger.info("rxmlrpc okay! http://" + options.serverIP + ":"+str(options.rpcport))      
       break
 
   ws_control_port = 9000
@@ -386,10 +428,10 @@ if __name__ == '__main__':
     ws_server_control = SimpleWebSocketServer("", ws_control_port, controlWShandler)
     ws_server_data = SimpleWebSocketServer("", ws_data_port, datalWShandler)
 
-  _ws_server_control_runner = ws_server_runner(ws_server_control, 'control')
+  _ws_server_control_runner = ws_runner(ws_server_control, 'control')
   _ws_server_control_runner.start()
 
-  _ws_server_data_runner = ws_server_runner(ws_server_data, 'data')
+  _ws_server_data_runner = ws_runner(ws_server_data, 'data')
   _ws_server_data_runner.start()
 
   _ws_dispatcher_control = ws_dispatcher(shared_queue_control, ws_clients_control, 'control')
@@ -401,9 +443,11 @@ if __name__ == '__main__':
   _data_processor = data_processor(options.serverIP, options.zmqport, shared_queue_control, shared_queue_data, xmlrpc_server)
   _data_processor.start()
   
-  print 'server okay!', "http://127.0.0.1:8080"
+  rootLogger.info("server okay! try http://127.0.0.1:" + str(options.wwwPort))
 
-  print 'main process'
+  rootLogger.info("main app PID:" + str(getThreadId()))
+
+  cherrypy.config.update({'server.socket_port': options.wwwPort})
 
   # RUN
   cherrypy.quickstart(web_site(_data_processor, ws_control_port, ws_data_port), '/',  config = 'cherrypy.conf')
