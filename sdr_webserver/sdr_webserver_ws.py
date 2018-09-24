@@ -21,15 +21,15 @@ if plat == "Windows":
     return "unavailable"
 elif plat == "Linux" or plat == "Darwin":
   clear = lambda: os.system('clear')
-
   import ctypes
-  libc = ctypes.cdll.LoadLibrary('libc.so.6')
-  # System dependent, see e.g. /usr/include/x86_64-linux-gnu/asm/unistd_64.h
+  if plat == "Linux":
+    libc = ctypes.cdll.LoadLibrary('libc.so.6')
+  else:
+    libc = ctypes.cdll.LoadLibrary('libc.dylib')
   SYS_gettid = 186
-
   def getThreadId():
-     """Returns OS thread id - Specific to Linux"""
-     return libc.syscall(SYS_gettid)
+    """Returns OS thread id - Specific to Linux"""
+    return libc.syscall(SYS_gettid)
 
 try:
   from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
@@ -371,14 +371,14 @@ class ws_dispatcher(threading.Thread):
 if __name__ == '__main__':
 
   parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
-  parser.add_option("--wwwPort", default='8080', type='int', action="store", dest="wwwPort", help="webserver port")
-  parser.add_option("--serverIP", default='127.0.0.1', type='string', action="store", dest="serverIP", help="rpc and zmq server address")
-  parser.add_option("--rpcport", default=7658, type='int', action="store", dest="rpcport", help="xmlrpc port")
-  parser.add_option("--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
-  parser.add_option("--ssl", default=0, type='int', action="store", dest="ssl", help="ssl (1: on, 0: off (default))")
-  parser.add_option("--cert", default='./cert.pem', type='string', action="store", dest="cert", help="cert (./cert.pem)")
-  parser.add_option("--key", default='./key.pem', type='string', action="store", dest="key", help="key (./key.pem)")
-  parser.add_option("--ver", default=ssl.PROTOCOL_TLSv1, type=int, action="store", dest="ver", help="ssl version")
+  parser.add_option("-w", "--wwwPort", default='8080', type='int', action="store", dest="wwwPort", help="webserver port")
+  parser.add_option("-s", "--serverIP", default='127.0.0.1', type='string', action="store", dest="serverIP", help="rpc and zmq server address")
+  parser.add_option("-r", "--rpcport", default=7658, type='int', action="store", dest="rpcport", help="xmlrpc port")
+  parser.add_option("-z", "--zmqport", default=5005, type='string', action="store", dest="zmqport", help="PORT of ZMQ publisher")
+  parser.add_option("-l", "--ssl", default=0, type='int', action="store", dest="ssl", help="ssl (1: on, 0: off (default))")
+  parser.add_option("-c", "--cert", default='./cert.pem', type='string', action="store", dest="cert", help="cert (./cert.pem)")
+  parser.add_option("-k", "--key", default='./key.pem', type='string', action="store", dest="key", help="key (./key.pem)")
+  parser.add_option("-v", "--ver", default=ssl.PROTOCOL_TLSv1, type=int, action="store", dest="ver", help="ssl version")
 
   (options, args) = parser.parse_args()
 
