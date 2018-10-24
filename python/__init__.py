@@ -77,6 +77,7 @@ from ascii_plot import ascii_plotter, ascii_bars
 from remote_client_qt import remote_client_qt
 from spectrum_sweeper import spectrum_sweeper
 from clipper import clipper
+from uart_serial import uart_serial
 
 import ofdm_txrx_modules
 import ofdm_cr_tools

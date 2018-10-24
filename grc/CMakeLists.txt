@@ -45,5 +45,6 @@ install(FILES
     ofdm_tools_remote_client.xml
     ofdm_tools_remote_client_qt.xml
     ofdm_tools_spectrum_sweeper.xml
-    ofdm_tools_clipper.xml DESTINATION share/gnuradio/grc/blocks
+    ofdm_tools_clipper.xml
+    ofdm_tools_uart_serial.xml DESTINATION share/gnuradio/grc/blocks
 )

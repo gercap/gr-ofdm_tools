@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<block>
+  <name>UART Serial Interface</name>
+  <key>ofdm_tools_uart_serial</key>
+  <category>[ofdm_tools]</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.uart_serial()</make>
+  <!-- Make one 'param' node for every Parameter you want settable from the GUI.
+       Sub-nodes:
+       * name
+       * key (makes the value accessible as $keyname, e.g. in the make node)
+       * type -->
+
+
+  <!-- Make one 'sink' node per input. Sub-nodes:
+       * name (an identifier for the GUI)
+       * type
+       * vlen
+       * optional (set to 1 for optional inputs) -->
+  <sink>
+    <name>in</name>
+    <type>message</type>
+    <optional>o</optional>
+  </sink>
+
+  <!-- Make one 'source' node per output. Sub-nodes:
+       * name (an identifier for the GUI)
+       * type
+       * vlen
+       * optional (set to 1 for optional inputs) -->
+  <source>
+    <name>out</name>
+    <type>message</type>
+    <optional>o</optional>
+  </source>
+</block>
