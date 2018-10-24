@@ -26,6 +26,10 @@ import pmt
 import gnuradio.gr.gr_threading as _threading
 
 flow_control_def = {'HARDWARE':(False, True),'XONXOFF':(True, False),'NO':(False, False)}
+def chunks(l, n):
+	"""Yield successive n-sized chunks from l."""
+	for i in xrange(0, len(l), n):
+		yield l[i:i + n]
 
 class uart_serial(gr.basic_block):
 	"""
@@ -37,6 +41,8 @@ class uart_serial(gr.basic_block):
 			in_sig=None,
 			out_sig=None
 		)
+		self.max_pkt_size = 120	
+
 		self.settings = {}
 		self.settings['com_id'] = "/dev/pts/37"
 		self.settings['baud_rate'] = 19200
@@ -53,11 +59,12 @@ class uart_serial(gr.basic_block):
 		self.set_msg_handler(pmt.intern('in'), self.handle_rx_msg)
 
 		####THREADS####
-		self._main = tx_thread(self.serial_com_interface, self.handle_tx_msg)
+		self._main = tx_thread(self.serial_com_interface, self.handle_tx_msg, self.max_pkt_size)
 
 	#handle message comming from flowgraph  - send to serial
 	def handle_rx_msg(self, msg):
 		_msg = pmt.to_python(msg)
+		#print "from flowgraph to serial", "".join([chr(item) for item in _msg[1]])
 		self.serial_com_interface.write("".join([chr(item) for item in _msg[1]]))
 
 	#handle message comming from serial - send to flowgraph
@@ -95,11 +102,12 @@ class uart_serial(gr.basic_block):
 
 #read serial - send to flowgraph
 class tx_thread(_threading.Thread):
-	def __init__(self, serial_com_interface, handle_tx_msg_callback):
+	def __init__(self, serial_com_interface, handle_tx_msg_callback, max_pkt_size):
 		_threading.Thread.__init__(self)
 		self.setDaemon(1)
 		self.serial_com_interface = serial_com_interface
 		self.handle_tx_msg_callback = handle_tx_msg_callback
+		self.max_pkt_size = max_pkt_size
 
 		self.state = None
 		self.keep_running = True #set to False to stop thread's main loop
@@ -107,6 +115,12 @@ class tx_thread(_threading.Thread):
 	
 	def run(self):
 		while self.keep_running:
-			msg = self.serial_com_interface.read(1600)
-			self.handle_tx_msg_callback(msg)
-			time.sleep(1)
+			msg = ""
+			while self.serial_com_interface.inWaiting():  # Or: while ser.inWaiting():
+				msg += self.serial_com_interface.read(1)
+
+			if len(msg)>0:
+				#avoid gnuradio's complaints abou buffer size or number of symbols
+				for chunk in chunks(msg, self.max_pkt_size):
+					self.handle_tx_msg_callback(chunk)
+			time.sleep(.001)
