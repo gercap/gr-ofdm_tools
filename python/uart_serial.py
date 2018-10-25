@@ -35,21 +35,21 @@ class uart_serial(gr.basic_block):
 	"""
 	docstring for block uart_serial
 	"""
-	def __init__(self):
+	def __init__(self, com_id, baud_rate, parity, stop_bits, char_size, flow_control, max_pkt_size):
 		gr.basic_block.__init__(self,
 			name="uart_serial",
 			in_sig=None,
 			out_sig=None
 		)
-		self.max_pkt_size = 120	
+		self.max_pkt_size = int(max_pkt_size)	
 
 		self.settings = {}
-		self.settings['com_id'] = "/dev/pts/37"
-		self.settings['baud_rate'] = 19200
-		self.settings['parity'] = 'N'
-		self.settings['stop_bits'] = 1
-		self.settings['char_size'] = 8
-		self.settings['flow_control'] = "NO"
+		self.settings['com_id'] = com_id
+		self.settings['baud_rate'] = int(baud_rate)
+		self.settings['parity'] = parity
+		self.settings['stop_bits'] = float(stop_bits)
+		self.settings['char_size'] = int(char_size)
+		self.settings['flow_control'] = flow_control
 		self.xon_xoff, self.rts_cts = flow_control_def[(self.settings['flow_control'])]
 
 		self.serial_com_interface = self.open_serial()
