@@ -136,6 +136,11 @@ GR_PYTHON_CHECK_MODULE("Crypto" Crypto True CRYPTO_FOUND)
 if(NOT MATPLOTLIB_FOUND)
     message(FATAL_ERROR "Crypto not found.")
 endif()
+GR_PYTHON_CHECK_MODULE("serial" serial True SERIAL_FOUND)
+if(NOT MATPLOTLIB_FOUND)
+    message(FATAL_ERROR "serial not found.")
+endif()
+
 
 ########################################################################
 # Setup the include and linker paths

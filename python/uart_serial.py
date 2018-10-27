@@ -20,9 +20,9 @@
 # 
 
 import numpy as np
-import time, serial, string
+import time, serial, sys
 from gnuradio import gr
-import pmt
+import pmt, traceback
 import gnuradio.gr.gr_threading as _threading
 
 flow_control_def = {'HARDWARE':(False, True),'XONXOFF':(True, False),'NO':(False, False)}
@@ -33,15 +33,15 @@ def chunks(l, n):
 
 class uart_serial(gr.basic_block):
 	"""
-	docstring for block uart_serial
+	interface block for serial ports
 	"""
-	def __init__(self, com_id, baud_rate, parity, stop_bits, char_size, flow_control, max_pkt_size):
+	def __init__(self, com_id, baud_rate, parity, stop_bits, char_size, flow_control, dsr_dtr, max_pkt_size):
 		gr.basic_block.__init__(self,
 			name="uart_serial",
 			in_sig=None,
 			out_sig=None
 		)
-		self.max_pkt_size = int(max_pkt_size)	
+		self.max_pkt_size = int(max_pkt_size)
 
 		self.settings = {}
 		self.settings['com_id'] = com_id
@@ -51,8 +51,13 @@ class uart_serial(gr.basic_block):
 		self.settings['char_size'] = int(char_size)
 		self.settings['flow_control'] = flow_control
 		self.xon_xoff, self.rts_cts = flow_control_def[(self.settings['flow_control'])]
+		self.settings['dsr_dtr'] = dsr_dtr
 
 		self.serial_com_interface = self.open_serial()
+		if self.serial_com_interface is None:
+			print "specified port", com_id, "unavailable"
+			sys.exit(0)
+
 
 		self.message_port_register_out(pmt.intern('out'))
 		self.message_port_register_in(pmt.intern('in'))
@@ -82,13 +87,15 @@ class uart_serial(gr.basic_block):
 				bytesize=int(self.settings['char_size']),
 				xonxoff = self.xon_xoff,
 				rtscts = self.rts_cts,
+				dsrdtr = self.settings['dsr_dtr'],
 				writeTimeout = 0,
 			)
 			print("serial %s open? %s" % (str(serial_com_interface.port), serial_com_interface.isOpen()) )
 			print("serial settings %s" % (str(serial_com_interface.getSettingsDict())) )
 
 		except:
-			print("failed to open serial port")
+			print("failed to open serial port with error")
+			print(traceback.print_exc())
 			print("check %s port definition" % (self.settings['com_id']) )
 			self.port_is_open = False
 			return None

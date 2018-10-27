@@ -11,6 +11,7 @@
   stop_bits=$stop_bits,
   char_size=$char_size,
   flow_control=$flow_control,
+  dsrdtr=$dsrdtr,
   max_pkt_size=$max_pkt_size)</make>
 
   <param>
@@ -137,16 +138,30 @@
     <key>flow_control</key>
     <type>enum</type>
     <option>
-      <name>No</name>
+      <name>No flow control</name>
       <key>"NO"</key>
     </option>
     <option>
-      <name>Hardware</name>
+      <name>RTS/CTS (Hardware)</name>
       <key>"HARDWARE"</key>
     </option>
     <option>
-      <name>XON/XOFF</name>
+      <name>XON/XOFF (Software)</name>
       <key>"XONXOFF"</key>
+    </option>
+  </param>
+
+  <param>
+    <name>DSR DTR</name>
+    <key>dsrdtr</key>
+    <type>enum</type>
+    <option>
+      <name>No</name>
+      <key>"True"</key>
+    </option>
+    <option>
+      <name>Yes</name>
+      <key>"False"</key>
     </option>
   </param>
 
