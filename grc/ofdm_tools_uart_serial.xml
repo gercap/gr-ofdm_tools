@@ -11,7 +11,7 @@
   stop_bits=$stop_bits,
   char_size=$char_size,
   flow_control=$flow_control,
-  dsrdtr=$dsrdtr,
+  dsr_dtr=$dsr_dtr,
   max_pkt_size=$max_pkt_size)</make>
 
   <param>
@@ -153,7 +153,7 @@
 
   <param>
     <name>DSR DTR</name>
-    <key>dsrdtr</key>
+    <key>dsr_dtr</key>
     <type>enum</type>
     <option>
       <name>No</name>
