@@ -24,145 +24,43 @@
   <param>
     <name>Baud Rate</name>
     <key>baud_rate</key>
-    <type>enum</type>
-    <option>
-      <name>50</name>
-      <key>50</key>
-    </option>
-    <option>
-      <name>75</name>
-      <key>75</key>
-    </option>
-    <option>
-      <name>150</name>
-      <key>150</key>
-    </option>
-    <option>
-      <name>300</name>
-      <key>300</key>
-    </option>
-    <option>
-      <name>600</name>
-      <key>600</key>
-    </option>
-    <option>
-      <name>1200</name>
-      <key>1200</key>
-    </option>
-    <option>
-      <name>2400</name>
-      <key>2400</key>
-    </option>
-    <option>
-      <name>4800</name>
-      <key>4800</key>
-    </option>
-    <option>
-      <name>9600</name>
-      <key>9600</key>
-    </option>
-    <option>
-      <name>19200</name>
-      <key>19200</key>
-    </option>
-    <option>
-      <name>38400</name>
-      <key>38400</key>
-    </option>
-    <option>
-      <name>57600</name>
-      <key>57600</key>
-    </option>
-    <option>
-      <name>115200</name>
-      <key>115200</key>
-    </option>
+    <value>19200</value>
+    <type>int</type>
   </param>
 
   <param>
     <name>Parity Bit</name>
     <key>parity</key>
-    <type>enum</type>
-    <option>
-      <name>No</name>
-      <key>"N"</key>
-    </option>
-    <option>
-      <name>Yes</name>
-      <key>"Y"</key>
-    </option>
+    <value>"N"</value>
+    <type>string</type>
   </param>
 
   <param>
     <name>Stop Bits</name>
     <key>stop_bits</key>
-    <type>enum</type>
-    <option>
-      <name>1</name>
-      <key>1</key>
-    </option>
-    <option>
-      <name>1.5</name>
-      <key>1.5</key>
-    </option>
-    <option>
-      <name>2</name>
-      <key>2</key>
-    </option>
+    <value>1</value>
+    <type>float</type>
   </param>
 
   <param>
     <name>Word Size</name>
     <key>char_size</key>
-    <type>enum</type>
-    <option>
-      <name>8</name>
-      <key>8</key>
-    </option>
-    <option>
-      <name>7</name>
-      <key>7</key>
-    </option>
-    <option>
-      <name>6</name>
-      <key>6</key>
-    </option>
-    <option>
-      <name>5</name>
-      <key>5</key>
-    </option>
+    <value>8</value>
+    <type>int</type>
   </param>
 
   <param>
     <name>Flow Control</name>
     <key>flow_control</key>
-    <type>enum</type>
-    <option>
-      <name>No flow control</name>
-      <key>"NO"</key>
-    </option>
-    <option>
-      <name>RTS/CTS (Hardware)</name>
-      <key>"HARDWARE"</key>
-    </option>
-    <option>
-      <name>XON/XOFF (Software)</name>
-      <key>"XONXOFF"</key>
-    </option>
+    <value>"NO"</value>
+    <type>string</type>
   </param>
 
   <param>
     <name>DSR DTR</name>
     <key>dsr_dtr</key>
-    <type>enum</type>
-    <option>
-      <name>No</name>
-      <key>"True"</key>
-    </option>
-    <option>
-      <name>Yes</name>
-      <key>"False"</key>
-    </option>
+    <value>"True"</value>
+    <type>string</type>
   </param>
 
   <param>
@@ -186,7 +84,14 @@
 
   <doc>
     This block sends/recives data from a serial port and generates/produces PDU's with the data
+
+    Parity - Y, N
+    Stop Bits - 1 1,5 2
+    Word Size - 5, 6, 7, 8
+    Flow Control - NO, HW, SW
+    DSR DTR - True, False
     Max Packet Size - devide incoming data from serial port in chunks not to overwhelm the modulator
+
   </doc>
 
 </block>

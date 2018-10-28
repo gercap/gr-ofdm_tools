@@ -25,7 +25,7 @@ from gnuradio import gr
 import pmt, traceback
 import gnuradio.gr.gr_threading as _threading
 
-flow_control_def = {'HARDWARE':(False, True),'XONXOFF':(True, False),'NO':(False, False)}
+flow_control_def = {'HW':(False, True),'SW':(True, False),'NO':(False, False)}
 def chunks(l, n):
 	"""Yield successive n-sized chunks from l."""
 	for i in xrange(0, len(l), n):
