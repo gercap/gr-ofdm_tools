@@ -81,6 +81,10 @@
       <key>'qpsk'</key>
     </option>
     <option>
+      <name>8psk</name>
+      <key>'8psk'</key>
+    </option>
+    <option>
       <name>qam16</name>
       <key>'qam16'</key>
     </option>

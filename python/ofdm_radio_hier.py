@@ -64,6 +64,8 @@ class ofdm_radio_hier(gr.hier_block2):
             self.payload_mod = payload_mod = digital.qam.qam_constellation(16,True,'none',False)
         elif payload_mod == 'bpsk':
             self.payload_mod = payload_mod = digital.constellation_bpsk()
+        elif payload_mod == '8psk':
+            self.payload_mod = payload_mod = digital.constellation_8psk()
 
         ##################################################
         # Variables
