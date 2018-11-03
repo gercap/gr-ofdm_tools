@@ -246,7 +246,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(384, 4)</value>
+      <value>(416, 4)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -377,11 +377,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(504, 4)</value>
+      <value>(536, 4)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -404,11 +404,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(664, 4)</value>
+      <value>(696, 4)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -431,11 +431,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(792, 4)</value>
+      <value>(824, 4)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -501,7 +501,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>10</value>
+      <value>20</value>
     </param>
   </block>
   <block>
@@ -539,11 +539,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(624, 68)</value>
+      <value>(656, 68)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -566,11 +566,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(768, 68)</value>
+      <value>(800, 68)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -699,7 +699,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>0.1</value>
+      <value>0.005</value>
     </param>
   </block>
   <block>
@@ -730,7 +730,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1152, 276)</value>
+      <value>(1336, 276)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -824,7 +824,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1472, 292)</value>
+      <value>(1656, 292)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1083,6 +1083,61 @@
     </param>
   </block>
   <block>
+    <key>blocks_tag_gate</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(1176, 284)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>blocks_tag_gate_0</value>
+    </param>
+    <param>
+      <key>type</key>
+      <value>complex</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>propagate_tags</key>
+      <value>False</value>
+    </param>
+    <param>
+      <key>single_key</key>
+      <value>""</value>
+    </param>
+    <param>
+      <key>vlen</key>
+      <value>1</value>
+    </param>
+  </block>
+  <block>
     <key>parameter</key>
     <param>
       <key>alias</key>
@@ -1196,7 +1251,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(476, 288)</value>
+      <value>(476, 352)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1239,7 +1294,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1188, 640)</value>
+      <value>(1188, 592)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1541,7 +1596,7 @@
     </param>
     <param>
       <key>header_mod</key>
-      <value>digital.constellation_bpsk()</value>
+      <value>header_mod</value>
     </param>
     <param>
       <key>id</key>
@@ -1561,7 +1616,7 @@
     </param>
     <param>
       <key>payload_mod</key>
-      <value>digital.constellation_bpsk()</value>
+      <value>payload_mod</value>
     </param>
     <param>
       <key>pilot_carriers</key>
@@ -1582,6 +1637,81 @@
     <param>
       <key>sync_word2</key>
       <value>[0j, 0j, 0j, 0j, 0j, 0j, (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1 +0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), 0j, (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), 0j, 0j, 0j, 0j, 0j]</value>
+    </param>
+  </block>
+  <block>
+    <key>ofdm_rx_hier</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>fft_len</key>
+      <value>fft_len</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(760, 636)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>header_mod</key>
+      <value>header_mod</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>ofdm_rx_hier2</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>occupied_carriers</key>
+      <value>occupied_carriers</value>
+    </param>
+    <param>
+      <key>payload_mod</key>
+      <value>payload_mod</value>
+    </param>
+    <param>
+      <key>pilot_carriers</key>
+      <value>pilot_carriers</value>
+    </param>
+    <param>
+      <key>pilot_symbols</key>
+      <value>pilot_symbols</value>
+    </param>
+    <param>
+      <key>samp_rate</key>
+      <value>audio_rate/float(sps)</value>
+    </param>
+    <param>
+      <key>sync_word1</key>
+      <value>sync_word1</value>
+    </param>
+    <param>
+      <key>sync_word2</key>
+      <value>sync_word2</value>
     </param>
   </block>
   <block>
@@ -1608,7 +1738,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(544, 156)</value>
+      <value>(528, 92)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1616,7 +1746,7 @@
     </param>
     <param>
       <key>header_mod</key>
-      <value>digital.constellation_bpsk()</value>
+      <value>header_mod</value>
     </param>
     <param>
       <key>id</key>
@@ -1636,7 +1766,7 @@
     </param>
     <param>
       <key>payload_mod</key>
-      <value>digital.constellation_bpsk()</value>
+      <value>payload_mod</value>
     </param>
     <param>
       <key>pilot_carriers</key>
@@ -1653,6 +1783,77 @@
     <param>
       <key>sync_word2</key>
       <value>[0j, 0j, 0j, 0j, 0j, 0j, (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1 +0j), (1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), 0j, (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (1+0j), (1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (1+0j), (-1+0j), (1+0j), (-1+0j), (-1+0j), (-1+0j), (-1+0j), 0j, 0j, 0j, 0j, 0j]</value>
+    </param>
+  </block>
+  <block>
+    <key>ofdm_tx_hier</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>fft_len</key>
+      <value>fft_len</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(552, 244)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>header_mod</key>
+      <value>header_mod</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>ofdm_tx_hier1</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>occupied_carriers</key>
+      <value>occupied_carriers</value>
+    </param>
+    <param>
+      <key>payload_mod</key>
+      <value>payload_mod</value>
+    </param>
+    <param>
+      <key>pilot_carriers</key>
+      <value>pilot_carriers</value>
+    </param>
+    <param>
+      <key>pilot_symbols</key>
+      <value>pilot_symbols</value>
+    </param>
+    <param>
+      <key>sync_word1</key>
+      <value>sync_word1</value>
+    </param>
+    <param>
+      <key>sync_word2</key>
+      <value>sync_word2</value>
     </param>
   </block>
   <block>
@@ -1746,7 +1947,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>digital.constellation_qpsk()</value>
+      <value>digital.constellation_bpsk()</value>
     </param>
   </block>
   <block>
@@ -1860,7 +2061,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1448, 180)</value>
+      <value>(1632, 180)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3375,7 +3576,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>flow_control</key>
@@ -3430,7 +3631,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1456, 340)</value>
+      <value>(1640, 340)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -3562,8 +3763,20 @@ picocom -b 19200 -f n -l /dev/pts/24
     <sink_key>in</sink_key>
   </connection>
   <connection>
+    <source_block_id>blocks_tag_gate_0</source_block_id>
+    <sink_block_id>audio_iq_modulator</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
     <source_block_id>digital_crc32_async_bb_0</source_block_id>
     <sink_block_id>ofdm_tx_hier0</sink_block_id>
+    <source_key>out</source_key>
+    <sink_key>in</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>digital_crc32_async_bb_0</source_block_id>
+    <sink_block_id>ofdm_tx_hier1</sink_block_id>
     <source_key>out</source_key>
     <sink_key>in</sink_key>
   </connection>
@@ -3599,6 +3812,12 @@ picocom -b 19200 -f n -l /dev/pts/24
   </connection>
   <connection>
     <source_block_id>freq_xlating_fir_filter</source_block_id>
+    <sink_block_id>ofdm_rx_hier2</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>freq_xlating_fir_filter</source_block_id>
     <sink_block_id>qtgui_freq_sink_x_0_1_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
@@ -3610,7 +3829,19 @@ picocom -b 19200 -f n -l /dev/pts/24
     <sink_key>in</sink_key>
   </connection>
   <connection>
+    <source_block_id>ofdm_rx_hier2</source_block_id>
+    <sink_block_id>digital_crc32_async_bb_0_0</sink_block_id>
+    <source_key>pdus</source_key>
+    <sink_key>in</sink_key>
+  </connection>
+  <connection>
     <source_block_id>ofdm_tx_hier0</source_block_id>
+    <sink_block_id>pfb_arb_resampler</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>ofdm_tx_hier1</source_block_id>
     <sink_block_id>pfb_arb_resampler</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
@@ -3635,7 +3866,7 @@ picocom -b 19200 -f n -l /dev/pts/24
   </connection>
   <connection>
     <source_block_id>tagged_stream_multiply_length</source_block_id>
-    <sink_block_id>audio_iq_modulator</sink_block_id>
+    <sink_block_id>blocks_tag_gate_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

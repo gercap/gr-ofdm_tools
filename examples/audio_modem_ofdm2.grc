@@ -450,7 +450,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>10</value>
+      <value>20</value>
     </param>
   </block>
   <block>
@@ -648,7 +648,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>0.1</value>
+      <value>0.5</value>
     </param>
   </block>
   <block>
@@ -1526,7 +1526,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1280, 300)</value>
+      <value>(1248, 220)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2825,7 +2825,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>flow_control</key>

@@ -911,7 +911,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -1062,7 +1062,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>12</value>
+      <value>20</value>
     </param>
   </block>
   <block>
@@ -1136,7 +1136,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>0.01</value>
+      <value>0.5</value>
     </param>
   </block>
   <block>
@@ -1304,7 +1304,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -1406,7 +1406,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -3639,7 +3639,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>flow_control</key>
@@ -3717,7 +3717,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -3744,7 +3744,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -3887,6 +3887,12 @@ picocom -b 19200 -f n -l /dev/pts/24
     <sink_block_id>uart_serial</sink_block_id>
     <source_key>out</source_key>
     <sink_key>in</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>freq_xlating_fir_filter</source_block_id>
+    <sink_block_id>qam_simple_modem_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
   </connection>
   <connection>
     <source_block_id>freq_xlating_fir_filter</source_block_id>

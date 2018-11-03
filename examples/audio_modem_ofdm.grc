@@ -105,7 +105,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -450,7 +450,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>10</value>
+      <value>20</value>
     </param>
   </block>
   <block>
@@ -648,7 +648,54 @@
     </param>
     <param>
       <key>value</key>
-      <value>0.01</value>
+      <value>0.005</value>
+    </param>
+  </block>
+  <block>
+    <key>analog_feedforward_agc_cc</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(648, 756)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>analog_feedforward_agc_cc_0</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>num_samples</key>
+      <value>1024</value>
+    </param>
+    <param>
+      <key>reference</key>
+      <value>1.0</value>
     </param>
   </block>
   <block>
@@ -773,7 +820,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1392, 284)</value>
+      <value>(1408, 276)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -918,7 +965,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1456, 696)</value>
+      <value>(1616, 696)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -949,7 +996,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(408, 612)</value>
+      <value>(408, 628)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -973,62 +1020,7 @@
     </param>
     <param>
       <key>period</key>
-      <value>1000</value>
-    </param>
-  </block>
-  <block>
-    <key>blocks_probe_rate</key>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(1080, 764)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>blocks_probe_rate_0</value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>byte</value>
-    </param>
-    <param>
-      <key>maxoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>minoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>mintime</key>
-      <value>500.0</value>
-    </param>
-    <param>
-      <key>alpha</key>
-      <value>0.15</value>
-    </param>
-    <param>
-      <key>vlen</key>
-      <value>1</value>
+      <value>2000</value>
     </param>
   </block>
   <block>
@@ -1071,7 +1063,7 @@
     </param>
     <param>
       <key>maxsize</key>
-      <value>400</value>
+      <value>100</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -1079,7 +1071,7 @@
     </param>
     <param>
       <key>minsize</key>
-      <value>200</value>
+      <value>100</value>
     </param>
     <param>
       <key>minoutbuf</key>
@@ -1098,7 +1090,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -1130,7 +1122,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>2.7e3</value>
+      <value>2.9e3</value>
     </param>
   </block>
   <block>
@@ -1202,7 +1194,7 @@ less robust</value>
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>fft_len</key>
@@ -1210,7 +1202,7 @@ less robust</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(688, 620)</value>
+      <value>(848, 620)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1289,7 +1281,7 @@ less robust</value>
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>fft_len</key>
@@ -1297,7 +1289,7 @@ less robust</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(816, 704)</value>
+      <value>(976, 708)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1390,7 +1382,7 @@ bit_rate aprox 6240bit/s</value>
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>fft_len</key>
@@ -1486,7 +1478,7 @@ carrier=1000 --&gt; BB spectrum 200-1800</value>
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>fft_len</key>
@@ -2261,7 +2253,7 @@ carrier=1000 --&gt; BB spectrum 200-1800</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(680, 920)</value>
+      <value>(840, 924)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3764,7 +3756,7 @@ carrier=1000 --&gt; BB spectrum 200-1800</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1104, 700)</value>
+      <value>(1264, 700)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -3823,7 +3815,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>flow_control</key>
@@ -3878,7 +3870,7 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1392, 332)</value>
+      <value>(1408, 364)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -3968,6 +3960,24 @@ picocom -b 19200 -f n -l /dev/pts/24
     </param>
   </block>
   <connection>
+    <source_block_id>analog_feedforward_agc_cc_0</source_block_id>
+    <sink_block_id>digital_ofdm_rx</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>analog_feedforward_agc_cc_0</source_block_id>
+    <sink_block_id>digital_ofdm_rx_0_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>analog_feedforward_agc_cc_0</source_block_id>
+    <sink_block_id>qtgui_freq_sink_x_0_1_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
     <source_block_id>audio_iq_modulator</source_block_id>
     <sink_block_id>audio_sink</sink_block_id>
     <source_key>0</source_key>
@@ -4010,12 +4020,6 @@ picocom -b 19200 -f n -l /dev/pts/24
     <sink_key>generate</sink_key>
   </connection>
   <connection>
-    <source_block_id>blocks_probe_rate_0</source_block_id>
-    <sink_block_id>blocks_message_debug</sink_block_id>
-    <source_key>rate</source_key>
-    <sink_key>print</sink_key>
-  </connection>
-  <connection>
     <source_block_id>blocks_random_pdu_0</source_block_id>
     <sink_block_id>pdu_to_tagged_stream_1</sink_block_id>
     <source_key>pdus</source_key>
@@ -4023,19 +4027,7 @@ picocom -b 19200 -f n -l /dev/pts/24
   </connection>
   <connection>
     <source_block_id>digital_ofdm_rx</source_block_id>
-    <sink_block_id>blocks_probe_rate_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>digital_ofdm_rx</source_block_id>
     <sink_block_id>tagged_stream_to_pdu</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>digital_ofdm_rx_0_0</source_block_id>
-    <sink_block_id>blocks_probe_rate_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -4071,19 +4063,7 @@ picocom -b 19200 -f n -l /dev/pts/24
   </connection>
   <connection>
     <source_block_id>freq_xlating_fir_filter</source_block_id>
-    <sink_block_id>digital_ofdm_rx</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>freq_xlating_fir_filter</source_block_id>
-    <sink_block_id>digital_ofdm_rx_0_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>freq_xlating_fir_filter</source_block_id>
-    <sink_block_id>qtgui_freq_sink_x_0_1_0</sink_block_id>
+    <sink_block_id>analog_feedforward_agc_cc_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
