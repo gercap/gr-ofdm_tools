@@ -1,4 +1,4 @@
-OFDM Tools
+OFDM Tools and other SDR stuff
 ==========
 
 Miscellaneous SDR tools amd GNU Radio blocks that fulfill some of my interests:
