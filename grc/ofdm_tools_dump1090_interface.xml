@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<block>
+  <name>dump1090 Interface</name>
+  <key>ofdm_tools_dump1090_interface</key>
+  <category>[ofdm_tools]</category>
+  <import>import ofdm_tools</import>
+  <make>ofdm_tools.dump1090_interface(
+  decoder_path=$decoder_path,
+  interactive=$interactive,
+  quiet=$quiet,
+  )</make>
+  <param>
+    <name>dump1090 Path</name>
+    <key>decoder_path</key>
+    <value></value>
+    <type>string</type>
+  </param>
+
+  <param>
+    <name>Interactive Terminal</name>
+    <key>interactive</key>
+    <value>False</value>
+    <type>enum</type>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+  </param>
+
+  <param>
+    <name>Quiet outpup</name>
+    <key>quiet</key>
+    <value>True</value>
+    <type>enum</type>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+</block>

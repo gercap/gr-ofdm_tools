@@ -78,6 +78,7 @@ from remote_client_qt import remote_client_qt
 from spectrum_sweeper import spectrum_sweeper
 from clipper import clipper
 from uart_serial import uart_serial
+from dump1090_interface import dump1090_interface
 
 import ofdm_txrx_modules
 import ofdm_cr_tools
